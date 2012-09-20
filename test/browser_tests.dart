@@ -116,11 +116,11 @@ main() {
     js.scoped(() {
       x = new js.Proxy(js.context.Foo, 42);
       y = new js.Proxy(js.context.Foo, 38);
-      y = js.globalize(y);
+      y = js.retain(y);
     });
     js.scoped(() {
       expect(y.a, equals(38));
-      js.invalidate(y);
+      js.release(y);
       // TODO(vsm): Invalid proxies are not throwing a catchable
       // error.  Fix and test that x and y are invalid here.
     });

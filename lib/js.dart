@@ -481,19 +481,18 @@ _exitScope(depth) {
 }
 
 /**
- * Convert the given proxy handle to a global handle.
- * The global handle will not be automatically collected when the scope exits.
- * Instead, it will need to be explicitly invalidated.
+ * Retain the given proxy handle beyond the current scope.
+ * Instead, it will need to be explicitly released.
  */
-globalize(Proxy handle) {
+retain(Proxy handle) {
   _jsGlobalize.callSync(_serialize(handle));
   return handle;
 }
 
 /**
- * Invalidate a global Proxy.
+ * Release a retained Proxy.
  */
-invalidate(Proxy handle) {
+release(Proxy handle) {
   _jsInvalidate.callSync(_serialize(handle));
 }
 
