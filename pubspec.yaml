@@ -1,4 +1,4 @@
-name: js_interop
+name: js
 description: Access JavaScript from Dart.
 version: 0.0.1
 dependencies:
