@@ -2,6 +2,75 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+/**
+ * The js.dart library provides simple JavaScript invocation from Dart that
+ * works on both Dartium and on other modern browsers via Dart2JS.
+ *
+ * It provides a model based on Scoped [Proxy] objects.  Proxies allow Dart
+ * code to access JavaScript objects, fields, and functions naturally and
+ * vice-versa.  Scopes enable developers to use proxies without memory leaks -
+ * a common challenge with cross-runtime interoperation.
+ *
+ * The top-level [context] getter provides a [Proxy] to the global JavaScript
+ * context for the page you are running on.  In the following example:
+ *
+ *     #import('package:js/js.dart', prefix: 'js');
+ *
+ *     void main() {
+ *       js.scoped(() {
+ *         js.context.alert('Hello from Dart via JavaScript');
+ *       });
+ *     }
+ *
+ * js.context.alert creates a proxy to the top-level alert function in
+ * JavaScript.  It is invoked from Dart as a regular function that forwards to
+ * the underlying JavaScript one.  The proxies allocated within the scope are
+ * released once the scope is exited.
+ *
+ * The library also enables JavaScript proxies to Dart objects and functions.
+ * For example, the following Dart code:
+ *
+ *     scoped(() {
+ *       js.context.dartCallback = new Callback.once((x) => print(x*2));
+ *     });
+ *
+ * defines a top-level JavaScript function 'dartCallback' that is a proxy to
+ * the corresponding Dart function.  The [Callback.once] constructor allows the
+ * proxy to the Dart function to be retained beyond the end of the scope;
+ * instead it is released after the first invocation.  (This is a common
+ * pattern for asychronous callbacks.)
+ *
+ * Note, parameters and return values are intuitively passed by value for
+ * primitives and by reference for non-primitives.  In the latter case, the
+ * references are automatically wrapped and unwrapped as proxies by the library.
+ *
+ * This library also allows construction of JavaScripts objects given a [Proxy]
+ * to a corresponding JavaScript constructor.  For example, if the following
+ * JavaScript is loaded on the page:
+ *
+ *     function Foo(x) {
+ *       this.x = x;
+ *     }
+ *
+ *     Foo.prototype.add = function(other) {
+ *       return new Foo(this.x + other.x);
+ *     }
+ *
+ * then, the following Dart:
+ *
+ *     var foo = new js.Proxy(js.context.Foo, 42);
+ *     var foo2 = foo.add(foo);
+ *     print(foo2.x);
+ *
+ * will construct a JavaScript Foo object with the parameter 42, invoke its
+ * add method, and return a [Proxy] to a new Foo object whose x field is 84.
+ *
+ * See [samples](http://dart-lang.github.com/js-interop/) for more examples
+ * of usage.
+ */
+
+// TODO(vsm): Add a link to an article.
+
 #library('js');
 
 #import('dart:html');
@@ -441,7 +510,7 @@ _js(String message) => _deserialize(_jsPortSync.callSync(_serialize(message)));
 /**
  * Return a proxy to the global JavaScript context for this page.
  */
-get context {
+Proxy get context {
   if (_depth == 0) throw 'Cannot get JavaScript context out of scope.';
   return _js('window');
 }
@@ -450,8 +519,8 @@ get context {
 get _depth => _proxiedObjectTable._scopeIndices.length;
 
 /**
- * Execute the closure f within a scope.  Any proxies created within this scope
- * are invalidated afterward unless they are converted to a global proxy.
+ * Execute the closure [f] within a scope.  Any proxies created within this
+ * scope are invalidated afterward unless they are converted to a global proxy.
  */
 scoped(f) {
   var depth = _enterScope();
@@ -481,31 +550,32 @@ _exitScope(depth) {
 }
 
 /**
- * Retain the given proxy handle beyond the current scope.
+ * Retain the given [proxy] beyond the current scope.
  * Instead, it will need to be explicitly released.
+ * The given [proxy] is returned for convenience.
  */
-retain(Proxy handle) {
-  _jsGlobalize.callSync(_serialize(handle));
-  return handle;
+Proxy retain(Proxy proxy) {
+  _jsGlobalize.callSync(_serialize(proxy));
+  return proxy;
 }
 
 /**
- * Release a retained Proxy.
+ * Release a retained [proxy].
  */
-release(Proxy handle) {
-  _jsInvalidate.callSync(_serialize(handle));
+void release(Proxy proxy) {
+  _jsInvalidate.callSync(_serialize(proxy));
 }
 
 
 /**
- * Convert a Dart map to a JavaScript map and return a proxy to it.
+ * Convert a Dart map [data] to a JavaScript map and return a [Proxy] to it.
  */
 Proxy map(Map data) => new Proxy._json(data);
 
 /**
- * Convert a Dart list to a JavaScript array and return a proxy to it.
+ * Convert a Dart [list] to a JavaScript array and return a [Proxy] to it.
  */
-Proxy array(List data) => new Proxy._json(data);
+Proxy array(List list) => new Proxy._json(list);
 
 /**
  * Convert a local Dart function to a callback that can be passed to
@@ -540,14 +610,19 @@ class Callback {
     _deserializedFunctionTable.remove(c);
   }
 
-  // Dispose this Callback so that it may be collected.
-  // Once a Callback is disposed, it is an error to invoke it from JavaScript.
+  /**
+   * Dispose this [Callback] so that it may be collected.
+   * Once a [Callback] is disposed, it is an error to invoke it from JavaScript.
+   */
   dispose() {
     assert(_manualDispose);
     _dispose();
   }
 
-  // Create a single-fire Callback.
+  /**
+   * Create a single-fire [Callback] that invokes [f].  The callback is
+   * automatically disposed after the first invocation.
+   */
   // TODO(vsm): Is there a better way to handle varargs?
   Callback.once(Function f) {
     _callback = ([arg1, arg2, arg3, arg4]) {
@@ -570,6 +645,10 @@ class Callback {
     _initialize(f, false);
   }
 
+  /**
+   * Create a multi-fire [Callback] that invokes [f].  The callback must be
+   * explicitly disposed to avoid memory leaks.
+   */
   // TODO(vsm): Is there a better way to handle varargs?
   Callback.many(Function f) {
     _callback = ([arg1, arg2, arg3, arg4]) {
@@ -597,8 +676,8 @@ class Proxy {
   final _id;
 
   /**
-   * Construct a Proxy to a new JavaScript object by invoking a (proxy to a)
-   * JavaScript constructor.  The arguments should be either
+   * Construct a [Proxy] to a new JavaScript object by invoking a (proxy to a)
+   * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
   factory Proxy(constructor, [arg1, arg2, arg3, arg4]) {
@@ -609,8 +688,8 @@ class Proxy {
   }
 
   /**
-   * Construct a Proxy to a new JavaScript map or list created defined via Dart
-   * map or list.
+   * Construct a [Proxy] to a new JavaScript map or list created defined via
+   * Dart map or list.
    */
   factory Proxy._json(data) {
     if (_depth == 0) throw 'Cannot create Proxy out of scope.';

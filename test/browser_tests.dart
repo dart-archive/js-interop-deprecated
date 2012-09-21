@@ -116,7 +116,7 @@ main() {
     js.scoped(() {
       x = new js.Proxy(js.context.Foo, 42);
       y = new js.Proxy(js.context.Foo, 38);
-      y = js.retain(y);
+      js.retain(y);
     });
     js.scoped(() {
       expect(y.a, equals(38));
