@@ -29,14 +29,14 @@ main() {
         ['RUS',    68.6,               1.54,      'Europe',         141850000],
         ['USA',    78.09,              2.05,      'North America',  307007000]
       ]));
-      
+
     var options = js.map({
       'title': 'Correlation between life expectancy, fertility rate and population of some world countries (2010)',
       'hAxis': {'title': 'Life Expectancy'},
       'vAxis': {'title': 'Fertility Rate'},
       'bubble': {'textStyle': {'fontSize': 11}}
     });
-      
+
     // Create and draw the visualization.
     var chart = new js.Proxy(google.visualization.BubbleChart,
                              query('#visualization'));
@@ -45,6 +45,6 @@ main() {
 
   js.scoped(() {
     js.context.google.setOnLoadCallback(
-        new js.Callback.once1(drawVisualization));
+        new js.Callback.once(drawVisualization));
   });
 }

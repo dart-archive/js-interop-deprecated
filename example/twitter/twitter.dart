@@ -13,7 +13,7 @@ void main() {
   js.scoped(() {
     // Create a JavaScript function called display that forwards to the Dart
     // function.
-    js.context.display = new js.Callback.once1(display);
+    js.context.display = new js.Callback.once(display);
 
     // Inject a JSONP request to Twitter invoking the JavaScript display
     // function.

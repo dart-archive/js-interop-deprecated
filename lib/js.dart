@@ -428,14 +428,14 @@ void _initialize() {
   _jsExitScope = window.lookupPort('dart-js-exit-scope');
   _jsGlobalize = window.lookupPort('dart-js-globalize');
   _jsInvalidate = window.lookupPort('dart-js-invalidate');
-  
+
   // Set up JS debugging.
   scoped(() {
-    context.dartProxyDebug = new Callback.many0(proxyDebug);
+    context.dartProxyDebug = new Callback.many(proxyDebug);
   });
 }
 
-// Evaluate a JavaScript string and return 
+// Evaluate a JavaScript string and return
 _js(String message) => _deserialize(_jsPortSync.callSync(_serialize(message)));
 
 /**
@@ -510,22 +510,22 @@ Proxy array(List data) => new Proxy._json(data);
 /**
  * Convert a local Dart function to a callback that can be passed to
  * JavaScript.
- * 
+ *
  * A callback can either be:
- * 
+ *
  * - single-fire, in which case it is automatically invalidated after the first
  *   invocation, or
- * - multi-fire, in which case it must be explicitly disposed. 
+ * - multi-fire, in which case it must be explicitly disposed.
  */
 class Callback {
   var _manualDispose;
   var _id;
   var _callback;
-  
+
   get _serialized => [ 'funcref',
                        _id,
-                       _proxiedFunctionTable.sendPort ];  
-  
+                       _proxiedFunctionTable.sendPort ];
+
   _initialize(f, manualDispose) {
     _manualDispose = manualDispose;
     _id = _proxiedFunctionTable.add(f);
@@ -534,87 +534,58 @@ class Callback {
     _proxiedFunctionTable._replace(_id, _callback);
     _deserializedFunctionTable.add(_callback, _serialized);
   }
-  
+
   _dispose() {
     var c = _proxiedFunctionTable.invalidate(_id);
     _deserializedFunctionTable.remove(c);
   }
-  
+
   // Dispose this Callback so that it may be collected.
   // Once a Callback is disposed, it is an error to invoke it from JavaScript.
   dispose() {
     assert(_manualDispose);
     _dispose();
   }
-  
-  // TODO(vsm): Collapse these into a single once constructor.
-  // Create a single-fire Callback with zero arguments.
-  Callback.once0(Function f) {
-    _callback = () {
-      _dispose();
-      return scoped(() => f());
+
+  // Create a single-fire Callback.
+  // TODO(vsm): Is there a better way to handle varargs?
+  Callback.once(Function f) {
+    _callback = ([arg1, arg2, arg3, arg4]) {
+      try {
+        if (!?arg1) {
+          return scoped(() => f());
+        } else if (!?arg2) {
+          return scoped(() => f(arg1));
+        } else if (!?arg3) {
+          return scoped(() => f(arg1, arg2));
+        } else if (!?arg4) {
+          return scoped(() => f(arg1, arg2, arg3));
+        } else {
+          return scoped(() => f(arg1, arg2, arg3, arg4));
+        }
+      } finally {
+        _dispose();
+      }
     };
     _initialize(f, false);
   }
-  
-  // Create a single-fire Callback with one argument.
-  Callback.once1(Function f) {
-    _callback = (x1) {
-      _dispose();
-      return scoped(() => f(x1));
+
+  // TODO(vsm): Is there a better way to handle varargs?
+  Callback.many(Function f) {
+    _callback = ([arg1, arg2, arg3, arg4]) {
+      if (!?arg1) {
+        return scoped(() => f());
+      } else if (!?arg2) {
+        return scoped(() => f(arg1));
+      } else if (!?arg3) {
+        return scoped(() => f(arg1, arg2));
+      } else if (!?arg4) {
+        return scoped(() => f(arg1, arg2, arg3));
+      } else {
+        return scoped(() => f(arg1, arg2, arg3, arg4));
+      }
     };
     _initialize(f, false);
-  }
-  
-  // Create a single-fire Callback with two arguments.  
-  Callback.once2(Function f) {
-    _callback = (x1, x2) {
-      _dispose();
-      return scoped(() => f(x1, x2));
-    };
-    _initialize(f, false);
-  }
-  
-  // Create a single-fire Callback with three arguments.  
-  Callback.once3(Function f) {
-    _callback = (x1, x2, x3) {
-      _dispose();
-      return scoped(() => f(x1, x2, x3));
-    };
-    _initialize(f, false);
-  }
-  
-  // TODO(vsm): Collapse these into a single many constructor.
-  // Create a multi-fire Callback with zero arguments.
-  Callback.many0(Function f) {
-    _callback = () {
-      return scoped(() => f());
-    };
-    _initialize(f, true);
-  }
-  
-  // Create a multi-fire Callback with one argument.
-  Callback.many1(Function f) {
-    _callback = (x1) {
-      return scoped(() => f(x1));
-    };
-    _initialize(f, true);
-  }
-  
-  // Create a multi-fire Callback with two arguments.  
-  Callback.many2(Function f) {
-    _callback = (x1, x2) {
-      return scoped(() => f(x1, x2));
-    };
-    _initialize(f, true);
-  }
-  
-  // Create a multi-fire Callback with three arguments.
-  Callback.many3(Function f) {
-    _callback = (x1, x2, x3) {
-      return scoped(() => f(x1, x2, x3));
-    };
-    _initialize(f, true);
   }
 }
 
@@ -645,7 +616,7 @@ class Proxy {
     if (_depth == 0) throw 'Cannot create Proxy out of scope.';
     return _convert(data);
   }
-  
+
   static _convert(data) {
     // TODO(vsm): Can we make this more efficient?
     if (data is Map) {
@@ -665,14 +636,14 @@ class Proxy {
     }
     return data;
   }
-  
+
   Proxy._internal(this._port, this._id);
 
   // TODO(vsm): This is not required in Dartium, but
   // it is in Dart2JS.
   // Resolve whether this is needed.
   operator[](arg) => noSuchMethod('[]', [ arg ]);
-  
+
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(method, args) {
     if (_depth == 0) throw 'Cannot access a JavaScript proxy out of scope.';
@@ -691,26 +662,26 @@ class Proxy {
 class _ProxiedReferenceTable<T> {
   // Debugging name.
   final String _name;
-  
+
   // Generator for unique IDs.
   int _nextId;
-  
+
   // Counter for invalidated IDs for debugging.
   int _deletedCount;
-  
+
   // Table of IDs to Dart objects.
   final Map<String, T> _registry;
-  
+
   // Port to handle and forward requests to the underlying Dart objects.
   // A remote proxy is uniquely identified by an ID and SendPortSync.
   final ReceivePortSync _port;
 
   // The set of IDs that are global.  These must be explicitly invalidated.
   final Set<String> _globalIds;
-  
+
   // The stack of valid IDs.
   final List<String> _handleStack;
-  
+
   // The stack of scopes, where each scope is represented by an index into the
   // handleStack.
   final List<int> _scopeIndices;
@@ -719,7 +690,7 @@ class _ProxiedReferenceTable<T> {
   enterScope() {
     _scopeIndices.addLast(_handleStack.length);
   }
-  
+
   // Invalidate non-global IDs created in the current scope and
   // restore to the previous scope.
   exitScope() {
@@ -733,10 +704,10 @@ class _ProxiedReferenceTable<T> {
     }
     _handleStack.removeRange(start, _handleStack.length - start);
   }
-  
+
   // Convert an ID to a global.
   globalize(id) => _globalIds.add(id);
-  
+
   // Invalidate an ID.
   invalidate(id) {
     var old = _registry[id];
@@ -745,12 +716,12 @@ class _ProxiedReferenceTable<T> {
     _deletedCount++;
     return old;
   }
-  
+
   // Replace the object referenced by an ID.
   _replace(id, T x) {
     _registry[id] = x;
   }
-  
+
   _ProxiedReferenceTable(this._name) :
       _nextId = 0,
       _deletedCount = 0,
@@ -779,10 +750,10 @@ class _ProxiedReferenceTable<T> {
 
   // Get the current number of objects kept alive by this table.
   get count => _registry.length;
-  
+
   // Get the total number of IDs ever allocated.
   get total => count + _deletedCount;
-  
+
   // Get a send port for this table.
   get sendPort => _port.toSendPort();
 }
@@ -856,7 +827,7 @@ class _DeserializedFunctionTable {
     }
     return null;
   }
-  
+
   remove(Function f) {
     data = data.filter((item) => item[0] != f);
   }
@@ -934,7 +905,7 @@ _deserialize(var message) {
         var message = [id, args.map(_serialize)];
         var result = port.callSync(message);
         return _deserialize(result);
-      };      
+      };
 
       // Cache the remote id and port.
       _deserializedFunctionTable.add(f, message);
@@ -953,15 +924,15 @@ _deserialize(var message) {
       return new Proxy._internal(port, id);
     }
   }
-  
-  
+
+
   if (message == null) {
     return null;  // Convert undefined to null.
   } else if (message is String ||
              message is num ||
              message is bool) {
     // Primitives are passed directly through.
-    return message;    
+    return message;
   } else if (message is SendPortSync) {
     // Serialized type.
     return message;

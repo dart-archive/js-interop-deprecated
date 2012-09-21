@@ -105,7 +105,7 @@ main() {
     js.scoped(() {
       expect(() => js.context.invokeCallback(), throws);
 
-      js.context.callback = new js.Callback.once0(() => 42);
+      js.context.callback = new js.Callback.once(() => 42);
       expect(js.context.invokeCallback(), equals(42));
     });
   });

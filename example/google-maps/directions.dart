@@ -19,7 +19,7 @@ void main() {
     // Save the JS google.maps namespace for convenience.  It must be retained
     // as it's used beyond this scope.
     maps = js.retain(js.context.google.maps);
-    
+
     // Allocate a new JS Map with the following options.  See:
     // https://developers.google.com/maps/documentation/javascript/reference#Map
     var myOptions = js.map({
@@ -33,7 +33,7 @@ void main() {
     // See
     // https://developers.google.com/maps/documentation/javascript/reference#DirectionsRenderer
     directionsDisplay =
-        js.retain(new js.Proxy(maps.DirectionsRenderer, 
+        js.retain(new js.Proxy(maps.DirectionsRenderer,
                                   js.map({'map': map})));
     directionsDisplay.setPanel(query('#directions_panel'));
 
@@ -68,7 +68,7 @@ void calcRoute(e) {
     });
 
     // The routing callback is only called once.
-    directionsService.route(request, new js.Callback.once2((response, status) {
+    directionsService.route(request, new js.Callback.once((response, status) {
       if (status == maps.DirectionsStatus.OK) {
         document.query('#directions_panel').innerHTML = "";
         directionsDisplay.setDirections(response);
