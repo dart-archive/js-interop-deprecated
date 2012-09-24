@@ -6,13 +6,14 @@
  * The js.dart library provides simple JavaScript invocation from Dart that
  * works on both Dartium and on other modern browsers via Dart2JS.
  *
- * It provides a model based on Scoped [Proxy] objects.  Proxies allow Dart
- * code to access JavaScript objects, fields, and functions naturally and
- * vice-versa.  Scopes enable developers to use proxies without memory leaks -
- * a common challenge with cross-runtime interoperation.
+ * It provides a model based on scoped [Proxy] objects.  Proxies give Dart
+ * code access to JavaScript objects, fields, and functions as well as the
+ * ability to pass Dart objects and functions to JavaScript functions.  Scopes
+ * enable developers to use proxies without memory leaks - a common challenge
+ * with cross-runtime interoperation.
  *
  * The top-level [context] getter provides a [Proxy] to the global JavaScript
- * context for the page you are running on.  In the following example:
+ * context for the page your Dart code is running on.  In the following example:
  *
  *     #import('package:js/js.dart', prefix: 'js');
  *
@@ -65,7 +66,7 @@
  * will construct a JavaScript Foo object with the parameter 42, invoke its
  * add method, and return a [Proxy] to a new Foo object whose x field is 84.
  *
- * See [samples](http://dart-lang.github.com/js-interop/) for more examples
+ * See [samples](http://dart-lang.github.com/js-interop/example) for more examples
  * of usage.
  */
 
@@ -128,7 +129,7 @@ final _JS_BOOTSTRAP = @"""
     return this.count() + this._deletedCount;
   }
 
-  // Add an object to the table and return an ID for serialization.
+  // Adds an object to the table and return an ID for serialization.
   ProxiedReferenceTable.prototype.add = function (obj) {
     if (this.scopeIndices.length == 0) {
       throw "Cannot allocate a proxy outside of a scope.";
@@ -150,13 +151,13 @@ final _JS_BOOTSTRAP = @"""
   // Overridable initialization on first use hook.
   ProxiedReferenceTable.prototype._initialize = function () {}
 
-  // Enter a new scope for this table.
+  // Enters a new scope for this table.
   ProxiedReferenceTable.prototype.enterScope = function() {
     this._initializeOnce();
     this.scopeIndices.push(this.handleStack.length);
   }
   
-  // Invalidate all non-global IDs in the current scope and
+  // Invalidates all non-global IDs in the current scope and
   // exit the current scope.
   ProxiedReferenceTable.prototype.exitScope = function() {
     var start = this.scopeIndices.pop();
@@ -170,12 +171,12 @@ final _JS_BOOTSTRAP = @"""
     this.handleStack = this.handleStack.splice(0, start);
   }
   
-  // Make this ID globally scope.  It must be explicitly invalidated.
+  // Makes this ID globally scope.  It must be explicitly invalidated.
   ProxiedReferenceTable.prototype.globalize = function(id) {
     this.globalIds[id] = true;
   }
 
-  // Invalidate this ID, potentially freeing its corresponding object.
+  // Invalidates this ID, potentially freeing its corresponding object.
   ProxiedReferenceTable.prototype.invalidate = function(id) {
     var old = this.get(id);
     delete this.globalIds[id];
@@ -184,7 +185,7 @@ final _JS_BOOTSTRAP = @"""
     return old;
   }
 
-  // Get the object or function corresponding to this ID.
+  // Gets the object or function corresponding to this ID.
   ProxiedReferenceTable.prototype.get = function (id) {
     if (!this.map.hasOwnProperty(id)) {
       throw 'Proxy ' + id + ' has been invalidated.'
@@ -293,7 +294,7 @@ final _JS_BOOTSTRAP = @"""
     this.port = sendPort;
   }
 
-  // Serialize JS types to SendPortSync format:
+  // Serializes JS types to SendPortSync format:
   // - primitives -> primitives
   // - sendport -> sendport
   // - DOM element -> [ 'domref', element-id ]
@@ -383,7 +384,7 @@ final _JS_BOOTSTRAP = @"""
     }
   }
 
-  // Create a DartProxy to forwards to the remote object.
+  // Creates a DartProxy to forwards to the remote object.
   function deserializeObject(message) {
     var id = message[1];
     var port = message[2];
@@ -437,13 +438,13 @@ final _JS_BOOTSTRAP = @"""
     window.registerPort(name, port.toSendPort());
   }
 
-  // Enter a new scope in the JavaScript context.
+  // Enters a new scope in the JavaScript context.
   function enterScope() {
     proxiedObjectTable.enterScope();
     proxiedFunctionTable.enterScope();
   }
 
-  // Exit the current scope (and invalidate local IDs) in the JavaScript
+  // Exits the current scope (and invalidate local IDs) in the JavaScript
   // context.
   function exitScope() {
     proxiedFunctionTable.exitScope();
@@ -468,7 +469,7 @@ final _JS_BOOTSTRAP = @"""
 })();
 """;
 
-// Inject JavaScript source code onto the page.
+// Injects JavaScript source code onto the page.
 // This is only used to load the bootstrapping code above.
 void _inject(code) {
   final script = new ScriptElement();
@@ -486,7 +487,7 @@ SendPortSync _jsExitScope = null;
 SendPortSync _jsGlobalize = null;
 SendPortSync _jsInvalidate = null;
 
-// Initialize bootstrap code and ports.
+// Initializes bootstrap code and ports.
 void _initialize() {
   if (_jsPortSync != null) return;
   _inject(_JS_BOOTSTRAP);
@@ -504,11 +505,11 @@ void _initialize() {
   });
 }
 
-// Evaluate a JavaScript string and return
+// Evaluates a JavaScript string and return
 _js(String message) => _deserialize(_jsPortSync.callSync(_serialize(message)));
 
 /**
- * Return a proxy to the global JavaScript context for this page.
+ * Returns a proxy to the global JavaScript context for this page.
  */
 Proxy get context {
   if (_depth == 0) throw 'Cannot get JavaScript context out of scope.';
@@ -519,7 +520,7 @@ Proxy get context {
 get _depth => _proxiedObjectTable._scopeIndices.length;
 
 /**
- * Execute the closure [f] within a scope.  Any proxies created within this
+ * Executes the closure [f] within a scope.  Any proxies created within this
  * scope are invalidated afterward unless they are converted to a global proxy.
  */
 scoped(f) {
@@ -550,7 +551,7 @@ _exitScope(depth) {
 }
 
 /**
- * Retain the given [proxy] beyond the current scope.
+ * Retains the given [proxy] beyond the current scope.
  * Instead, it will need to be explicitly released.
  * The given [proxy] is returned for convenience.
  */
@@ -560,7 +561,7 @@ Proxy retain(Proxy proxy) {
 }
 
 /**
- * Release a retained [proxy].
+ * Releases a retained [proxy].
  */
 void release(Proxy proxy) {
   _jsInvalidate.callSync(_serialize(proxy));
@@ -568,17 +569,17 @@ void release(Proxy proxy) {
 
 
 /**
- * Convert a Dart map [data] to a JavaScript map and return a [Proxy] to it.
+ * Converts a Dart map [data] to a JavaScript map and return a [Proxy] to it.
  */
 Proxy map(Map data) => new Proxy._json(data);
 
 /**
- * Convert a Dart [list] to a JavaScript array and return a [Proxy] to it.
+ * Converts a Dart [list] to a JavaScript array and return a [Proxy] to it.
  */
 Proxy array(List list) => new Proxy._json(list);
 
 /**
- * Convert a local Dart function to a callback that can be passed to
+ * Converts a local Dart function to a callback that can be passed to
  * JavaScript.
  *
  * A callback can either be:
@@ -611,7 +612,7 @@ class Callback {
   }
 
   /**
-   * Dispose this [Callback] so that it may be collected.
+   * Disposes this [Callback] so that it may be collected.
    * Once a [Callback] is disposed, it is an error to invoke it from JavaScript.
    */
   dispose() {
@@ -620,7 +621,7 @@ class Callback {
   }
 
   /**
-   * Create a single-fire [Callback] that invokes [f].  The callback is
+   * Creates a single-fire [Callback] that invokes [f].  The callback is
    * automatically disposed after the first invocation.
    */
   // TODO(vsm): Is there a better way to handle varargs?
@@ -646,7 +647,7 @@ class Callback {
   }
 
   /**
-   * Create a multi-fire [Callback] that invokes [f].  The callback must be
+   * Creates a multi-fire [Callback] that invokes [f].  The callback must be
    * explicitly disposed to avoid memory leaks.
    */
   // TODO(vsm): Is there a better way to handle varargs?
@@ -676,7 +677,7 @@ class Proxy {
   final _id;
 
   /**
-   * Construct a [Proxy] to a new JavaScript object by invoking a (proxy to a)
+   * Constructs a [Proxy] to a new JavaScript object by invoking a (proxy to a)
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
@@ -688,7 +689,7 @@ class Proxy {
   }
 
   /**
-   * Construct a [Proxy] to a new JavaScript map or list created defined via
+   * Constructs a [Proxy] to a new JavaScript map or list created defined via
    * Dart map or list.
    */
   factory Proxy._json(data) {
@@ -765,12 +766,12 @@ class _ProxiedReferenceTable<T> {
   // handleStack.
   final List<int> _scopeIndices;
 
-  // Enter a new scope.
+  // Enters a new scope.
   enterScope() {
     _scopeIndices.addLast(_handleStack.length);
   }
 
-  // Invalidate non-global IDs created in the current scope and
+  // Invalidates non-global IDs created in the current scope and
   // restore to the previous scope.
   exitScope() {
     int start = _scopeIndices.removeLast();
@@ -784,10 +785,10 @@ class _ProxiedReferenceTable<T> {
     _handleStack.removeRange(start, _handleStack.length - start);
   }
 
-  // Convert an ID to a global.
+  // Converts an ID to a global.
   globalize(id) => _globalIds.add(id);
 
-  // Invalidate an ID.
+  // Invalidates an ID.
   invalidate(id) {
     var old = _registry[id];
     _globalIds.remove(id);
@@ -796,7 +797,7 @@ class _ProxiedReferenceTable<T> {
     return old;
   }
 
-  // Replace the object referenced by an ID.
+  // Replaces the object referenced by an ID.
   _replace(id, T x) {
     _registry[id] = x;
   }
@@ -810,7 +811,7 @@ class _ProxiedReferenceTable<T> {
       _scopeIndices = new List<int>(),
       _globalIds = new Set<String>();
 
-  // Add a new object to the table and return a new ID for it.
+  // Adds a new object to the table and return a new ID for it.
   String add(T x) {
     if (_scopeIndices.length == 0) {
       throw "Must be inside scope to allocate.";
@@ -822,18 +823,18 @@ class _ProxiedReferenceTable<T> {
     return id;
   }
 
-  // Get an object by ID.
+  // Gets an object by ID.
   T get(String id) {
     return _registry[id];
   }
 
-  // Get the current number of objects kept alive by this table.
+  // Gets the current number of objects kept alive by this table.
   get count => _registry.length;
 
-  // Get the total number of IDs ever allocated.
+  // Gets the total number of IDs ever allocated.
   get total => count + _deletedCount;
 
-  // Get a send port for this table.
+  // Gets a send port for this table.
   get sendPort => _port.toSendPort();
 }
 
@@ -1049,8 +1050,8 @@ Element _deserializeElement(var id) {
 }
 
 /**
- * Debugging / profiling support.  Print the number of live handles in Dart
- * and JavaScript.
+ * Prints the number of live handles in Dart and JavaScript.  This is for
+ * debugging / profiling purposes.
  */
 void proxyDebug([String message = '']) {
   print('Proxy status $message:');
