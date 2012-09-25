@@ -5,7 +5,46 @@ The js.dart library allows Dart code running in the browser to
 manipulate JavaScript running in the same page.  It is intended to
 allow Dart code to easily interact with third-party JavaScript libraries.
 
-This library is under construction. More coming soon!
+Documentation
+-------------
+
+See [API documentation][docs]. 
+
+Samples
+-------
+
+See [samples][samples] that demonstrate interaction with JavaScript
+code.  These include interoperation with the Google Maps JavaScript
+library, the Google Visualization JavaScript library, and Twitter's
+query API via JSONP.
+
+Usage
+-----
+
+The [Dart Editor][editor] now includes pub support.  To try out this
+library in the editor:
+
+1.  [Update to the latest editor][editor].
+
+2.  From the "File" menu, open a "New Application" (and make sure "Add
+        Pub support" is checked).
+
+3.  Add the following to your pubspec.yaml:
+
+    dependencies: 
+      js: { hosted: js }
+
+4.  Under the "Tools" menu, run "Pub Install".
+
+5.  Try the following test Dart file:
+
+    import 'package:js/js.dart' as js;
+    
+    void main() {
+      js.scoped(() {
+        js.context.alert('Hello from Dart via JS');
+      });
+    }
 
 Running Tests
 -------------
@@ -28,3 +67,6 @@ and then open **test/browser_tests.html** in any browser.
 [mb]: http://www.dartlang.org/support/faq.html#what-browsers-supported
 [pub]: http://www.dartlang.org/docs/pub-package-manager/
 [Dartium]: http://www.dartlang.org/dartium/index.html
+[docs]: http://dart-lang.github.com/js-interop
+[samples]: http://dart-lang.github.com/js-interop/example
+[editor]: http://www.dartlang.org/docs/editor/getting-started/
