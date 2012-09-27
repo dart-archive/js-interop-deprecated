@@ -681,10 +681,17 @@ class Proxy {
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy(constructor, [arg1, arg2, arg3, arg4]) {
+  factory Proxy(constructor, [arg1, arg2, arg3, arg4]) => new Proxy.withVarargs(constructor, [arg1, arg2, arg3, arg4]);
+
+  /**
+   * Constructs a [Proxy] to a new JavaScript object by invoking a (proxy to a)
+   * JavaScript [constructor].  The arguments list should contains either
+   * primitive values, DOM elements, or Proxies.
+   */
+  factory Proxy.withVarargs(constructor, List args) {
     if (_depth == 0) throw 'Cannot create Proxy out of scope.';
-    var serialized = [constructor, arg1, arg2, arg3, arg4].map(_serialize);
-    var result = _jsPortCreate.callSync(serialized);
+    final serialized = ([constructor]..addAll(args)).map(_serialize);
+    final result = _jsPortCreate.callSync(serialized);
     return _deserialize(result);
   }
 
