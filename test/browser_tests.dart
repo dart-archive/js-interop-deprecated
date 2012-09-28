@@ -39,6 +39,14 @@ final TEST_JS = '''
   function invokeCallback() {
     return callback();
   }
+
+  function getElementAttribute(element, attr) {
+    return element.getAttribute(attr);
+  }
+
+  function getNewDivElement() {
+    return document.createElement("div");
+  }
 ''';
 
 injectSource(code) {
@@ -123,6 +131,30 @@ main() {
       js.release(y);
       // TODO(vsm): Invalid proxies are not throwing a catchable
       // error.  Fix and test that x and y are invalid here.
+    });
+  });
+
+  test('pass unattached Dom Element', () {
+    js.scoped(() {
+      final div = new DivElement();
+      div.classes.add('a');
+      expect(js.context.getElementAttribute(div, 'class'), equals('a'));
+    });
+  });
+
+  test('pass Dom Element attached to an unattached element', () {
+    js.scoped(() {
+      final div = new DivElement();
+      div.classes.add('a');
+      final container = new DivElement();
+      container.elements.add(div);
+      expect(js.context.getElementAttribute(div, 'class'), equals('a'));
+    });
+  });
+
+  test('retrieve unattached Dom Element', () {
+    js.scoped(() {
+      expect(js.context.getNewDivElement() is DivElement);
     });
   });
 }

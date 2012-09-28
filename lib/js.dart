@@ -267,8 +267,20 @@ final _JS_BOOTSTRAP = @"""
   // DOM element serialization code.
   var _localNextElementId = 0;
   var _DART_ID = 'data-dart_id';
+  var _DART_TEMPORARY_ATTACHED = 'data-dart_temporary_attached';
 
   function serializeElement(e) {
+    // Element must be attached to DOM to be retrieve in js part.
+    // Attach top unattached parent to avoid detaching parent of "e" when
+    // appending "e" directly to document.
+    if (!document.documentElement.contains(e)) {
+      var top = e;
+      while (top.parent != null) {
+        top = top.parent;
+      }
+      document.documentElement.appendChild(top);
+      e.setAttribute(_DART_TEMPORARY_ATTACHED, "true");
+    }
     // TODO(vsm): Check for collisions with existing DOM nodes.
     if (e.hasAttribute(_DART_ID)) return e.getAttribute(_DART_ID);
     var id = (_localNextElementId++).toString();
@@ -284,7 +296,16 @@ final _JS_BOOTSTRAP = @"""
     if (list.length == 0) {
       throw 'Element must be attached to the document: ' + id;
     }
-    return list[0];
+    var e = list[0];
+    // detach temporary attached element
+    if (e.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
+      var top = e;
+      while (top.parentNode !== document.documentElement) {
+        top = top.parentNode;
+      }
+      document.documentElement.removeChild(top);
+    }
+    return e;
   }
 
 
@@ -1038,8 +1059,21 @@ _deserialize(var message) {
 int _localNextElementId = 0;
 
 const _DART_ID = 'data-dart_id';
+const _DART_TEMPORARY_ATTACHED = 'data-dart_temporary_attached';
 
 _serializeElement(Element e) {
+  // Element must be attached to DOM to be retrieve in js part.
+  // Attach top unattached parent to avoid detaching parent of "e" when
+  // appending "e" directly to document.
+  if (!document.documentElement.contains(e)) {
+    var top = e;
+    while (top.parent != null) {
+      top = top.parent;
+    }
+    document.documentElement.elements.add(top);
+    e.attributes[_DART_TEMPORARY_ATTACHED] = "true";
+  }
+  // set an 'data-dart_id' attribute to find it
   if (e.attributes.containsKey(_DART_ID)) return e.attributes[_DART_ID];
   // TODO(vsm): Use an isolate-specific id.
   var id = 'dart-${_localNextElementId++}';
@@ -1053,7 +1087,16 @@ Element _deserializeElement(var id) {
   if (list.length == 0) {
     throw 'Only elements attached to document can be serialized: $id';
   }
-  return list[0];
+  final e = list[0];
+  // detach temporary attached element
+  if (e.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
+    var top = e;
+    while (top.parent !== document.documentElement) {
+      top = top.parent;
+    }
+    document.documentElement.$dom_removeChild(top);
+  }
+  return e;
 }
 
 /**
