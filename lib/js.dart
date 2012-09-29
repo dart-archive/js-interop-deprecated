@@ -1094,7 +1094,7 @@ Element _deserializeElement(var id) {
     while (top.parent !== document.documentElement) {
       top = top.parent;
     }
-    document.documentElement.$dom_removeChild(top);
+    top.remove();
   }
   return e;
 }
