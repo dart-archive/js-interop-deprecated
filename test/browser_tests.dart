@@ -44,6 +44,14 @@ final TEST_JS = '''
     return element.getAttribute(attr);
   }
 
+  function addClassAttributes(list) {
+    var result = "";
+    for (var i=0; i<list.length; i++) {
+      result += list[i].getAttribute("class");
+    }
+    return result;
+  }
+
   function getNewDivElement() {
     return document.createElement("div");
   }
@@ -142,6 +150,14 @@ main() {
     });
   });
 
+  test('pass unattached Dom Element two times on same call', () {
+    js.scoped(() {
+      final div = new DivElement();
+      div.classes.add('a');
+      expect(js.context.addClassAttributes(js.array([div, div])), equals('aa'));
+    });
+  });
+
   test('pass Dom Element attached to an unattached element', () {
     js.scoped(() {
       final div = new DivElement();
@@ -149,6 +165,38 @@ main() {
       final container = new DivElement();
       container.elements.add(div);
       expect(js.context.getElementAttribute(div, 'class'), equals('a'));
+    });
+  });
+
+  test('pass 2 Dom Elements attached to an unattached element', () {
+    js.scoped(() {
+      final div1 = new DivElement();
+      div1.classes.add('a');
+      final div2 = new DivElement();
+      div2.classes.add('b');
+      final container = new DivElement();
+      container.elements.add(div1);
+      container.elements.add(div2);
+      expect(js.context.addClassAttributes(js.array([div1, div2])), equals('ab'));
+    });
+  });
+
+  test('pass multiple Dom Elements unattached to document', () {
+    js.scoped(() {
+      // A is alone
+      // 1 and 2 are brother
+      // 3 is child of 2
+      final divA = new DivElement()..classes.add('A');
+      final div1 = new DivElement()..classes.add('1');
+      final div2 = new DivElement()..classes.add('2');
+      final div3 = new DivElement()..classes.add('3');
+      final container = new DivElement();
+      container.elements.add(div1);
+      container.elements.add(div2);
+      div2.elements.add(div3);
+      expect(js.context.addClassAttributes(js.array([divA, div1, div2, div3])), equals('A123'));
+      expect(js.context.addClassAttributes(js.array([divA, div1, div3, div2])), equals('A132'));
+      expect(js.context.addClassAttributes(js.array([divA, div1, div1, div3, divA, div2, div3])), equals('A113A23'));
     });
   });
 

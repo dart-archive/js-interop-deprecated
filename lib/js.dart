@@ -270,21 +270,36 @@ final _JS_BOOTSTRAP = @"""
   var _DART_TEMPORARY_ATTACHED = 'data-dart_temporary_attached';
 
   function serializeElement(e) {
+    // TODO(vsm): Use an isolate-specific id.
+    var id;
+    if (e.hasAttribute(_DART_ID)) {
+      id = e.getAttribute(_DART_ID);
+    } else {
+      id = (_localNextElementId++).toString();
+      e.setAttribute(_DART_ID, id);
+    }
     // Element must be attached to DOM to be retrieve in js part.
     // Attach top unattached parent to avoid detaching parent of "e" when
-    // appending "e" directly to document.
-    if (!document.documentElement.contains(e)) {
-      var top = e;
-      while (top.parent != null) {
-        top = top.parent;
+    // appending "e" directly to document. We keep all ids to prevent 
+    // detaching top unattached parent to early. There could be other 
+    // elements to serialize having the same top unattached parent.
+    var top = e;
+    while (true) {
+      if (top.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
+        top.setAttribute(_DART_TEMPORARY_ATTACHED, top.getAttribute(_DART_TEMPORARY_ATTACHED) + " " + id);
+        break;
       }
-      document.documentElement.appendChild(top);
-      e.setAttribute(_DART_TEMPORARY_ATTACHED, "true");
+      if (top.parentNode == null) {
+        top.setAttribute(_DART_TEMPORARY_ATTACHED, " " + id);
+        document.documentElement.appendChild(top);
+        break;
+      }
+      if (top.parentNode === document.documentElement) {
+        // e was already attached to dom
+        break;
+      }
+      top = top.parentNode;
     }
-    // TODO(vsm): Check for collisions with existing DOM nodes.
-    if (e.hasAttribute(_DART_ID)) return e.getAttribute(_DART_ID);
-    var id = (_localNextElementId++).toString();
-    e.setAttribute(_DART_ID, id);
     return id;
   }
 
@@ -298,13 +313,22 @@ final _JS_BOOTSTRAP = @"""
     }
     var e = list[0];
     // detach temporary attached element
-    if (e.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
-      e.removeAttribute(_DART_TEMPORARY_ATTACHED);
-      var top = e;
-      while (top.parentNode !== document.documentElement) {
-        top = top.parentNode;
+    var top = e;
+    while (true) {
+      if (top.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
+        top.setAttribute(_DART_TEMPORARY_ATTACHED, top.getAttribute(_DART_TEMPORARY_ATTACHED).replace(" " + id, ''));
+        // detach top only if no more elements have to be unserialized
+        if (top.getAttribute(_DART_TEMPORARY_ATTACHED).length === 0) {
+          top.removeAttribute(_DART_TEMPORARY_ATTACHED);
+          document.documentElement.removeChild(top);
+        }
+        break;
       }
-      document.documentElement.removeChild(top);
+      if (top.parentNode === document.documentElement) {
+        // e was already attached to dom
+        break;
+      }
+      top = top.parentNode;
     }
     return e;
   }
@@ -1063,22 +1087,36 @@ const _DART_ID = 'data-dart_id';
 const _DART_TEMPORARY_ATTACHED = 'data-dart_temporary_attached';
 
 _serializeElement(Element e) {
+  // TODO(vsm): Use an isolate-specific id.
+  var id;
+  if (e.attributes.containsKey(_DART_ID)) {
+    id = e.attributes[_DART_ID];
+  } else {
+    id = 'dart-${_localNextElementId++}';
+    e.attributes[_DART_ID] = id;
+  }
   // Element must be attached to DOM to be retrieve in js part.
   // Attach top unattached parent to avoid detaching parent of "e" when
-  // appending "e" directly to document.
-  if (!document.documentElement.contains(e)) {
-    var top = e;
-    while (top.parent != null) {
-      top = top.parent;
+  // appending "e" directly to document. We keep all ids to prevent
+  // detaching top unattached parent to early. There could be other
+  // elements to serialize having the same top unattached parent.
+  var top = e;
+  while (true) {
+    if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
+      top.attributes[_DART_TEMPORARY_ATTACHED] = '${top.attributes[_DART_TEMPORARY_ATTACHED]} ${id}';
+      break;
     }
-    document.documentElement.elements.add(top);
-    e.attributes[_DART_TEMPORARY_ATTACHED] = "true";
+    if (top.parent == null) {
+      top.attributes[_DART_TEMPORARY_ATTACHED] = ' ${id}';
+      document.documentElement.elements.add(top);
+      break;
+    }
+    if (top.parent === document.documentElement) {
+      // e was already attached to dom
+      break;
+    }
+    top = top.parent;
   }
-  // set an 'data-dart_id' attribute to find it
-  if (e.attributes.containsKey(_DART_ID)) return e.attributes[_DART_ID];
-  // TODO(vsm): Use an isolate-specific id.
-  var id = 'dart-${_localNextElementId++}';
-  e.attributes[_DART_ID] = id;
   return id;
 }
 
@@ -1090,13 +1128,22 @@ Element _deserializeElement(var id) {
   }
   final e = list[0];
   // detach temporary attached element
-  if (e.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
-    e.attributes.remove(_DART_TEMPORARY_ATTACHED);
-    var top = e;
-    while (top.parent !== document.documentElement) {
-      top = top.parent;
+  var top = e;
+  while (true) {
+    if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
+      top.attributes[_DART_TEMPORARY_ATTACHED] = top.attributes[_DART_TEMPORARY_ATTACHED].replaceFirst(' ${id}', '');
+      // detach top only if no more elements have to be unserialized
+      if (top.attributes[_DART_TEMPORARY_ATTACHED].length == 0) {
+        top.attributes.remove(_DART_TEMPORARY_ATTACHED);
+        top.remove();
+      }
+      break;
     }
-    top.remove();
+    if (top.parent === document.documentElement) {
+      // e was already attached to dom
+      break;
+    }
+    top = top.parent;
   }
   return e;
 }
