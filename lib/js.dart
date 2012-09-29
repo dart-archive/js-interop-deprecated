@@ -299,6 +299,7 @@ final _JS_BOOTSTRAP = @"""
     var e = list[0];
     // detach temporary attached element
     if (e.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
+      e.removeAttribute(_DART_TEMPORARY_ATTACHED);
       var top = e;
       while (top.parentNode !== document.documentElement) {
         top = top.parentNode;
@@ -1090,6 +1091,7 @@ Element _deserializeElement(var id) {
   final e = list[0];
   // detach temporary attached element
   if (e.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
+    e.attributes.remove(_DART_TEMPORARY_ATTACHED);
     var top = e;
     while (top.parent !== document.documentElement) {
       top = top.parent;
