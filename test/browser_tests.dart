@@ -223,7 +223,8 @@ main() {
 
   test('pass documentElement', () {
     js.scoped(() {
-      expect(js.context.returnElement(document.documentElement), equals(document.documentElement));
+      expect(js.context.returnElement(document.documentElement),
+          equals(document.documentElement));
     });
   });
 
