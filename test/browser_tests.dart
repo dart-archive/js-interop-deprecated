@@ -40,6 +40,10 @@ final TEST_JS = '''
     return callback();
   }
 
+  function returnElement(element) {
+    return element;
+  }
+
   function getElementAttribute(element, attr) {
     return element.getAttribute(attr);
   }
@@ -177,32 +181,57 @@ main() {
       final container = new DivElement();
       container.elements.add(div1);
       container.elements.add(div2);
-      expect(js.context.addClassAttributes(js.array([div1, div2])), equals('ab'));
+      final f = js.context.addClassAttributes;
+      expect(f(js.array([div1, div2])), equals('ab'));
     });
   });
 
   test('pass multiple Dom Elements unattached to document', () {
     js.scoped(() {
       // A is alone
-      // 1 and 2 are brother
-      // 3 is child of 2
+      // 1 and 3 are brother
+      // 2 is child of 3
       final divA = new DivElement()..classes.add('A');
       final div1 = new DivElement()..classes.add('1');
       final div2 = new DivElement()..classes.add('2');
-      final div3 = new DivElement()..classes.add('3');
-      final container = new DivElement();
-      container.elements.add(div1);
-      container.elements.add(div2);
-      div2.elements.add(div3);
-      expect(js.context.addClassAttributes(js.array([divA, div1, div2, div3])), equals('A123'));
-      expect(js.context.addClassAttributes(js.array([divA, div1, div3, div2])), equals('A132'));
-      expect(js.context.addClassAttributes(js.array([divA, div1, div1, div3, divA, div2, div3])), equals('A113A23'));
+      final div3 = new DivElement()..classes.add('3')..elements.add(div2);
+      final container = new DivElement()..elements.addAll([div1, div3]);
+      final f = js.context.addClassAttributes;
+      expect(f(js.array([divA, div1, div2, div3])), equals('A123'));
+      expect(f(js.array([divA, div1, div3, div2])), equals('A132'));
+      expect(f(js.array([divA, div1, div1, div3, divA, div2, div3])),
+          equals('A113A23'));
+      expect(!document.documentElement.contains(divA));
+      expect(!document.documentElement.contains(div1));
+      expect(!document.documentElement.contains(div2));
+      expect(!document.documentElement.contains(div3));
+      expect(!document.documentElement.contains(container));
+    });
+  });
+
+  test('pass one Dom Elements unattached and another attached', () {
+    js.scoped(() {
+      final div1 = new DivElement()..classes.add('1');
+      final div2 = new DivElement()..classes.add('2');
+      document.documentElement.elements.add(div2);
+      final f = js.context.addClassAttributes;
+      expect(f(js.array([div1, div2])), equals('12'));
+      expect(!document.documentElement.contains(div1));
+      expect(document.documentElement.contains(div2));
+    });
+  });
+
+  test('pass documentElement', () {
+    js.scoped(() {
+      expect(js.context.returnElement(document.documentElement), equals(document.documentElement));
     });
   });
 
   test('retrieve unattached Dom Element', () {
     js.scoped(() {
-      expect(js.context.getNewDivElement() is DivElement);
+      var result = js.context.getNewDivElement();
+      expect(result is DivElement);
+      expect(!document.documentElement.contains(result));
     });
   });
 }

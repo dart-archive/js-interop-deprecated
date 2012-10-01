@@ -278,27 +278,33 @@ final _JS_BOOTSTRAP = @"""
       id = (_localNextElementId++).toString();
       e.setAttribute(_DART_ID, id);
     }
-    // Element must be attached to DOM to be retrieve in js part.
-    // Attach top unattached parent to avoid detaching parent of "e" when
-    // appending "e" directly to document. We keep all ids to prevent 
-    // detaching top unattached parent to early. There could be other 
-    // elements to serialize having the same top unattached parent.
-    var top = e;
-    while (true) {
-      if (top.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
-        top.setAttribute(_DART_TEMPORARY_ATTACHED, top.getAttribute(_DART_TEMPORARY_ATTACHED) + " " + id);
-        break;
+    if (e !== document.documentElement) {
+      // Element must be attached to DOM to be retrieve in js part.
+      // Attach top unattached parent to avoid detaching parent of "e" when
+      // appending "e" directly to document. We keep count of elements
+      // temporarily attached to prevent detaching top unattached parent to
+      // early. This count is equals to the length of _DART_TEMPORARY_ATTACHED
+      // attribute. There could be other elements to serialize having the same
+      // top unattached parent.
+      var top = e;
+      while (true) {
+        if (top.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
+          var oldValue = top.getAttribute(_DART_TEMPORARY_ATTACHED);
+          var newValue = oldValue + "a";
+          top.setAttribute(_DART_TEMPORARY_ATTACHED, newValue);
+          break;
+        }
+        if (top.parentNode == null) {
+          top.setAttribute(_DART_TEMPORARY_ATTACHED, "a");
+          document.documentElement.appendChild(top);
+          break;
+        }
+        if (top.parentNode === document.documentElement) {
+          // e was already attached to dom
+          break;
+        }
+        top = top.parentNode;
       }
-      if (top.parentNode == null) {
-        top.setAttribute(_DART_TEMPORARY_ATTACHED, " " + id);
-        document.documentElement.appendChild(top);
-        break;
-      }
-      if (top.parentNode === document.documentElement) {
-        // e was already attached to dom
-        break;
-      }
-      top = top.parentNode;
     }
     return id;
   }
@@ -312,23 +318,27 @@ final _JS_BOOTSTRAP = @"""
       throw 'Element must be attached to the document: ' + id;
     }
     var e = list[0];
-    // detach temporary attached element
-    var top = e;
-    while (true) {
-      if (top.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
-        top.setAttribute(_DART_TEMPORARY_ATTACHED, top.getAttribute(_DART_TEMPORARY_ATTACHED).replace(" " + id, ''));
-        // detach top only if no more elements have to be unserialized
-        if (top.getAttribute(_DART_TEMPORARY_ATTACHED).length === 0) {
-          top.removeAttribute(_DART_TEMPORARY_ATTACHED);
-          document.documentElement.removeChild(top);
+    if (e !== document.documentElement) {
+      // detach temporary attached element
+      var top = e;
+      while (true) {
+        if (top.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
+          var oldValue = top.getAttribute(_DART_TEMPORARY_ATTACHED);
+          var newValue = oldValue.substring(1);
+          top.setAttribute(_DART_TEMPORARY_ATTACHED, newValue);
+          // detach top only if no more elements have to be unserialized
+          if (top.getAttribute(_DART_TEMPORARY_ATTACHED).length === 0) {
+            top.removeAttribute(_DART_TEMPORARY_ATTACHED);
+            document.documentElement.removeChild(top);
+          }
+          break;
         }
-        break;
+        if (top.parentNode === document.documentElement) {
+          // e was already attached to dom
+          break;
+        }
+        top = top.parentNode;
       }
-      if (top.parentNode === document.documentElement) {
-        // e was already attached to dom
-        break;
-      }
-      top = top.parentNode;
     }
     return e;
   }
@@ -727,7 +737,8 @@ class Proxy {
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy(constructor, [arg1, arg2, arg3, arg4]) => new Proxy.withArgList(constructor, [arg1, arg2, arg3, arg4]);
+  factory Proxy(constructor, [arg1, arg2, arg3, arg4]) =>
+      new Proxy.withArgList(constructor, [arg1, arg2, arg3, arg4]);
 
   /**
    * Constructs a [Proxy] to a new JavaScript object by invoking a (proxy to a)
@@ -1095,27 +1106,33 @@ _serializeElement(Element e) {
     id = 'dart-${_localNextElementId++}';
     e.attributes[_DART_ID] = id;
   }
-  // Element must be attached to DOM to be retrieve in js part.
-  // Attach top unattached parent to avoid detaching parent of "e" when
-  // appending "e" directly to document. We keep all ids to prevent
-  // detaching top unattached parent to early. There could be other
-  // elements to serialize having the same top unattached parent.
-  var top = e;
-  while (true) {
-    if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
-      top.attributes[_DART_TEMPORARY_ATTACHED] = '${top.attributes[_DART_TEMPORARY_ATTACHED]} ${id}';
-      break;
+  if (e !== document.documentElement) {
+    // Element must be attached to DOM to be retrieve in js part.
+    // Attach top unattached parent to avoid detaching parent of "e" when
+    // appending "e" directly to document. We keep count of elements
+    // temporarily attached to prevent detaching top unattached parent to
+    // early. This count is equals to the length of _DART_TEMPORARY_ATTACHED
+    // attribute. There could be other elements to serialize having the same
+    // top unattached parent.
+    var top = e;
+    while (true) {
+      if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
+        final oldValue = top.attributes[_DART_TEMPORARY_ATTACHED];
+        final newValue = oldValue.concat('a');
+        top.attributes[_DART_TEMPORARY_ATTACHED] = newValue;
+        break;
+      }
+      if (top.parent == null) {
+        top.attributes[_DART_TEMPORARY_ATTACHED] = 'a';
+        document.documentElement.elements.add(top);
+        break;
+      }
+      if (top.parent === document.documentElement) {
+        // e was already attached to dom
+        break;
+      }
+      top = top.parent;
     }
-    if (top.parent == null) {
-      top.attributes[_DART_TEMPORARY_ATTACHED] = ' ${id}';
-      document.documentElement.elements.add(top);
-      break;
-    }
-    if (top.parent === document.documentElement) {
-      // e was already attached to dom
-      break;
-    }
-    top = top.parent;
   }
   return id;
 }
@@ -1127,23 +1144,27 @@ Element _deserializeElement(var id) {
     throw 'Only elements attached to document can be serialized: $id';
   }
   final e = list[0];
-  // detach temporary attached element
-  var top = e;
-  while (true) {
-    if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
-      top.attributes[_DART_TEMPORARY_ATTACHED] = top.attributes[_DART_TEMPORARY_ATTACHED].replaceFirst(' ${id}', '');
-      // detach top only if no more elements have to be unserialized
-      if (top.attributes[_DART_TEMPORARY_ATTACHED].length == 0) {
-        top.attributes.remove(_DART_TEMPORARY_ATTACHED);
-        top.remove();
+  if (e !== document.documentElement) {
+    // detach temporary attached element
+    var top = e;
+    while (true) {
+      if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
+        final oldValue = top.attributes[_DART_TEMPORARY_ATTACHED];
+        final newValue = oldValue.substring(1);
+        top.attributes[_DART_TEMPORARY_ATTACHED] = newValue;
+        // detach top only if no more elements have to be unserialized
+        if (top.attributes[_DART_TEMPORARY_ATTACHED].length == 0) {
+          top.attributes.remove(_DART_TEMPORARY_ATTACHED);
+          top.remove();
+        }
+        break;
       }
-      break;
+      if (top.parent === document.documentElement) {
+        // e was already attached to dom
+        break;
+      }
+      top = top.parent;
     }
-    if (top.parent === document.documentElement) {
-      // e was already attached to dom
-      break;
-    }
-    top = top.parent;
   }
   return e;
 }
