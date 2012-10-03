@@ -78,7 +78,7 @@
 #import('dart:isolate');
 
 // JavaScript bootstrapping code.
-final _JS_BOOTSTRAP = @"""
+final _JS_BOOTSTRAP = r"""
 (function() {
   // Proxy support
 
