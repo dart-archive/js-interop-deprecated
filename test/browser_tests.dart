@@ -59,6 +59,11 @@ final TEST_JS = '''
   function getNewDivElement() {
     return document.createElement("div");
   }
+
+  function testJsMap(callback) {
+    var result = callback();
+    return result['value'];
+  }
 ''';
 
 injectSource(code) {
@@ -127,6 +132,9 @@ main() {
 
       js.context.callback = new js.Callback.once(() => 42);
       expect(js.context.invokeCallback(), equals(42));
+      // TODO(vsm): This exception is not propagated back to
+      // Dart correctly.
+      // expect(() => js.context.invokeCallback(), throws);
     });
   });
 
@@ -233,6 +241,28 @@ main() {
       var result = js.context.getNewDivElement();
       expect(result is DivElement);
       expect(!document.documentElement.contains(result));
+    });
+  });
+
+  test('return a JS proxy to JavaScript', () {
+    js.scoped(() {
+      var result = js.context.testJsMap(
+          new js.Callback.once(() => js.map({ 'value': 42 })));
+      expect(result, 42);
+    });
+  });
+
+  test('dispose a callback', () {
+    js.scoped(() {
+      var x = 0;
+      final callback = new js.Callback.many(() => x++);
+      js.context.callback = callback;
+      expect(js.context.invokeCallback(), equals(0));
+      expect(js.context.invokeCallback(), equals(1));
+      callback.dispose();
+      // TODO(vsm): This exception is not propagated back to
+      // Dart correctly.
+      // expect(() => js.context.invokeCallback(), throws);
     });
   });
 }

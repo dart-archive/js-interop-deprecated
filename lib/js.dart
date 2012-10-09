@@ -424,13 +424,13 @@ final _JS_BOOTSTRAP = r"""
     } else {
       // Remote function.  Forward to its port.
       var f = function () {
-        enterScope();
+        var depth = enterScope();
         try {
           var args = Array.prototype.slice.apply(arguments).map(serialize);
           var result = port.callSync([id, args]);
           return deserialize(result);
         } finally {
-          exitScope();
+          exitScope(depth);
         }
       };
       // Cache the remote id and port.
@@ -495,23 +495,43 @@ final _JS_BOOTSTRAP = r"""
   }
 
   // Enters a new scope in the JavaScript context.
-  function enterScope() {
+  function enterJavaScriptScope() {
     proxiedObjectTable.enterScope();
     proxiedFunctionTable.enterScope();
   }
 
+  // Enters a new scope in both the JavaScript and Dart context.
+  var _dartEnterScopePort = null;
+  function enterScope() {
+    enterJavaScriptScope();
+    if (!_dartEnterScopePort) {
+      _dartEnterScopePort = window.lookupPort('js-dart-enter-scope');
+    }
+    return _dartEnterScopePort.callSync([]);
+  }
+
   // Exits the current scope (and invalidate local IDs) in the JavaScript
   // context.
-  function exitScope() {
+  function exitJavaScriptScope() {
     proxiedFunctionTable.exitScope();
     proxiedObjectTable.exitScope();
+  }
+
+  // Exits the current scope in both the JavaScript and Dart context.
+  var _dartExitScopePort = null;
+  function exitScope(depth) {
+    exitJavaScriptScope();
+    if (!_dartExitScopePort) {
+      _dartExitScopePort = window.lookupPort('js-dart-exit-scope');
+    }
+    return _dartExitScopePort.callSync([ depth ]);
   }
 
   makeGlobalPort('dart-js-evaluate', evaluate);
   makeGlobalPort('dart-js-create', construct);
   makeGlobalPort('dart-js-debug', debug);
-  makeGlobalPort('dart-js-enter-scope', enterScope);
-  makeGlobalPort('dart-js-exit-scope', exitScope);
+  makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
+  makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
   makeGlobalPort('dart-js-globalize', function(data) {
     if (data[0] == "objref") return proxiedObjectTable.globalize(data[1]);
     // TODO(vsm): Do we ever need to globalize functions?
@@ -534,14 +554,18 @@ void _inject(code) {
   document.body.nodes.add(script);
 }
 
-// Global ports to manage communication between Dart and JS.
+// Global ports to manage communication from Dart to JS.
 SendPortSync _jsPortSync = null;
 SendPortSync _jsPortCreate = null;
 SendPortSync _jsPortDebug = null;
-SendPortSync _jsEnterScope = null;
-SendPortSync _jsExitScope = null;
+SendPortSync _jsEnterJavaScriptScope = null;
+SendPortSync _jsExitJavaScriptScope = null;
 SendPortSync _jsGlobalize = null;
 SendPortSync _jsInvalidate = null;
+
+// Global ports to manage communication from JS to Dart.
+ReceivePortSync _dartEnterDartScope = null;
+ReceivePortSync _dartExitDartScope = null;
 
 // Initializes bootstrap code and ports.
 void _initialize() {
@@ -550,10 +574,17 @@ void _initialize() {
   _jsPortSync = window.lookupPort('dart-js-evaluate');
   _jsPortCreate = window.lookupPort('dart-js-create');
   _jsPortDebug = window.lookupPort('dart-js-debug');
-  _jsEnterScope = window.lookupPort('dart-js-enter-scope');
-  _jsExitScope = window.lookupPort('dart-js-exit-scope');
+  _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
+  _jsExitJavaScriptScope = window.lookupPort('dart-js-exit-scope');
   _jsGlobalize = window.lookupPort('dart-js-globalize');
   _jsInvalidate = window.lookupPort('dart-js-invalidate');
+
+  _dartEnterDartScope = new ReceivePortSync()
+    ..receive((_) => _enterScope());
+  _dartExitDartScope = new ReceivePortSync()
+    ..receive((args) => _exitScope(args[0]));
+  window.registerPort('js-dart-enter-scope', _dartEnterDartScope.toSendPort());
+  window.registerPort('js-dart-exit-scope', _dartExitDartScope.toSendPort());
 
   // Set up JS debugging.
   scoped(() {
@@ -594,13 +625,13 @@ _enterScope() {
   _proxiedFunctionTable.enterScope();
   assert(_proxiedObjectTable._scopeIndices.length ==
          _proxiedFunctionTable._scopeIndices.length);
-  _jsEnterScope.callSync([]);
+  _jsEnterJavaScriptScope.callSync([]);
   return _proxiedObjectTable._scopeIndices.length;
 }
 
 _exitScope(depth) {
   assert(_proxiedObjectTable._scopeIndices.length == depth);
-  _jsExitScope.callSync([]);
+  _jsExitJavaScriptScope.callSync([]);
   _proxiedFunctionTable.exitScope();
   _proxiedObjectTable.exitScope();
   proxyDebug();
@@ -653,12 +684,10 @@ class Callback {
                        _id,
                        _proxiedFunctionTable.sendPort ];
 
-  _initialize(f, manualDispose) {
+  _initialize(manualDispose) {
     _manualDispose = manualDispose;
-    _id = _proxiedFunctionTable.add(f);
+    _id = _proxiedFunctionTable.add(_callback);
     _proxiedFunctionTable.globalize(_id);
-
-    _proxiedFunctionTable._replace(_id, _callback);
     _deserializedFunctionTable.add(_callback, _serialized);
   }
 
@@ -685,43 +714,30 @@ class Callback {
     _callback = ([arg1, arg2, arg3, arg4]) {
       try {
         if (!?arg1) {
-          return scoped(() => f());
+          return f();
         } else if (!?arg2) {
-          return scoped(() => f(arg1));
+          return f(arg1);
         } else if (!?arg3) {
-          return scoped(() => f(arg1, arg2));
+          return f(arg1, arg2);
         } else if (!?arg4) {
-          return scoped(() => f(arg1, arg2, arg3));
+          return f(arg1, arg2, arg3);
         } else {
-          return scoped(() => f(arg1, arg2, arg3, arg4));
+          return f(arg1, arg2, arg3, arg4);
         }
       } finally {
         _dispose();
       }
     };
-    _initialize(f, false);
+    _initialize(false);
   }
 
   /**
    * Creates a multi-fire [Callback] that invokes [f].  The callback must be
    * explicitly disposed to avoid memory leaks.
    */
-  // TODO(vsm): Is there a better way to handle varargs?
   Callback.many(Function f) {
-    _callback = ([arg1, arg2, arg3, arg4]) {
-      if (!?arg1) {
-        return scoped(() => f());
-      } else if (!?arg2) {
-        return scoped(() => f(arg1));
-      } else if (!?arg3) {
-        return scoped(() => f(arg1, arg2));
-      } else if (!?arg4) {
-        return scoped(() => f(arg1, arg2, arg3));
-      } else {
-        return scoped(() => f(arg1, arg2, arg3, arg4));
-      }
-    };
-    _initialize(f, false);
+    _callback = f;
+    _initialize(true);
   }
 }
 
