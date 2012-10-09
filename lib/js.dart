@@ -488,6 +488,12 @@ final _JS_BOOTSTRAP = r"""
            ' (out of ' + total + ' ever allocated).';
   }
 
+  // Return true iff two JavaScript proxies are equal (==).
+  function proxyEquals(args) {
+    return deserialize(args[0]) ==
+      deserialize(args[1]);
+  }
+
   function makeGlobalPort(name, f) {
     var port = new ReceivePortSync();
     port.receive(f);
@@ -530,6 +536,7 @@ final _JS_BOOTSTRAP = r"""
   makeGlobalPort('dart-js-evaluate', evaluate);
   makeGlobalPort('dart-js-create', construct);
   makeGlobalPort('dart-js-debug', debug);
+  makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
   makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
   makeGlobalPort('dart-js-globalize', function(data) {
@@ -558,6 +565,7 @@ void _inject(code) {
 SendPortSync _jsPortSync = null;
 SendPortSync _jsPortCreate = null;
 SendPortSync _jsPortDebug = null;
+SendPortSync _jsPortEquals = null;
 SendPortSync _jsEnterJavaScriptScope = null;
 SendPortSync _jsExitJavaScriptScope = null;
 SendPortSync _jsGlobalize = null;
@@ -574,6 +582,7 @@ void _initialize() {
   _jsPortSync = window.lookupPort('dart-js-evaluate');
   _jsPortCreate = window.lookupPort('dart-js-create');
   _jsPortDebug = window.lookupPort('dart-js-debug');
+  _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
   _jsExitJavaScriptScope = window.lookupPort('dart-js-exit-scope');
   _jsGlobalize = window.lookupPort('dart-js-globalize');
@@ -803,6 +812,14 @@ class Proxy {
   // it is in Dart2JS.
   // Resolve whether this is needed.
   operator[](arg) => noSuchMethod('[]', [ arg ]);
+
+  // Test if this is equivalent to another Proxy.  This essentially
+  // maps to JavaScript's == operator.
+  // TODO(vsm): Can we avoid forwarding to JS?
+  operator==(Proxy other) => this === other
+      ? true
+      : (other is Proxy &&
+         _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(method, args) {

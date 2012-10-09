@@ -265,4 +265,15 @@ main() {
       // expect(() => js.context.invokeCallback(), throws);
     });
   });
+
+  test('test proxy equality', () {
+    js.scoped(() {
+      var foo1 = new js.Proxy(js.context.Foo, 1);
+      var foo2 = new js.Proxy(js.context.Foo, 2);
+      js.context.foo = foo1;
+      js.context.foo = foo2;
+      expect(foo1 != js.context.foo);
+      expect(foo2 == js.context.foo);
+    });
+  });
 }
