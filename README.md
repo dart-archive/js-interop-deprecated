@@ -31,20 +31,21 @@ library in the editor:
 
 3.  Add the following to your pubspec.yaml:
 
-    dependencies: 
-      js: { hosted: js }
+        dependencies:
+          js: { hosted: js }
+
 
 4.  Under the "Tools" menu, run "Pub Install".
 
 5.  Try the following test Dart file:
 
-    import 'package:js/js.dart' as js;
-    
-    void main() {
-      js.scoped(() {
-        js.context.alert('Hello from Dart via JS');
-      });
-    }
+        import 'package:js/js.dart' as js;
+        
+        void main() {
+          js.scoped(() {
+            js.context.alert('Hello from Dart via JS');
+          });
+        }
 
 Running Tests
 -------------
