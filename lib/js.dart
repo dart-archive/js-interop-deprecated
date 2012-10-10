@@ -205,11 +205,15 @@ final _JS_BOOTSTRAP = r"""
     var table = this;
 
     this.port.receive(function (message) {
-      var id = message[0];
-      var args = message[1].map(deserialize);
-      var f = table.get(id);
-      // TODO(vsm): Should we capture _this_ automatically?
-      return serialize(f.apply(null, args));
+      try {
+        var id = message[0];
+        var args = message[1].map(deserialize);
+        var f = table.get(id);
+        // TODO(vsm): Should we capture _this_ automatically?
+        return [ 'return', serialize(f.apply(null, args)) ];
+      } catch (e) {
+        return [ 'throws', e.toString() ];
+      }
     });
   }
 
@@ -228,36 +232,36 @@ final _JS_BOOTSTRAP = r"""
 
     this.port.receive(function (message) {
       // TODO(vsm): Support a mechanism to register a handler here.
-      var receiver = table.get(message[0]);
-      var method = message[1];
-      var args = message[2].map(deserialize);
-      if (method.indexOf("get:") == 0) {
-        // Getter.
-        var field = method.substring(4);
-        if (field in receiver && args.length == 0) {
-          return [ 'return', serialize(receiver[field]) ];
-        }
-      } else if (method.indexOf("set:") == 0) {
-        // Setter.
-        var field = method.substring(4);
-        if (args.length == 1) {
-          return [ 'return', serialize(receiver[field] = args[0]) ];
-        }
-      } else if (method == '[]' && args.length == 1) {
-        // Index getter.
-        return [ 'return', serialize(receiver[args[0]]) ];
-      } else {
-        var f = receiver[method];
-        if (f) {
-          try {
+      try {
+        var receiver = table.get(message[0]);
+        var method = message[1];
+        var args = message[2].map(deserialize);
+        if (method.indexOf("get:") == 0) {
+          // Getter.
+          var field = method.substring(4);
+          if (field in receiver && args.length == 0) {
+            return [ 'return', serialize(receiver[field]) ];
+          }
+        } else if (method.indexOf("set:") == 0) {
+          // Setter.
+          var field = method.substring(4);
+          if (args.length == 1) {
+            return [ 'return', serialize(receiver[field] = args[0]) ];
+          }
+        } else if (method == '[]' && args.length == 1) {
+          // Index getter.
+          return [ 'return', serialize(receiver[args[0]]) ];
+        } else {
+          var f = receiver[method];
+          if (f) {
             var result = f.apply(receiver, args);
             return [ 'return', serialize(result) ];
-          } catch (e) {
-            return [ 'exception', serialize(e) ];
           }
         }
+        return [ 'none' ];
+      } catch (e) {
+        return [ 'throws', e.toString() ];
       }
-      return [ 'none' ];
     });
   }
 
@@ -428,7 +432,8 @@ final _JS_BOOTSTRAP = r"""
         try {
           var args = Array.prototype.slice.apply(arguments).map(serialize);
           var result = port.callSync([id, args]);
-          return deserialize(result);
+          if (result[0] == 'throws') throw deserialize(result[1]);
+          return deserialize(result[1]);
         } finally {
           exitScope(depth);
         }
@@ -827,7 +832,7 @@ class Proxy {
     var result = _port.callSync([_id, method, args.map(_serialize)]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
-      case 'exception': throw _deserialize(result[1]);
+      case 'throws': throw _deserialize(result[1]);
       case 'none': throw new NoSuchMethodError(this, method, args);
       default: throw 'Invalid return value';
     }
@@ -942,16 +947,33 @@ class _ProxiedFunctionTable extends _ProxiedReferenceTable<Function> {
   _ProxiedFunctionTable() : super('func-ref') {
     // Dispatch remote requests to the corresponding function.
     _port.receive((msg) {
-      final id = msg[0];
-      final args = msg[1].map(_deserialize);
-      final f = _registry[id];
-      switch (args.length) {
-        case 0: return _serialize(f());
-        case 1: return _serialize(f(args[0]));
-        case 2: return _serialize(f(args[0], args[1]));
-        case 3: return _serialize(f(args[0], args[1], args[2]));
-        case 4: return _serialize(f(args[0], args[1], args[2], args[3]));
-        default: throw 'Unsupported number of arguments.';
+      try {
+        final id = msg[0];
+        final args = msg[1].map(_deserialize);
+        final f = _registry[id];
+        var result;
+        switch (args.length) {
+          case 0:
+            result = _serialize(f());
+            break;
+          case 1:
+            result = _serialize(f(args[0]));
+            break;
+          case 2:
+            result = _serialize(f(args[0], args[1]));
+            break;
+          case 3:
+            result = _serialize(f(args[0], args[1], args[2]));
+            break;
+          case 4:
+            result = _serialize(f(args[0], args[1], args[2], args[3]));
+            break;
+          default: throw 'Unsupported number of arguments.';
+        }
+        return ['return', result];
+      } catch (e) {
+        // TODO(vsm): callSync should just handle exceptions itself.
+        return ['throws', '$e'];
       }
     });
   }
@@ -1081,7 +1103,8 @@ _deserialize(var message) {
           args = [];
         var message = [id, args.map(_serialize)];
         var result = port.callSync(message);
-        return _deserialize(result);
+        if (result[0] == 'throws') throw result[1];
+        return _deserialize(result[1]);
       };
 
       // Cache the remote id and port.

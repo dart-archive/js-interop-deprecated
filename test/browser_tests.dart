@@ -132,9 +132,7 @@ main() {
 
       js.context.callback = new js.Callback.once(() => 42);
       expect(js.context.invokeCallback(), equals(42));
-      // TODO(vsm): This exception is not propagated back to
-      // Dart correctly.
-      // expect(() => js.context.invokeCallback(), throws);
+      expect(() => js.context.invokeCallback(), throws);
     });
   });
 
@@ -144,13 +142,15 @@ main() {
     js.scoped(() {
       x = new js.Proxy(js.context.Foo, 42);
       y = new js.Proxy(js.context.Foo, 38);
+      expect(x.a, equals(42));
+      expect(y.a, equals(38));
       js.retain(y);
     });
     js.scoped(() {
+      expect(() => x.a, throws);
       expect(y.a, equals(38));
       js.release(y);
-      // TODO(vsm): Invalid proxies are not throwing a catchable
-      // error.  Fix and test that x and y are invalid here.
+      expect(() => y.a, throws);
     });
   });
 
@@ -260,9 +260,7 @@ main() {
       expect(js.context.invokeCallback(), equals(0));
       expect(js.context.invokeCallback(), equals(1));
       callback.dispose();
-      // TODO(vsm): This exception is not propagated back to
-      // Dart correctly.
-      // expect(() => js.context.invokeCallback(), throws);
+      expect(() => js.context.invokeCallback(), throws);
     });
   });
 
