@@ -274,4 +274,13 @@ main() {
       expect(foo2 == js.context.foo);
     });
   });
+
+  test('test instanceof', () {
+    js.scoped(() {
+      var foo = new js.Proxy(js.context.Foo, 1);
+      expect(js.isInstanceOf(foo, js.context.Foo), equals(true));
+      expect(js.isInstanceOf(foo, js.context.Object), equals(true));
+      expect(js.isInstanceOf(foo, js.context.String), equals(false));
+    });
+  });
 }
