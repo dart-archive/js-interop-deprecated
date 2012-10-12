@@ -678,7 +678,7 @@ void release(Proxy proxy) {
 /**
  * Check if [proxy] is instance of [type].
  */
-bool isInstanceOf(Proxy proxy, type) {
+bool instanceof(Proxy proxy, type) {
   return _jsPortInstanceof.callSync([proxy, type].map(_serialize));
 }
 
