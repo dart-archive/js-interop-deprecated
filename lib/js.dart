@@ -493,10 +493,14 @@ final _JS_BOOTSTRAP = r"""
            ' (out of ' + total + ' ever allocated).';
   }
 
-  // Return true iff two JavaScript proxies are equal (==).
+  // Return true if two JavaScript proxies are equal (==).
   function proxyEquals(args) {
-    return deserialize(args[0]) ==
-      deserialize(args[1]);
+    return deserialize(args[0]) == deserialize(args[1]);
+  }
+
+  // Return true if a JavaScript proxy is instance of a given type (instanceof).
+  function proxyInstanceof(args) {
+    return deserialize(args[0]) instanceof deserialize(args[1]);
   }
 
   function makeGlobalPort(name, f) {
@@ -542,6 +546,7 @@ final _JS_BOOTSTRAP = r"""
   makeGlobalPort('dart-js-create', construct);
   makeGlobalPort('dart-js-debug', debug);
   makeGlobalPort('dart-js-equals', proxyEquals);
+  makeGlobalPort('dart-js-instanceof', proxyInstanceof);
   makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
   makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
   makeGlobalPort('dart-js-globalize', function(data) {
@@ -571,6 +576,7 @@ SendPortSync _jsPortSync = null;
 SendPortSync _jsPortCreate = null;
 SendPortSync _jsPortDebug = null;
 SendPortSync _jsPortEquals = null;
+SendPortSync _jsPortInstanceof = null;
 SendPortSync _jsEnterJavaScriptScope = null;
 SendPortSync _jsExitJavaScriptScope = null;
 SendPortSync _jsGlobalize = null;
@@ -588,6 +594,7 @@ void _initialize() {
   _jsPortCreate = window.lookupPort('dart-js-create');
   _jsPortDebug = window.lookupPort('dart-js-debug');
   _jsPortEquals = window.lookupPort('dart-js-equals');
+  _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
   _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
   _jsExitJavaScriptScope = window.lookupPort('dart-js-exit-scope');
   _jsGlobalize = window.lookupPort('dart-js-globalize');
@@ -668,6 +675,12 @@ void release(Proxy proxy) {
   _jsInvalidate.callSync(_serialize(proxy));
 }
 
+/**
+ * Check if [proxy] is instance of [type].
+ */
+bool instanceof(Proxy proxy, type) {
+  return _jsPortInstanceof.callSync([proxy, type].map(_serialize));
+}
 
 /**
  * Converts a Dart map [data] to a JavaScript map and return a [Proxy] to it.
