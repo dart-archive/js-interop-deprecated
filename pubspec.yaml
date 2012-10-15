@@ -1,5 +1,5 @@
 name: js
-author: "Dart Team <mailto:misc@dartlang.org>"
+author: "Dart Team <misc@dartlang.org>"
 homepage: https://github.com/dart-lang/js-interop
 description: Access JavaScript from Dart.
 version: 0.0.4
