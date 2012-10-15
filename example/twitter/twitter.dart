@@ -4,10 +4,9 @@
 
 // A JS interop sample showing JSONP access to Twitter from Dart.
 
-#import('dart:html');
-#import('dart:json');
-// TODO(vsm): Make this a package path.
-#import('../../lib/js.dart', prefix: 'js');
+import 'dart:html';
+import 'dart:json';
+import 'package:js/js.dart' as js;
 
 void main() {
   js.scoped(() {

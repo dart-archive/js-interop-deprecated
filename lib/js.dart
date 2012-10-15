@@ -15,7 +15,7 @@
  * The top-level [context] getter provides a [Proxy] to the global JavaScript
  * context for the page your Dart code is running on.  In the following example:
  *
- *     #import('package:js/js.dart', prefix: 'js');
+ *     import 'package:js/js.dart' as js;
  *
  *     void main() {
  *       js.scoped(() {
@@ -72,10 +72,10 @@
 
 // TODO(vsm): Add a link to an article.
 
-#library('js');
+library js;
 
-#import('dart:html');
-#import('dart:isolate');
+import 'dart:html';
+import 'dart:isolate';
 
 // JavaScript bootstrapping code.
 final _JS_BOOTSTRAP = r"""

@@ -2,13 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-#library('js_tests');
+library js_tests;
 
-#import('dart:html');
-#import('../packages/unittest/unittest.dart');
-#import('../packages/unittest/html_config.dart');
+import 'dart:html';
+import 'package:unittest/unittest.dart';
+import 'package:unittest/html_config.dart';
 
-#import('../lib/js.dart', prefix: 'js');
+import 'package:js/js.dart' as js;
 
 final TEST_JS = '''
   var x = 42;

@@ -6,9 +6,8 @@
 // the directions-panel example here:
 // https://google-developers.appspot.com/maps/documentation/javascript/examples/directions-panel
 
-#import('dart:html');
-// TODO(vsm): Make this a package path.
-#import('../../lib/js.dart', prefix: 'js');
+import 'dart:html';
+import 'package:js/js.dart' as js;
 
 var maps;
 var directionsDisplay;
