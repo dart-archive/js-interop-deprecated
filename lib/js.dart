@@ -251,6 +251,9 @@ final _JS_BOOTSTRAP = r"""
         } else if (method == '[]' && args.length == 1) {
           // Index getter.
           return [ 'return', serialize(receiver[args[0]]) ];
+        } else if (method == '[]=' && args.length == 2) {
+          // Index setter.
+          return [ 'return', serialize(receiver[args[0]] = args[1]) ];
         } else {
           var f = receiver[method];
           if (f) {
@@ -830,6 +833,11 @@ class Proxy {
   // it is in Dart2JS.
   // Resolve whether this is needed.
   operator[](arg) => noSuchMethod('[]', [ arg ]);
+
+  // TODO(vsm): This is not required in Dartium, but
+  // it is in Dart2JS.
+  // Resolve whether this is needed.
+  operator[]=(key, value) => noSuchMethod('[]=', [ key, value ]);
 
   // Test if this is equivalent to another Proxy.  This essentially
   // maps to JavaScript's == operator.
