@@ -12,6 +12,7 @@ import 'package:js/js.dart' as js;
 
 final TEST_JS = '''
   var x = 42;
+  var myArray = ["value1"];
 
   function razzle() {
     return x;
@@ -281,6 +282,21 @@ main() {
       expect(js.instanceof(foo, js.context.Foo), equals(true));
       expect(js.instanceof(foo, js.context.Object), equals(true));
       expect(js.instanceof(foo, js.context.String), equals(false));
+    });
+  });
+
+  test('test index get and set', () {
+    js.scoped(() {
+      final myArray = js.context.myArray;
+      expect(myArray.length, equals(1));
+      expect(myArray[0], equals("value1"));
+      myArray[0] = "value2";
+      expect(myArray.length, equals(1));
+      expect(myArray[0], equals("value2"));
+
+      final foo = new js.Proxy(js.context.Foo, 1);
+      foo["getAge"] = new js.Callback.once(() => 10);
+      expect(foo.getAge(), equals(10));
     });
   });
 }
