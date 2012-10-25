@@ -1077,8 +1077,12 @@ _serialize(var message) {
   } else if (message is SendPortSync) {
     // Non-proxied objects are serialized.
     return message;
-  } else if (message is Element &&
-      (message.document == null || message.document == document)) {
+  // TODO(vsm): Change this to (message is Element && (...))
+  // without the redundant Node test.  This ugliness is a workaround
+  // for http://code.google.com/p/dart/issues/detail?id=6259
+  } else if (message is Node &&
+      (message.document == null || message.document == document) &&
+      message is Element) {
     return [ 'domref', _serializeElement(message) ];
   } else if (message is Callback) {
     return message._serialized;
