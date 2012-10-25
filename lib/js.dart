@@ -374,7 +374,8 @@ final _JS_BOOTSTRAP = r"""
     } else if (message instanceof SendPortSync) {
       // Non-proxied objects are serialized.
       return message;
-    } else if (message instanceof Element) {
+    } else if (message instanceof Element && 
+        (message.ownerDocument == null || message.ownerDocument == document)) {
       return [ 'domref', serializeElement(message) ];
     } else if (typeof(message) == 'function') {
       if ('_dart_id' in message) {
@@ -1076,7 +1077,8 @@ _serialize(var message) {
   } else if (message is SendPortSync) {
     // Non-proxied objects are serialized.
     return message;
-  } else if (message is Element) {
+  } else if (message is Element &&
+      (message.document == null || message.document == document)) {
     return [ 'domref', _serializeElement(message) ];
   } else if (message is Callback) {
     return message._serialized;
