@@ -66,8 +66,8 @@
  * will construct a JavaScript Foo object with the parameter 42, invoke its
  * add method, and return a [Proxy] to a new Foo object whose x field is 84.
  *
- * See [samples](http://dart-lang.github.com/js-interop/example) for more examples
- * of usage.
+ * See [samples](http://dart-lang.github.com/js-interop/example) for more
+ * examples of usage.
  */
 
 // TODO(vsm): Add a link to an article.
@@ -78,9 +78,16 @@ import 'dart:html';
 import 'dart:isolate';
 
 // JavaScript bootstrapping code.
+// TODO(vsm): Migrate this to use a builtin resource mechanism once we have
+// one.
+
+// NOTE: Please re-run tools/create_bootstrap.dart on any modification of
+// this bootstrap string.
 final _JS_BOOTSTRAP = r"""
 (function() {
-  // Proxy support
+  // Proxy support for js.dart.
+
+  var globalContext = window;
 
   // Table for local objects and functions that are proxied.
   // TODO(vsm): Merge into one.
@@ -144,8 +151,8 @@ final _JS_BOOTSTRAP = r"""
   ProxiedReferenceTable.prototype._initializeOnce = function () {
     if (!this._initialized) {
       this._initialize();
+      this._initialized = true;
     }
-    this._initialized = true;
   }
 
   // Overridable initialization on first use hook.
@@ -483,10 +490,14 @@ final _JS_BOOTSTRAP = r"""
     return serialize(Object(ret) === ret ? ret : instance);
   }
 
-  // Remote handler to evaluate a string in JavaScript and return a serialized
-  // result. 
-  function evaluate(data) {
-    return serialize(eval(deserialize(data))); 
+  // Remote handler to construct a native JavaScript Array.
+  function constructArray() {
+    return serialize(new Array());
+  }
+
+  // Remote handler to return the top-level JavaScript context.
+  function context(data) {
+    return serialize(globalContext);
   }
 
   // Remote handler for debugging.
@@ -546,8 +557,9 @@ final _JS_BOOTSTRAP = r"""
     return _dartExitScopePort.callSync([ depth ]);
   }
 
-  makeGlobalPort('dart-js-evaluate', evaluate);
+  makeGlobalPort('dart-js-context', context);
   makeGlobalPort('dart-js-create', construct);
+  makeGlobalPort('dart-js-create-array', constructArray);
   makeGlobalPort('dart-js-debug', debug);
   makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-instanceof', proxyInstanceof);
@@ -578,6 +590,7 @@ void _inject(code) {
 // Global ports to manage communication from Dart to JS.
 SendPortSync _jsPortSync = null;
 SendPortSync _jsPortCreate = null;
+SendPortSync _jsPortCreateArray = null;
 SendPortSync _jsPortDebug = null;
 SendPortSync _jsPortEquals = null;
 SendPortSync _jsPortInstanceof = null;
@@ -594,8 +607,9 @@ ReceivePortSync _dartExitDartScope = null;
 void _initialize() {
   if (_jsPortSync != null) return;
   _inject(_JS_BOOTSTRAP);
-  _jsPortSync = window.lookupPort('dart-js-evaluate');
+  _jsPortSync = window.lookupPort('dart-js-context');
   _jsPortCreate = window.lookupPort('dart-js-create');
+  _jsPortCreateArray = window.lookupPort('dart-js-create-array');
   _jsPortDebug = window.lookupPort('dart-js-debug');
   _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
@@ -617,15 +631,12 @@ void _initialize() {
   });
 }
 
-// Evaluates a JavaScript string and return
-_js(String message) => _deserialize(_jsPortSync.callSync(_serialize(message)));
-
 /**
  * Returns a proxy to the global JavaScript context for this page.
  */
 Proxy get context {
   if (_depth == 0) throw 'Cannot get JavaScript context out of scope.';
-  return _js('window');
+  return _deserialize(_jsPortSync.callSync([]));
 }
 
 // Depth of current scope.  Return 0 if no scope.
@@ -811,14 +822,14 @@ class Proxy {
   static _convert(data) {
     // TODO(vsm): Can we make this more efficient?
     if (data is Map) {
-      var result = _js('new Object()');
+      var result = new Proxy(context.Object);
       for (var key in data.getKeys()) {
         var value = _convert(data[key]);
         result.noSuchMethod('set:$key', [value]);
       }
       return result;
     } else if (data is List) {
-      var result = _js('new Array()');
+      var result = _deserialize(_jsPortCreateArray.callSync([]));
       for (var i = 0; i < data.length; ++i) {
         var value = _convert(data[i]);
         result.noSuchMethod('set:$i', [value]);

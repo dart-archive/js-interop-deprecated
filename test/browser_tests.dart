@@ -5,86 +5,13 @@
 library js_tests;
 
 import 'dart:html';
+
+import 'package:js/js.dart' as js;
 import 'package:unittest/unittest.dart';
 import 'package:unittest/html_config.dart';
 
-import 'package:js/js.dart' as js;
-
-final TEST_JS = '''
-  var x = 42;
-  var myArray = ["value1"];
-  var foreignDoc = (function(){
-    var doc = document.implementation.createDocument("", "root", null);
-    var element = doc.createElement('element');
-    element.setAttribute('id', 'abc');
-    doc.documentElement.appendChild(element);
-    return doc;
-  })();
-
-  function razzle() {
-    return x;
-  }
-
-  function Foo(a) {
-    this.a = a;
-  }
-
-  Foo.prototype.bar = function() {
-    return this.a;
-  }
-
-  function isArray(a) {
-    return a instanceof Array;
-  }
-
-  function checkMap(m, key, value) {
-    if (m.hasOwnProperty(key))
-      return m[key] == value;
-    else
-      return false;
-  }
-
-  function invokeCallback() {
-    return callback();
-  }
-
-  function returnElement(element) {
-    return element;
-  }
-
-  function getElementAttribute(element, attr) {
-    return element.getAttribute(attr);
-  }
-
-  function addClassAttributes(list) {
-    var result = "";
-    for (var i=0; i<list.length; i++) {
-      result += list[i].getAttribute("class");
-    }
-    return result;
-  }
-
-  function getNewDivElement() {
-    return document.createElement("div");
-  }
-
-  function testJsMap(callback) {
-    var result = callback();
-    return result['value'];
-  }
-''';
-
-injectSource(code) {
-  final script = new ScriptElement();
-  script.type = 'text/javascript';
-  script.innerHTML = code;
-  document.body.nodes.add(script);
-}
-
 main() {
   useHtmlConfiguration();
-
-  injectSource(TEST_JS);
 
   test('require scope', () {
       expect(() => js.context, throws);
