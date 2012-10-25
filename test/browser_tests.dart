@@ -13,6 +13,13 @@ import 'package:js/js.dart' as js;
 final TEST_JS = '''
   var x = 42;
   var myArray = ["value1"];
+  var foreignDoc = (function(){
+    var doc = document.implementation.createDocument("", "root", null);
+    var element = doc.createElement('element');
+    element.setAttribute('id', 'abc');
+    doc.documentElement.appendChild(element);
+    return doc;
+  })();
 
   function razzle() {
     return x;
@@ -242,6 +249,17 @@ main() {
       var result = js.context.getNewDivElement();
       expect(result is DivElement);
       expect(!document.documentElement.contains(result));
+    });
+  });
+
+  test('element of foreign document should not be serialized', () {
+    js.scoped(() {
+      final foreignDoc = js.context.foreignDoc;
+      final root = foreignDoc.documentElement;
+      expect(root is js.Proxy);
+      final element = root.firstChild;
+      expect(element is js.Proxy);
+      expect(element.getAttribute('id'), equals('abc'));
     });
   });
 
