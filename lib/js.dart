@@ -823,7 +823,7 @@ class Proxy {
     // TODO(vsm): Can we make this more efficient?
     if (data is Map) {
       var result = new Proxy(context.Object);
-      for (var key in data.getKeys()) {
+      for (var key in data.keys) {
         var value = _convert(data[key]);
         result.noSuchMethod('set:$key', [value]);
       }
