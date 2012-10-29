@@ -28,19 +28,29 @@ final HEADER = """
 // http://dartbug.com/6101.
 """;
 
-create(Path path, String text) {
-  final js = JS_PATTERN.firstMatch(text).group(1);
-  final out = new File.fromPath(path.join(new Path('../lib/dart_interop.js')));
-  out.create()
-    .then((out) => out.open(FileMode.WRITE)
-      .then((file) => file.writeString(HEADER)
-        .then((file) => file.writeString(js)
-          .then((file) => file.close()))));
+createFile(Path source, Path target) {
+  final f = new File.fromPath(source);
+  f.readAsText()
+    .then((text) {
+      final js = JS_PATTERN.firstMatch(text).group(1);
+      final out = new File.fromPath(target);
+      out.create()
+        .then((out) => out.open(FileMode.WRITE)
+          .then((file) => file.writeString(HEADER)
+            .then((file) => file.writeString(js)
+              .then((file) => file.close()))));
+    });
+}
+
+create(Path libPath) {
+  final source = libPath.append('js.dart');
+  final target = libPath.append('dart_interop.js');
+  createFile(source, target);
 }
 
 main() {
   final options = new Options();
-  final path = new Path(options.script).directoryPath;
-  final f = new File.fromPath(path.join(new Path('../lib/js.dart')));
-  f.readAsText().then((text) => create(path, text));
+  final scriptPath = new Path(options.script).directoryPath;
+  final libPath = scriptPath.join(new Path('../lib'));
+  create(libPath);
 }
