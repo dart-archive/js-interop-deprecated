@@ -163,7 +163,7 @@ final _JS_BOOTSTRAP = r"""
     this._initializeOnce();
     this.scopeIndices.push(this.handleStack.length);
   }
-  
+
   // Invalidates all non-global IDs in the current scope and
   // exit the current scope.
   ProxiedReferenceTable.prototype.exitScope = function() {
@@ -177,7 +177,7 @@ final _JS_BOOTSTRAP = r"""
     }
     this.handleStack = this.handleStack.splice(0, start);
   }
-  
+
   // Makes this ID globally scope.  It must be explicitly invalidated.
   ProxiedReferenceTable.prototype.globalize = function(id) {
     this.globalIds[id] = true;
@@ -381,7 +381,7 @@ final _JS_BOOTSTRAP = r"""
     } else if (message instanceof SendPortSync) {
       // Non-proxied objects are serialized.
       return message;
-    } else if (message instanceof Element && 
+    } else if (message instanceof Element &&
         (message.ownerDocument == null || message.ownerDocument == document)) {
       return [ 'domref', serializeElement(message) ];
     } else if (typeof(message) == 'function') {
@@ -854,7 +854,7 @@ class Proxy {
   // Test if this is equivalent to another Proxy.  This essentially
   // maps to JavaScript's == operator.
   // TODO(vsm): Can we avoid forwarding to JS?
-  operator==(Proxy other) => this === other
+  operator==(Proxy other) => identical(this, other)
       ? true
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
@@ -1015,7 +1015,7 @@ class _ProxiedFunctionTable extends _ProxiedReferenceTable<Function> {
 // The singleton to manage proxied Dart functions.
 _ProxiedFunctionTable __proxiedFunctionTable;
 _ProxiedFunctionTable get _proxiedFunctionTable {
-  if (__proxiedFunctionTable === null) {
+  if (__proxiedFunctionTable == null) {
     __proxiedFunctionTable = new _ProxiedFunctionTable();
   }
   return __proxiedFunctionTable;
@@ -1034,7 +1034,7 @@ class _ProxiedObjectTable extends _ProxiedReferenceTable<Object> {
 // The singleton to manage proxied Dart objects.
 _ProxiedObjectTable __proxiedObjectTable;
 _ProxiedObjectTable get _proxiedObjectTable {
-  if (__proxiedObjectTable === null) {
+  if (__proxiedObjectTable == null) {
     __proxiedObjectTable = new _ProxiedObjectTable();
   }
   return __proxiedObjectTable;
@@ -1129,16 +1129,17 @@ _deserialize(var message) {
       // TODO: Support varargs when there is support in the language.
       var f = ([arg0, arg1, arg2, arg3]) {
         var args;
-        if (?arg3)
+        if (?arg3) {
           args = [arg0, arg1, arg2, arg3];
-        else if (?arg2)
+        } else if (?arg2) {
           args = [arg0, arg1, arg2];
-        else if (?arg1)
+        } else if (?arg1) {
           args = [arg0, arg1];
-        else if (?arg0)
+        } else if (?arg0) {
           args = [arg0];
-        else
+        } else {
           args = [];
+        }
         var message = [id, args.map(_serialize)];
         var result = port.callSync(message);
         if (result[0] == 'throws') throw result[1];
@@ -1200,7 +1201,7 @@ _serializeElement(Element e) {
     id = 'dart-${_localNextElementId++}';
     e.attributes[_DART_ID] = id;
   }
-  if (e !== document.documentElement) {
+  if (!identical(e, document.documentElement)) {
     // Element must be attached to DOM to be retrieve in js part.
     // Attach top unattached parent to avoid detaching parent of "e" when
     // appending "e" directly to document. We keep count of elements
@@ -1221,7 +1222,7 @@ _serializeElement(Element e) {
         document.documentElement.elements.add(top);
         break;
       }
-      if (top.parent === document.documentElement) {
+      if (identical(top.parent, document.documentElement)) {
         // e was already attached to dom
         break;
       }
@@ -1238,7 +1239,7 @@ Element _deserializeElement(var id) {
     throw 'Only elements attached to document can be serialized: $id';
   }
   final e = list[0];
-  if (e !== document.documentElement) {
+  if (!identical(e, document.documentElement)) {
     // detach temporary attached element
     var top = e;
     while (true) {
@@ -1253,7 +1254,7 @@ Element _deserializeElement(var id) {
         }
         break;
       }
-      if (top.parent === document.documentElement) {
+      if (identical(top.parent, document.documentElement)) {
         // e was already attached to dom
         break;
       }
