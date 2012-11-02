@@ -26,7 +26,7 @@ String linkify(String text) {
   List words = text.split(' ');
   var buffer = new StringBuffer();
   for (var word in words) {
-    if (!buffer.isEmpty()) buffer.add(' ');
+    if (!buffer.isEmpty) buffer.add(' ');
     if (word.startsWith('http://') || word.startsWith('https://')) {
       buffer.add('<a href="$word">$word</a>');
     } else {
