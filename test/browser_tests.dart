@@ -53,11 +53,11 @@ main() {
     js.scoped(() {
       var array = js.array([1, 2, 3]);
       var map = js.map({'a': 1, 'b': 2});
-      expect(js.context.isArray(array));
-      expect(array.length, equals(3));
-      expect(!js.context.isArray(map));
-      expect(js.context.checkMap(map, 'a', 1));
-      expect(!js.context.checkMap(map, 'c', 3));
+      expect(js.context.isArray(array), isTrue);
+      expect(array.length, equals(3), isTrue);
+      expect(!js.context.isArray(map), isTrue);
+      expect(js.context.checkMap(map, 'a', 1), isTrue);
+      expect(!js.context.checkMap(map, 'c', 3), isTrue);
     });
   });
 
@@ -144,11 +144,11 @@ main() {
       expect(f(js.array([divA, div1, div3, div2])), equals('A132'));
       expect(f(js.array([divA, div1, div1, div3, divA, div2, div3])),
           equals('A113A23'));
-      expect(!document.documentElement.contains(divA));
-      expect(!document.documentElement.contains(div1));
-      expect(!document.documentElement.contains(div2));
-      expect(!document.documentElement.contains(div3));
-      expect(!document.documentElement.contains(container));
+      expect(!document.documentElement.contains(divA), isTrue);
+      expect(!document.documentElement.contains(div1), isTrue);
+      expect(!document.documentElement.contains(div2), isTrue);
+      expect(!document.documentElement.contains(div3), isTrue);
+      expect(!document.documentElement.contains(container), isTrue);
     });
   });
 
@@ -159,8 +159,8 @@ main() {
       document.documentElement.elements.add(div2);
       final f = js.context.addClassAttributes;
       expect(f(js.array([div1, div2])), equals('12'));
-      expect(!document.documentElement.contains(div1));
-      expect(document.documentElement.contains(div2));
+      expect(!document.documentElement.contains(div1), isTrue);
+      expect(document.documentElement.contains(div2), isTrue);
     });
   });
 
@@ -174,8 +174,8 @@ main() {
   test('retrieve unattached Dom Element', () {
     js.scoped(() {
       var result = js.context.getNewDivElement();
-      expect(result is DivElement);
-      expect(!document.documentElement.contains(result));
+      expect(result is DivElement, isTrue);
+      expect(!document.documentElement.contains(result), isTrue);
     });
   });
 
@@ -183,9 +183,9 @@ main() {
     js.scoped(() {
       final foreignDoc = js.context.foreignDoc;
       final root = foreignDoc.documentElement;
-      expect(root is js.Proxy);
+      expect(root is js.Proxy, isTrue);
       final element = root.firstChild;
-      expect(element is js.Proxy);
+      expect(element is js.Proxy, isTrue);
       expect(element.getAttribute('id'), equals('abc'));
     });
   });
@@ -216,17 +216,17 @@ main() {
       var foo2 = new js.Proxy(js.context.Foo, 2);
       js.context.foo = foo1;
       js.context.foo = foo2;
-      expect(foo1 != js.context.foo);
-      expect(foo2 == js.context.foo);
+      expect(foo1, isNot(equals(js.context.foo)));
+      expect(foo2, equals(js.context.foo));
     });
   });
 
   test('test instanceof', () {
     js.scoped(() {
       var foo = new js.Proxy(js.context.Foo, 1);
-      expect(js.instanceof(foo, js.context.Foo), equals(true));
-      expect(js.instanceof(foo, js.context.Object), equals(true));
-      expect(js.instanceof(foo, js.context.String), equals(false));
+      expect(js.instanceof(foo, js.context.Foo), isTrue);
+      expect(js.instanceof(foo, js.context.Object), isTrue);
+      expect(js.instanceof(foo, js.context.String), isFalse);
     });
   });
 
