@@ -814,13 +814,16 @@ class Proxy {
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
   // Forward member accesses to the backing JavaScript object.
-  noSuchMethod(method, args) {
+  noSuchMethod(InvocationMirror invocation) {
     if (_depth == 0) throw 'Cannot access a JavaScript proxy out of scope.';
-    var result = _port.callSync([_id, method, args.map(_serialize)]);
+    var result = _port.callSync([_id, invocation.memberName, invocation.positionalArguments.map(_serialize)]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(this, method, args);
+      case 'none': throw new NoSuchMethodError(this,
+          invocation.memberName,
+          invocation.positionalArguments,
+          invocation.namedArguments);
       default: throw 'Invalid return value';
     }
   }
