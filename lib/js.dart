@@ -205,32 +205,33 @@ final _JS_BOOTSTRAP = r"""
       // TODO(vsm): Support a mechanism to register a handler here.
       try {
         var receiver = table.get(message[0]);
-        var method = message[1];
-        var args = message[2].map(deserialize);
-        if (method.indexOf("get:") == 0) {
+        var member = message[1];
+        var kind = message[2];
+        var args = message[3].map(deserialize);
+        if (kind == 'get') {
           // Getter.
-          var field = method.substring(4);
+          var field = member;
           if (field in receiver && args.length == 0) {
             return [ 'return', serialize(receiver[field]) ];
           }
-        } else if (method.indexOf("set:") == 0) {
+        } else if (kind == 'set') {
           // Setter.
-          var field = method.substring(4);
+          var field = member;
           if (args.length == 1) {
             return [ 'return', serialize(receiver[field] = args[0]) ];
           }
-        } else if (method == '[]' && args.length == 1) {
-          // Index getter.
-          return [ 'return', serialize(receiver[args[0]]) ];
-        } else if (method == '[]=' && args.length == 2) {
-          // Index setter.
-          return [ 'return', serialize(receiver[args[0]] = args[1]) ];
-        } else if (method == '#call') {
+        } else if (kind == 'apply') {
           // Direct function invocation.
           // TODO(vsm): Should we capture _this_ automatically?
           return [ 'return', serialize(receiver.apply(null, args)) ];
+        } else if (member == '[]' && args.length == 1) {
+          // Index getter.
+          return [ 'return', serialize(receiver[args[0]]) ];
+        } else if (member == '[]=' && args.length == 2) {
+          // Index setter.
+          return [ 'return', serialize(receiver[args[0]] = args[1]) ];
         } else {
-          var f = receiver[method];
+          var f = receiver[member];
           if (f) {
             var result = f.apply(receiver, args);
             return [ 'return', serialize(result) ];
@@ -779,14 +780,14 @@ class Proxy {
       var result = new Proxy(context.Object);
       for (var key in data.keys) {
         var value = _convert(data[key]);
-        _forward(result, 'set:$key', [value]);
+        _forward(result, '$key', 'set', [value]);
       }
       return result;
     } else if (data is List) {
       var result = _deserialize(_jsPortCreateArray.callSync([]));
       for (var i = 0; i < data.length; ++i) {
         var value = _convert(data[i]);
-        _forward(result, 'set:$i', [value]);
+        _forward(result, '$i', 'set', [value]);
       }
       return result;
     }
@@ -798,12 +799,12 @@ class Proxy {
   // TODO(vsm): This is not required in Dartium, but
   // it is in Dart2JS.
   // Resolve whether this is needed.
-  operator[](arg) => _forward(this, '[]', [ arg ]);
+  operator[](arg) => _forward(this, '[]', 'method', [ arg ]);
 
   // TODO(vsm): This is not required in Dartium, but
   // it is in Dart2JS.
   // Resolve whether this is needed.
-  operator[]=(key, value) => _forward(this, '[]=', [ key, value ]);
+  operator[]=(key, value) => _forward(this, '[]=', 'method', [ key, value ]);
 
   // Test if this is equivalent to another Proxy.  This essentially
   // maps to JavaScript's == operator.
@@ -814,18 +815,42 @@ class Proxy {
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
   // Forward member accesses to the backing JavaScript object.
-  noSuchMethod(InvocationMirror invocation)
-    => _forward(this, invocation.memberName, invocation.positionalArguments);
+  noSuchMethod(InvocationMirror invocation) {
+    String member = invocation.memberName;
+    String kind;
+    List args = invocation.positionalArguments;
+    if (args == null) args = [];
+    // TODO(vsm): Clean this up once InvocationMirrors settle down.  The 'get:'
+    // and 'set:' form is still used by Dartium.
+    if (invocation.isGetter) {
+      kind = 'get';
+    } else if (invocation.isSetter) {
+      kind = 'set';
+      assert(member.endsWith('='));
+      member = member.substring(0, member.length - 1);
+    } else if (member.startsWith('get:')) {
+      kind = 'get';
+      member = member.substring(4);
+    } else if (member.startsWith('set:')) {
+      kind = 'set';
+      member = member.substring(4);
+    } else {
+      kind = 'method';
+    }
+    return _forward(this, member,
+                    kind, args);
+  }
 
   // Forward member accesses to the backing JavaScript object.
-  static _forward(Proxy receiver, String method, List args) {
+  static _forward(Proxy receiver, String member, String kind, List args) {
     if (_depth == 0) throw 'Cannot access a JavaScript proxy out of scope.';
     var result =
-        receiver._port.callSync([receiver._id, method, args.map(_serialize)]);
+        receiver._port.callSync([receiver._id, member,
+                                 kind, args.map(_serialize)]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(receiver, method, args, {});
+      case 'none': throw new NoSuchMethodError(receiver, member, args, {});
       default: throw 'Invalid return value';
     }
   }
@@ -854,7 +879,7 @@ class _FunctionProxy extends Proxy {
       } else {
         args = [];
       }
-      var message = [id, '#call', args.map(_serialize)];
+      var message = [id, '', 'apply', args.map(_serialize)];
       var result = port.callSync(message);
       if (result[0] == 'throws') throw result[1];
       return _deserialize(result[1]);
