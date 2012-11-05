@@ -54,7 +54,7 @@ main() {
       var array = js.array([1, 2, 3]);
       var map = js.map({'a': 1, 'b': 2});
       expect(js.context.isArray(array), isTrue);
-      expect(array.length, equals(3), isTrue);
+      expect(array.length, equals(3));
       expect(!js.context.isArray(map), isTrue);
       expect(js.context.checkMap(map, 'a', 1), isTrue);
       expect(!js.context.checkMap(map, 'c', 3), isTrue);

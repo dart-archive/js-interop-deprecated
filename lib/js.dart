@@ -779,14 +779,14 @@ class Proxy {
       var result = new Proxy(context.Object);
       for (var key in data.keys) {
         var value = _convert(data[key]);
-        result.noSuchMethod('set:$key', [value]);
+        _forward(result, 'set:$key', [value]);
       }
       return result;
     } else if (data is List) {
       var result = _deserialize(_jsPortCreateArray.callSync([]));
       for (var i = 0; i < data.length; ++i) {
         var value = _convert(data[i]);
-        result.noSuchMethod('set:$i', [value]);
+        _forward(result, 'set:$i', [value]);
       }
       return result;
     }
@@ -798,12 +798,12 @@ class Proxy {
   // TODO(vsm): This is not required in Dartium, but
   // it is in Dart2JS.
   // Resolve whether this is needed.
-  operator[](arg) => noSuchMethod('[]', [ arg ]);
+  operator[](arg) => _forward(this, '[]', [ arg ]);
 
   // TODO(vsm): This is not required in Dartium, but
   // it is in Dart2JS.
   // Resolve whether this is needed.
-  operator[]=(key, value) => noSuchMethod('[]=', [ key, value ]);
+  operator[]=(key, value) => _forward(this, '[]=', [ key, value ]);
 
   // Test if this is equivalent to another Proxy.  This essentially
   // maps to JavaScript's == operator.
@@ -814,13 +814,18 @@ class Proxy {
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
   // Forward member accesses to the backing JavaScript object.
-  noSuchMethod(InvocationMirror invocation) {
+  noSuchMethod(InvocationMirror invocation)
+    => _forward(this, invocation.memberName, invocation.positionalArguments);
+
+  // Forward member accesses to the backing JavaScript object.
+  static _forward(Proxy receiver, String method, List args) {
     if (_depth == 0) throw 'Cannot access a JavaScript proxy out of scope.';
-    var result = _port.callSync([_id, invocation.memberName, invocation.positionalArguments.map(_serialize)]);
+    var result =
+        receiver._port.callSync([receiver._id, method, args.map(_serialize)]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(this,
+      case 'none': throw new NoSuchMethodError(receiver,
           invocation.memberName,
           invocation.positionalArguments,
           invocation.namedArguments);
