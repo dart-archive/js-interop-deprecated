@@ -825,10 +825,7 @@ class Proxy {
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(receiver,
-          invocation.memberName,
-          invocation.positionalArguments,
-          invocation.namedArguments);
+      case 'none': throw new NoSuchMethodError(receiver, method, args, {});
       default: throw 'Invalid return value';
     }
   }
