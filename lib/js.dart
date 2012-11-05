@@ -821,13 +821,21 @@ class Proxy {
     List args = invocation.positionalArguments;
     if (args == null) args = [];
     // TODO(vsm): Clean this up once InvocationMirrors settle down.  The 'get:'
-    // and 'set:' form is still used by Dartium.
+    // and 'set:' form is still used by Dartium and the trunk version of
+    // Dart2JS.
     if (invocation.isGetter) {
       kind = 'get';
+      if (member.startsWith('get:')) {
+        member = member.substring(4);
+      }
     } else if (invocation.isSetter) {
       kind = 'set';
-      assert(member.endsWith('='));
-      member = member.substring(0, member.length - 1);
+      if (member.endsWith('=')) {
+        member = member.substring(0, member.length - 1);
+      }
+      if (member.startsWith('set:')) {
+        member = member.substring(4);
+      }
     } else if (member.startsWith('get:')) {
       kind = 'get';
       member = member.substring(4);
