@@ -750,8 +750,21 @@ class Proxy {
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy(constructor, [arg1, arg2, arg3, arg4]) =>
-      new Proxy.withArgList(constructor, [arg1, arg2, arg3, arg4]);
+  factory Proxy(constructor, [arg1, arg2, arg3, arg4]) {
+      var arguments;
+      if (?arg4) {
+        arguments = [arg1, arg2, arg3, arg4];
+      } else if (?arg3) {
+        arguments = [arg1, arg2, arg3];
+      } else if (?arg2) {
+        arguments = [arg1, arg2];
+      } else if (?arg1) {
+        arguments = [arg1];
+      } else {
+        arguments = [];
+      }
+      return new Proxy.withArgList(constructor, arguments);
+  }
 
   /**
    * Constructs a [Proxy] to a new JavaScript object by invoking a (proxy to a)

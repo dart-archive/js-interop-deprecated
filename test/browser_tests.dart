@@ -25,6 +25,32 @@ main() {
     });
   });
 
+
+  test('instanciation of Array', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context.Array);
+      expect(a, isNotNull);
+      expect(a.length, equals(0));
+
+      a.push("value 1");
+      expect(a.length, equals(1));
+      expect(a[0], equals("value 1"));
+
+      a.pop();
+      expect(a.length, equals(0));
+    });
+  });
+
+  test('instanciation of Object', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context.Object);
+      expect(a, isNotNull);
+
+      a.attr = "value";
+      expect(a.attr, equals("value"));
+    });
+  });
+
   test('write global field', () {
     js.scoped(() {
       js.context.y = 42;
