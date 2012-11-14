@@ -12,5 +12,11 @@ void main() {
   final options = new Options();
   final scriptPath = new Path(options.script).directoryPath;
   final libPath = scriptPath.append('lib');
-  createBootstrap.create(libPath);
+
+  final changedOpt = "--changed=${libPath.append('js.dart')}";
+  for (String arg in new Options().arguments) {
+    if (arg == changedOpt) {
+      createBootstrap.create(libPath);
+    }
+  }
 }
