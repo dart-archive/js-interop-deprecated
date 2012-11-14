@@ -459,11 +459,6 @@ final _JS_BOOTSTRAP = r"""
     return serialize(Object(ret) === ret ? ret : instance);
   }
 
-  // Remote handler to construct a native JavaScript Array.
-  function constructArray() {
-    return serialize(new Array());
-  }
-
   // Remote handler to return the top-level JavaScript context.
   function context(data) {
     return serialize(globalContext);
@@ -526,7 +521,6 @@ final _JS_BOOTSTRAP = r"""
 
   makeGlobalPort('dart-js-context', context);
   makeGlobalPort('dart-js-create', construct);
-  makeGlobalPort('dart-js-create-array', constructArray);
   makeGlobalPort('dart-js-debug', debug);
   makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-instanceof', proxyInstanceof);
@@ -557,7 +551,6 @@ void _inject(code) {
 // Global ports to manage communication from Dart to JS.
 SendPortSync _jsPortSync = null;
 SendPortSync _jsPortCreate = null;
-SendPortSync _jsPortCreateArray = null;
 SendPortSync _jsPortDebug = null;
 SendPortSync _jsPortEquals = null;
 SendPortSync _jsPortInstanceof = null;
@@ -576,7 +569,6 @@ void _initialize() {
   _inject(_JS_BOOTSTRAP);
   _jsPortSync = window.lookupPort('dart-js-context');
   _jsPortCreate = window.lookupPort('dart-js-create');
-  _jsPortCreateArray = window.lookupPort('dart-js-create-array');
   _jsPortDebug = window.lookupPort('dart-js-debug');
   _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
@@ -797,7 +789,7 @@ class Proxy {
       }
       return result;
     } else if (data is List) {
-      var result = _deserialize(_jsPortCreateArray.callSync([]));
+      var result = new Proxy(context.Array);
       for (var i = 0; i < data.length; ++i) {
         var value = _convert(data[i]);
         _forward(result, '$i', 'set', [value]);
