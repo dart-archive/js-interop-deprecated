@@ -2,6 +2,6 @@ name: js
 authors: ["Dart Team <misc@dartlang.org>", "Alexandre Ardhuin <alexandre.ardhuin@gmail.com>"]
 homepage: https://github.com/dart-lang/js-interop
 description: Access JavaScript from Dart.
-version: 0.0.9
+version: 0.0.10
 dependencies:
   unittest: { sdk: unittest }
