@@ -26,7 +26,7 @@ main() {
   });
 
 
-  test('instanciation of Array', () {
+  test('js instantiation : new Array()', () {
     js.scoped(() {
       final a = new js.Proxy(js.context.Array);
       expect(a, isNotNull);
@@ -41,13 +41,57 @@ main() {
     });
   });
 
-  test('instanciation of Object', () {
+  test('js instantiation : new Date()', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context.Date);
+      expect(a.getTime(), isNotNull);
+    });
+  });
+
+  test('js instantiation : new Date(12345678)', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context.Date, 12345678);
+      expect(a.getTime(), equals(12345678));
+    });
+  });
+
+  test('js instantiation : new Date("December 17, 1995 03:24:00")', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context.Date, "December 17, 1995 03:24:00");
+      expect(a.getTime(), equals(819167040000));
+    });
+  });
+
+  test('js instantiation : new Date(1995,11,17)', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context.Date, 1995,11,17);
+      expect(a.getTime(), equals(819154800000));
+    });
+  });
+
+  test('js instantiation : new Date(1995,11,17,3,24,0)', () {
+    js.scoped(() {
+      final a = new js.Proxy.withArgList(js.context.Date, [1995,11,17,3,24,0]);
+      expect(a.getTime(), equals(819167040000));
+    });
+  });
+
+  test('js instantiation : new Object()', () {
     js.scoped(() {
       final a = new js.Proxy(js.context.Object);
       expect(a, isNotNull);
 
       a.attr = "value";
       expect(a.attr, equals("value"));
+    });
+  });
+
+  test(r'js instantiation : new RegExp("^\w+$")', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context.RegExp, r'^\w+$');
+      expect(a, isNotNull);
+      expect(a.test('true'), isTrue);
+      expect(a.test(' false'), isFalse);
     });
   });
 
