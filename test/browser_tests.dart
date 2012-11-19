@@ -55,24 +55,31 @@ main() {
     });
   });
 
-  test('js instantiation : new Date("December 17, 1995 03:24:00")', () {
+  test('js instantiation : new Date("December 17, 1995 03:24:00 GMT+01:00")',
+      () {
     js.scoped(() {
-      final a = new js.Proxy(js.context.Date, "December 17, 1995 03:24:00");
+      final a = new js.Proxy(js.context.Date,
+                             "December 17, 1995 03:24:00 GMT+01:00");
       expect(a.getTime(), equals(819167040000));
     });
   });
 
   test('js instantiation : new Date(1995,11,17)', () {
     js.scoped(() {
-      final a = new js.Proxy(js.context.Date, 1995,11,17);
-      expect(a.getTime(), equals(819154800000));
+      // Note: JS Date counts months from 0 while Dart counts from 1.
+      final a = new js.Proxy(js.context.Date, 1995, 11, 17);
+      final b = new Date(1995, 12, 17);
+      expect(a.getTime(), equals(b.millisecondsSinceEpoch));
     });
   });
 
   test('js instantiation : new Date(1995,11,17,3,24,0)', () {
     js.scoped(() {
-      final a = new js.Proxy.withArgList(js.context.Date, [1995,11,17,3,24,0]);
-      expect(a.getTime(), equals(819167040000));
+      // Note: JS Date counts months from 0 while Dart counts from 1.
+      final a = new js.Proxy.withArgList(js.context.Date,
+                                         [1995, 11, 17, 3, 24, 0]);
+      final b = new Date(1995, 12, 17, 3, 24, 0);
+      expect(a.getTime(), equals(b.millisecondsSinceEpoch));
     });
   });
 
