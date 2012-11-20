@@ -15,7 +15,7 @@ library create_bootstrap;
 
 import 'dart:io';
 
-final JS_PATTERN = const RegExp(r'final _JS_BOOTSTRAP = r"""((.*\n)*)""";');
+final JS_PATTERN = new RegExp(r'final _JS_BOOTSTRAP = r"""((.*\n)*)""";');
 
 final HEADER = """
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
@@ -30,7 +30,7 @@ final HEADER = """
 
 createFile(Path source, Path target) {
   final f = new File.fromPath(source);
-  f.readAsText()
+  f.readAsString()
     .then((text) {
       final js = JS_PATTERN.firstMatch(text).group(1);
       final out = new File.fromPath(target);
