@@ -513,6 +513,33 @@ final _JS_BOOTSTRAP = r"""
     return deserialize(args[0]) instanceof deserialize(args[1]);
   }
 
+  function proxyConvert(args, depth) {
+    depth = depth || 0;
+    var type = args[0];
+    var value = args[1];
+    var result;
+    if (type === 'map') {
+      var obj = {};
+      for (var i = 0; i < value.length; i++) {
+        obj[value[i][0]] = proxyConvert(value[i][1], depth + 1);
+      }
+      result = obj;
+    } else if (type === 'list') {
+      var list = [];
+      for (var i = 0; i < value.length; i++) {
+        list.push(proxyConvert(value[i], depth + 1));
+      }
+      result = list;
+    } else /* 'simple' */ {
+      result = deserialize(value);
+    }
+    if (depth === 0) {
+      return serialize(result);
+    } else {
+      return result;
+    }
+  }
+
   function makeGlobalPort(name, f) {
     var port = new ReceivePortSync();
     port.receive(f);
@@ -555,6 +582,7 @@ final _JS_BOOTSTRAP = r"""
   makeGlobalPort('dart-js-debug', debug);
   makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-instanceof', proxyInstanceof);
+  makeGlobalPort('dart-js-convert', proxyConvert);
   makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
   makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
   makeGlobalPort('dart-js-globalize', function(data) {
@@ -585,6 +613,7 @@ SendPortSync _jsPortCreate = null;
 SendPortSync _jsPortDebug = null;
 SendPortSync _jsPortEquals = null;
 SendPortSync _jsPortInstanceof = null;
+SendPortSync _jsPortConvert = null;
 SendPortSync _jsEnterJavaScriptScope = null;
 SendPortSync _jsExitJavaScriptScope = null;
 SendPortSync _jsGlobalize = null;
@@ -603,6 +632,7 @@ void _initialize() {
   _jsPortDebug = window.lookupPort('dart-js-debug');
   _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
+  _jsPortConvert = window.lookupPort('dart-js-convert');
   _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
   _jsExitJavaScriptScope = window.lookupPort('dart-js-exit-scope');
   _jsGlobalize = window.lookupPort('dart-js-globalize');
@@ -810,24 +840,24 @@ class Proxy {
     return _convert(data);
   }
 
-  static _convert(data) {
-    // TODO(vsm): Can we make this more efficient?
+  static _convert(data, [depth = 0]) {
+    var convertedDatas;
     if (data is Map) {
-      var result = new Proxy(context.Object);
+      final entries = new List();
       for (var key in data.keys) {
-        var value = _convert(data[key]);
-        _forward(result, '$key', 'set', [value]);
+        entries.add([key, _convert(data[key], depth + 1)]);
       }
-      return result;
+      convertedDatas = ['map', entries];
     } else if (data is List) {
-      var result = new Proxy(context.Array);
-      for (var i = 0; i < data.length; ++i) {
-        var value = _convert(data[i]);
-        _forward(result, '$i', 'set', [value]);
-      }
-      return result;
+      convertedDatas = ['list', data.map((e) => _convert(e, depth + 1))];
+    } else {
+      convertedDatas = ['simple', _serialize(data)];
     }
-    return data;
+    if (depth == 0) {
+      return _deserialize(_jsPortConvert.callSync(convertedDatas));
+    } else {
+      return convertedDatas;
+    }
   }
 
   Proxy._internal(this._port, this._id);
@@ -881,8 +911,7 @@ class Proxy {
     } else {
       kind = 'method';
     }
-    return _forward(this, member,
-                    kind, args);
+    return _forward(this, member, kind, args);
   }
 
   // Forward member accesses to the backing JavaScript object.
