@@ -513,30 +513,27 @@ final _JS_BOOTSTRAP = r"""
     return deserialize(args[0]) instanceof deserialize(args[1]);
   }
 
-  function proxyConvert(args, depth) {
-    depth = depth || 0;
-    var type = args[0];
-    var value = args[1];
-    var result;
+  function proxyConvert(args) {
+    return serialize(deserializeDataTree(args));
+  }
+
+  function deserializeDataTree(data) {
+    var type = data[0];
+    var value = data[1];
     if (type === 'map') {
       var obj = {};
       for (var i = 0; i < value.length; i++) {
-        obj[value[i][0]] = proxyConvert(value[i][1], depth + 1);
+        obj[value[i][0]] = deserializeDataTree(value[i][1]);
       }
-      result = obj;
+      return obj;
     } else if (type === 'list') {
       var list = [];
       for (var i = 0; i < value.length; i++) {
-        list.push(proxyConvert(value[i], depth + 1));
+        list.push(deserializeDataTree(value[i]));
       }
-      result = list;
+      return list;
     } else /* 'simple' */ {
-      result = deserialize(value);
-    }
-    if (depth === 0) {
-      return serialize(result);
-    } else {
-      return result;
+      return deserialize(value);
     }
   }
 
@@ -840,23 +837,21 @@ class Proxy {
     return _convert(data);
   }
 
-  static _convert(data, [depth = 0]) {
-    var convertedDatas;
+  static _convert(data) {
+    return _deserialize(_jsPortConvert.callSync(_serializeDataTree(data)));
+  }
+
+  static _serializeDataTree(data) {
     if (data is Map) {
       final entries = new List();
       for (var key in data.keys) {
-        entries.add([key, _convert(data[key], depth + 1)]);
+        entries.add([key, _serializeDataTree(data[key])]);
       }
-      convertedDatas = ['map', entries];
+      return ['map', entries];
     } else if (data is List) {
-      convertedDatas = ['list', data.map((e) => _convert(e, depth + 1))];
+      return ['list', data.map((e) => _serializeDataTree(e))];
     } else {
-      convertedDatas = ['simple', _serialize(data)];
-    }
-    if (depth == 0) {
-      return _deserialize(_jsPortConvert.callSync(convertedDatas));
-    } else {
-      return convertedDatas;
+      return ['simple', _serialize(data)];
     }
   }
 
