@@ -623,8 +623,20 @@ ReceivePortSync _dartExitDartScope = null;
 // Initializes bootstrap code and ports.
 void _initialize() {
   if (_jsPortSync != null) return;
-  _inject(_JS_BOOTSTRAP);
-  _jsPortSync = window.lookupPort('dart-js-context');
+
+  // Test if the port is already defined.
+  try {
+    _jsPortSync = window.lookupPort('dart-js-context');
+  } catch (e) {
+    // TODO(vsm): Suppress the exception until dartbug.com/5854 is fixed.
+  }
+
+  // If not, try injecting the script.
+  if (_jsPortSync == null) {
+    _inject(_JS_BOOTSTRAP);
+    _jsPortSync = window.lookupPort('dart-js-context');
+  }
+
   _jsPortCreate = window.lookupPort('dart-js-create');
   _jsPortDebug = window.lookupPort('dart-js-debug');
   _jsPortEquals = window.lookupPort('dart-js-equals');
