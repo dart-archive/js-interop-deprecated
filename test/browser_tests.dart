@@ -126,15 +126,48 @@ main() {
     });
   });
 
-  test('allocate JS array and map', () {
+  test('allocate simple JS array', () {
     js.scoped(() {
-      var array = js.array([1, 2, 3]);
-      var map = js.map({'a': 1, 'b': 2});
+      final list = [1, 2, 3, 4, 5, 6, 7, 8];
+      var array = js.array(list);
       expect(js.context.isArray(array), isTrue);
-      expect(array.length, equals(3));
-      expect(!js.context.isArray(map), isTrue);
-      expect(js.context.checkMap(map, 'a', 1), isTrue);
-      expect(!js.context.checkMap(map, 'c', 3), isTrue);
+      expect(array.length, equals(list.length));
+      for (var i = 0; i < list.length ; i++) {
+        expect(array[i], equals(list[i]));
+      }
+    });
+  });
+
+  test('allocate simple JS map', () {
+    js.scoped(() {
+      var map = {'a': 1, 'b': 2, 'c': 3};
+      var jsMap = js.map(map);
+      expect(!js.context.isArray(jsMap), isTrue);
+      for (final key in map.keys) {
+        expect(js.context.checkMap(jsMap, key, map[key]), isTrue);
+      }
+    });
+  });
+
+  test('allocate complex JS object', () {
+    js.scoped(() {
+      final object =
+        {
+          'a': [1, [2, 3]],
+          'b': {
+            'c': 3,
+            'd': new js.Proxy(js.context.Foo, 42)
+          },
+          'e': null
+        };
+      var jsObject = js.map(object);
+      expect(jsObject['a'][0], equals(object['a'][0]));
+      expect(jsObject['a'][1][0], equals(object['a'][1][0]));
+      expect(jsObject['a'][1][1], equals(object['a'][1][1]));
+      expect(jsObject['b']['c'], equals(object['b']['c']));
+      expect(jsObject['b']['d'], equals(object['b']['d']));
+      expect(jsObject['b']['d'].bar(), equals(42));
+      expect(jsObject['e'], isNull);
     });
   });
 

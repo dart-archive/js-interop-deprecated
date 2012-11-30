@@ -513,6 +513,30 @@ final _JS_BOOTSTRAP = r"""
     return deserialize(args[0]) instanceof deserialize(args[1]);
   }
 
+  function proxyConvert(args) {
+    return serialize(deserializeDataTree(args));
+  }
+
+  function deserializeDataTree(data) {
+    var type = data[0];
+    var value = data[1];
+    if (type === 'map') {
+      var obj = {};
+      for (var i = 0; i < value.length; i++) {
+        obj[value[i][0]] = deserializeDataTree(value[i][1]);
+      }
+      return obj;
+    } else if (type === 'list') {
+      var list = [];
+      for (var i = 0; i < value.length; i++) {
+        list.push(deserializeDataTree(value[i]));
+      }
+      return list;
+    } else /* 'simple' */ {
+      return deserialize(value);
+    }
+  }
+
   function makeGlobalPort(name, f) {
     var port = new ReceivePortSync();
     port.receive(f);
@@ -555,6 +579,7 @@ final _JS_BOOTSTRAP = r"""
   makeGlobalPort('dart-js-debug', debug);
   makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-instanceof', proxyInstanceof);
+  makeGlobalPort('dart-js-convert', proxyConvert);
   makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
   makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
   makeGlobalPort('dart-js-globalize', function(data) {
@@ -585,6 +610,7 @@ SendPortSync _jsPortCreate = null;
 SendPortSync _jsPortDebug = null;
 SendPortSync _jsPortEquals = null;
 SendPortSync _jsPortInstanceof = null;
+SendPortSync _jsPortConvert = null;
 SendPortSync _jsEnterJavaScriptScope = null;
 SendPortSync _jsExitJavaScriptScope = null;
 SendPortSync _jsGlobalize = null;
@@ -597,12 +623,25 @@ ReceivePortSync _dartExitDartScope = null;
 // Initializes bootstrap code and ports.
 void _initialize() {
   if (_jsPortSync != null) return;
-  _inject(_JS_BOOTSTRAP);
-  _jsPortSync = window.lookupPort('dart-js-context');
+
+  // Test if the port is already defined.
+  try {
+    _jsPortSync = window.lookupPort('dart-js-context');
+  } catch (e) {
+    // TODO(vsm): Suppress the exception until dartbug.com/5854 is fixed.
+  }
+
+  // If not, try injecting the script.
+  if (_jsPortSync == null) {
+    _inject(_JS_BOOTSTRAP);
+    _jsPortSync = window.lookupPort('dart-js-context');
+  }
+
   _jsPortCreate = window.lookupPort('dart-js-create');
   _jsPortDebug = window.lookupPort('dart-js-debug');
   _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
+  _jsPortConvert = window.lookupPort('dart-js-convert');
   _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
   _jsExitJavaScriptScope = window.lookupPort('dart-js-exit-scope');
   _jsGlobalize = window.lookupPort('dart-js-globalize');
@@ -811,23 +850,21 @@ class Proxy {
   }
 
   static _convert(data) {
-    // TODO(vsm): Can we make this more efficient?
+    return _deserialize(_jsPortConvert.callSync(_serializeDataTree(data)));
+  }
+
+  static _serializeDataTree(data) {
     if (data is Map) {
-      var result = new Proxy(context.Object);
+      final entries = new List();
       for (var key in data.keys) {
-        var value = _convert(data[key]);
-        _forward(result, '$key', 'set', [value]);
+        entries.add([key, _serializeDataTree(data[key])]);
       }
-      return result;
+      return ['map', entries];
     } else if (data is List) {
-      var result = new Proxy(context.Array);
-      for (var i = 0; i < data.length; ++i) {
-        var value = _convert(data[i]);
-        _forward(result, '$i', 'set', [value]);
-      }
-      return result;
+      return ['list', data.map((e) => _serializeDataTree(e))];
+    } else {
+      return ['simple', _serialize(data)];
     }
-    return data;
   }
 
   Proxy._internal(this._port, this._id);
@@ -881,8 +918,7 @@ class Proxy {
     } else {
       kind = 'method';
     }
-    return _forward(this, member,
-                    kind, args);
+    return _forward(this, member, kind, args);
   }
 
   // Forward member accesses to the backing JavaScript object.
