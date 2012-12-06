@@ -692,7 +692,24 @@ _exitScope(depth) {
   _proxiedObjectTable.exitScope();
 }
 
-/**
+/*
+ * Enters a scope and returns the depth of the scope stack.
+ */
+/// WARNING: This API is experimental and may be removed.
+int $experimentalEnterScope() {
+  return _enterScope();
+}
+
+/*
+ * Exits a scope.  The [depth] must match that returned by the corresponding
+ * enter scope call.
+ */
+/// WARNING: This API is experimental and may be removed.
+void $experimentalExitScope(int depth) {
+  _exitScope(depth);
+}
+
+/*
  * Retains the given [proxy] beyond the current scope.
  * Instead, it will need to be explicitly released.
  * The given [proxy] is returned for convenience.
