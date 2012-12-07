@@ -25,7 +25,6 @@ main() {
     });
   });
 
-
   test('js instantiation : new Array()', () {
     js.scoped(() {
       final a = new js.Proxy(js.context.Array);
@@ -353,5 +352,11 @@ main() {
       foo["getAge"] = new js.Callback.once(() => 10);
       expect(foo.getAge(), equals(10));
     });
+  });
+
+  test('test experimental apis', () {
+    var depth = js.$experimentalEnterScope();
+    expect(js.context.x, equals(42));
+    js.$experimentalExitScope(depth);
   });
 }
