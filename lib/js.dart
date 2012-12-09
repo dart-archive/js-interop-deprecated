@@ -1002,7 +1002,7 @@ class _FunctionProxy extends Proxy {
  *     // f is a callable function, we can invoke it
  *     f();           // -> "ret_value"                     
  *     // get a Proxy object for the function ...
- *     var proxy = js.functionProxy(f);
+ *     var fp = js.$functionProxy(f);
  *     // ... in order to access its properties 
  *     fp.myProperty; // -> "property_value" 
  *     
