@@ -1009,7 +1009,7 @@ class _FunctionProxy extends Proxy {
  * **Note**: this is a workaround for the fact that function emulation is not yet
  * fully implemented in M1.
  */ 
-Proxy functionProxy(Function f) {
+Proxy $functionProxy(Function f) {
   if (f == null) throw new ArgumentError("f must not be null");    
   if (! _FunctionProxy._map.containsKey(f)) {
     throw new ArgumentError("f doesn't represent a JavaScript function. Failed to lookup proxy object.");
