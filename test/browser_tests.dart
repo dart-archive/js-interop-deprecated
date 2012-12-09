@@ -25,7 +25,6 @@ main() {
     });
   });
 
-
   test('js instantiation : new Array()', () {
     js.scoped(() {
       final a = new js.Proxy(js.context.Array);
@@ -355,6 +354,11 @@ main() {
     });
   });
   
+  test('test experimental apis', () {
+    var depth = js.$experimentalEnterScope();
+    expect(js.context.x, equals(42));
+    js.$experimentalExitScope(depth);
+  });
   
   group("function proxy", () {
     test("- function must not be null", () {
