@@ -1002,14 +1002,14 @@ class _FunctionProxy extends Proxy {
  *     // f is a callable function, we can invoke it
  *     f();           // -> "ret_value"                     
  *     // get a Proxy object for the function ...
- *     var fp = js.$functionProxy(f);
+ *     var fp = js.$experimentalFunctionProxy(f);
  *     // ... in order to access its properties 
  *     fp.myProperty; // -> "property_value" 
  *     
- * **Note**: this is a workaround for the fact that function emulation is not yet
- * fully implemented in M1.
+ * **Note**: this is a workaround which will be removed as soon as function emulation is 
+ * fully implemented in Dart. 
  */ 
-Proxy $functionProxy(Function f) {
+Proxy $experimentalFunctionProxy(Function f) {
   if (f == null) throw new ArgumentError("f must not be null");    
   if (! _FunctionProxy._map.containsKey(f)) {
     throw new ArgumentError("f doesn't represent a JavaScript function. Failed to lookup proxy object.");
