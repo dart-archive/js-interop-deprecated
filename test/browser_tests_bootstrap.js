@@ -65,3 +65,8 @@ function testJsMap(callback) {
   var result = callback();
   return result['value'];
 }
+
+function Bar() {
+  return "ret_value";
+}
+Bar.foo = "property_value";

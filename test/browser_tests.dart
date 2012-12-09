@@ -359,4 +359,22 @@ main() {
     expect(js.context.x, equals(42));
     js.$experimentalExitScope(depth);
   });
+
+  group("function proxy", () {
+    test("- function must not be null", () {
+      expect(() => js.$experimentalFunctionProxy(null), throwsA(new isInstanceOf<ArgumentError>()));
+    });
+
+    test("- function must not be a dart funtion", () {
+      dart_function(){};
+      expect(() => js.$experimentalFunctionProxy(dart_function), throwsA(new isInstanceOf<ArgumentError>()));
+    });
+
+    test('- can access a property of a function', () {
+      js.scoped(() {
+        final Bar = js.context.Bar;
+        expect(js.$experimentalFunctionProxy(Bar).foo, "property_value");
+      });
+    });
+  });
 }
