@@ -120,6 +120,13 @@ main() {
     });
   });
 
+  test('get JS FunctionProxy', () {
+    js.scoped(() {
+      var razzle = js.context.razzle;
+      expect(razzle(), equals(42));
+    });
+  });
+
   test('call JS function', () {
     js.scoped(() {
       expect(js.context.razzle(), equals(42));
@@ -365,27 +372,9 @@ main() {
     });
   });
 
-  test('test experimental apis', () {
-    var depth = js.$experimentalEnterScope();
-    expect(js.context.x, equals(42));
-    js.$experimentalExitScope(depth);
-  });
-
-  group("function proxy", () {
-    test("- function must not be null", () {
-      expect(() => js.$experimentalFunctionProxy(null), throwsA(new isInstanceOf<ArgumentError>()));
-    });
-
-    test("- function must not be a dart funtion", () {
-      dart_function(){};
-      expect(() => js.$experimentalFunctionProxy(dart_function), throwsA(new isInstanceOf<ArgumentError>()));
-    });
-
-    test('- can access a property of a function', () {
-      js.scoped(() {
-        final Bar = js.context.Bar;
-        expect(js.$experimentalFunctionProxy(Bar).foo, "property_value");
-      });
+  test('access a property of a function', () {
+    js.scoped(() {
+      expect(js.context.Bar.foo, "property_value");
     });
   });
 }
