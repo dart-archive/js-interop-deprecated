@@ -602,7 +602,7 @@ final _JS_BOOTSTRAP = r"""
 void _inject(code) {
   final script = new ScriptElement();
   script.type = 'text/javascript';
-  script.innerHTML = code;
+  script.innerHtml = code;
   document.body.nodes.add(script);
 }
 
@@ -1284,7 +1284,7 @@ _serializeElement(Element e) {
       }
       if (top.parent == null) {
         top.attributes[_DART_TEMPORARY_ATTACHED] = 'a';
-        document.documentElement.elements.add(top);
+        document.documentElement.children.add(top);
         break;
       }
       if (identical(top.parent, document.documentElement)) {
