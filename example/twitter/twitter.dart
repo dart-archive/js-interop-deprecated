@@ -48,7 +48,7 @@ void display(var data) {
     var time = result.created_at;
     var text = linkify(result.text);
     var div = new DivElement();
-    div.innerHTML = '<div>From: $user</div><div>$text</div><p>';
+    div.innerHtml = '<div>From: $user</div><div>$text</div><p>';
     document.body.nodes.add(div);
   }
 }
