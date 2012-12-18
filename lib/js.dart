@@ -990,27 +990,27 @@ class _FunctionProxy extends Proxy {
 /**
  * Replies a [Proxy] object for a function [f], provided [f] represents a JavaScript
  * function.
- * 
+ *
  * Consider the following JavaScript fragment:
- *     function MyFunction() { 
+ *     function MyFunction() {
  *       return "ret_value";
  *     }
  *     MyFunction.myProperty = "property_value";
- *     
- * In Dart use: 
+ *
+ * In Dart use:
  *     var f = js.context.MyFunction;
  *     // f is a callable function, we can invoke it
- *     f();           // -> "ret_value"                     
+ *     f();           // -> "ret_value"
  *     // get a Proxy object for the function ...
  *     var fp = js.$experimentalFunctionProxy(f);
- *     // ... in order to access its properties 
- *     fp.myProperty; // -> "property_value" 
- *     
- * **Note**: this is a workaround which will be removed as soon as function emulation is 
- * fully implemented in Dart. 
- */ 
+ *     // ... in order to access its properties
+ *     fp.myProperty; // -> "property_value"
+ *
+ * **Note**: this is a workaround which will be removed as soon as function emulation is
+ * fully implemented in Dart.
+ */
 Proxy $experimentalFunctionProxy(Function f) {
-  if (f == null) throw new ArgumentError("f must not be null");    
+  if (f == null) throw new ArgumentError("f must not be null");
   if (! _FunctionProxy._map.containsKey(f)) {
     throw new ArgumentError("f doesn't represent a JavaScript function. Failed to lookup proxy object.");
   }
