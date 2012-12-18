@@ -101,6 +101,17 @@ main() {
     });
   });
 
+  test('js instantiation : typed array', () {
+    js.scoped(() {
+      final charCodes = "test".charCodes;
+      final buf = new js.Proxy(js.context.ArrayBuffer, charCodes.length);
+      final bufView = new js.Proxy(js.context.Uint8Array, buf);
+      for (var i = 0; i < charCodes.length; i++) {
+        bufView[i] = charCodes[i];
+      }
+    });
+  });
+
   test('write global field', () {
     js.scoped(() {
       js.context.y = 42;
