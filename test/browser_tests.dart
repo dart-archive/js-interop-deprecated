@@ -127,6 +127,13 @@ main() {
     });
   });
 
+  test('call JS function by dynamic name', () {
+    js.scoped(() {
+      expect(js.context.callMethod('razzle', []), equals(42));
+      expect(() => js.context.callMethod('dazzle', []), throwsA(isNoSuchMethodError));
+    });
+  });
+
   test('allocate JS object', () {
     js.scoped(() {
       var foo = new js.Proxy(js.context.Foo, 42);

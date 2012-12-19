@@ -906,6 +906,13 @@ class Proxy {
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
+  // Call a method with the given name & arguments on this object.
+  // TODO(sasha): Integrate this with a wrapped return from the [] operator,
+  // e.g. x[member](args).
+  callMethod(String member, List args) {
+    return _forward(this, member, 'method', args);
+  }
+
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(InvocationMirror invocation) {
     String member = invocation.memberName;
