@@ -905,7 +905,8 @@ class Proxy {
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
   // Call a method with the given name & arguments on this object.
-  // TODO(sasha): integrate this with a wrapped return from the [] operator, i.e. x[member](args). 
+  // TODO(sasha): Integrate this with a wrapped return from the [] operator,
+  // e.g. x[member](args).
   callMethod(String member, List args) {
     return _forward(this, member, 'method', args);
   }
