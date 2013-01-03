@@ -230,7 +230,7 @@ main() {
       final div = new DivElement();
       div.classes.add('a');
       final container = new DivElement();
-      container.elements.add(div);
+      container.children.add(div);
       expect(js.context.getElementAttribute(div, 'class'), equals('a'));
     });
   });
@@ -242,8 +242,8 @@ main() {
       final div2 = new DivElement();
       div2.classes.add('b');
       final container = new DivElement();
-      container.elements.add(div1);
-      container.elements.add(div2);
+      container.children.add(div1);
+      container.children.add(div2);
       final f = js.context.addClassAttributes;
       expect(f(js.array([div1, div2])), equals('ab'));
     });
@@ -257,8 +257,8 @@ main() {
       final divA = new DivElement()..classes.add('A');
       final div1 = new DivElement()..classes.add('1');
       final div2 = new DivElement()..classes.add('2');
-      final div3 = new DivElement()..classes.add('3')..elements.add(div2);
-      final container = new DivElement()..elements.addAll([div1, div3]);
+      final div3 = new DivElement()..classes.add('3')..children.add(div2);
+      final container = new DivElement()..children.addAll([div1, div3]);
       final f = js.context.addClassAttributes;
       expect(f(js.array([divA, div1, div2, div3])), equals('A123'));
       expect(f(js.array([divA, div1, div3, div2])), equals('A132'));
@@ -276,7 +276,7 @@ main() {
     js.scoped(() {
       final div1 = new DivElement()..classes.add('1');
       final div2 = new DivElement()..classes.add('2');
-      document.documentElement.elements.add(div2);
+      document.documentElement.children.add(div2);
       final f = js.context.addClassAttributes;
       expect(f(js.array([div1, div2])), equals('12'));
       expect(!document.documentElement.contains(div1), isTrue);
