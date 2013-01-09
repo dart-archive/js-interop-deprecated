@@ -372,8 +372,15 @@ main() {
     });
   });
 
+  test('test experimental apis', () {
+    var depth = js.$experimentalEnterScope();
+    expect(js.context.x, equals(42));
+    js.$experimentalExitScope(depth);
+  });
+
   test('access a property of a function', () {
     js.scoped(() {
+      expect(js.context.Bar(), "ret_value");
       expect(js.context.Bar.foo, "property_value");
     });
   });
