@@ -57,7 +57,7 @@ void calcRoute(e) {
     final SelectElement start = query('#start');
     final SelectElement end = query('#end');
 
-    panel.innerHTML = "<b>Thinking...</b>";
+    panel.innerHtml = "<b>Thinking...</b>";
 
     // Submit a new directions request.
     final request = js.map({
@@ -69,10 +69,10 @@ void calcRoute(e) {
     // The routing callback is only called once.
     directionsService.route(request, new js.Callback.once((response, status) {
       if (status == maps.DirectionsStatus.OK) {
-        document.query('#directions_panel').innerHTML = "";
+        document.query('#directions_panel').innerHtml = "";
         directionsDisplay.setDirections(response);
       } else {
-        document.query('#directions_panel').innerHTML = "<b>Err, try flying.</b>";
+        document.query('#directions_panel').innerHtml = "<b>Err, try flying.</b>";
       }
     }));
   });

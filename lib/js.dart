@@ -760,9 +760,7 @@ class Callback {
   var _id;
   var _callback;
 
-  get _serialized => [ 'funcref',
-                       _id,
-                       _proxiedObjectTable.sendPort ];
+  get _serialized => [ 'funcref', _id, _proxiedObjectTable.sendPort ];
 
   _initialize(manualDispose) {
     _manualDispose = manualDispose;
@@ -831,7 +829,7 @@ class Proxy {
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy(constructor, [arg1, arg2, arg3, arg4]) {
+  factory Proxy(FunctionProxy constructor, [arg1, arg2, arg3, arg4]) {
       var arguments;
       if (?arg4) {
         arguments = [arg1, arg2, arg3, arg4];
@@ -852,7 +850,7 @@ class Proxy {
    * JavaScript [constructor].  The [arguments] list should contain either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy.withArgList(constructor, List arguments) {
+  factory Proxy.withArgList(FunctionProxy constructor, List arguments) {
     if (_depth == 0) throw 'Cannot create Proxy out of scope.';
     final serialized = ([constructor]..addAll(arguments)).map(_serialize);
     final result = _jsPortCreate.callSync(serialized);
@@ -955,68 +953,21 @@ class Proxy {
   }
 }
 
-// A [Proxy] subtype to handle remote functions.
-class _FunctionProxy extends Proxy {
+// TODO(aa) make FunctionProxy implements Function once it is allowed
+/// A [Proxy] subtype to JavaScript functions.
+class FunctionProxy extends Proxy /*implements Function*/ {
+  FunctionProxy._internal(port, id) : super._internal(port, id);
 
-  // A Map to recover the proxies for remote functions.
-  static final _map = new Map<Function, _FunctionProxy>();
-
-  Function _call;
-
-  _FunctionProxy._internal(port, id) : super._internal(port, id) {
-    // TODO: Support varargs when there is support in the language.
-    _call = ([arg0, arg1, arg2, arg3]) {
-      var args;
-      if (?arg3) {
-        args = [arg0, arg1, arg2, arg3];
-      } else if (?arg2) {
-        args = [arg0, arg1, arg2];
-      } else if (?arg1) {
-        args = [arg0, arg1];
-      } else if (?arg0) {
-        args = [arg0];
-      } else {
-        args = [];
-      }
-      var message = [id, '', 'apply', args.map(_serialize)];
-      var result = port.callSync(message);
+  noSuchMethod(InvocationMirror invocation) {
+    if (invocation.isMethod && invocation.memberName == 'call') {
+      var message = [_id, '', 'apply', invocation.positionalArguments.map(_serialize)];
+      var result = _port.callSync(message);
       if (result[0] == 'throws') throw result[1];
       return _deserialize(result[1]);
-    };
-
-    // Cache the remote id and port.
-    _map[_call] = this;
+    } else {
+      return super.noSuchMethod(invocation);
+    }
   }
-}
-
-/**
- * Replies a [Proxy] object for a function [f], provided [f] represents a JavaScript
- * function.
- *
- * Consider the following JavaScript fragment:
- *     function MyFunction() {
- *       return "ret_value";
- *     }
- *     MyFunction.myProperty = "property_value";
- *
- * In Dart use:
- *     var f = js.context.MyFunction;
- *     // f is a callable function, we can invoke it
- *     f();           // -> "ret_value"
- *     // get a Proxy object for the function ...
- *     var fp = js.$experimentalFunctionProxy(f);
- *     // ... in order to access its properties
- *     fp.myProperty; // -> "property_value"
- *
- * **Note**: this is a workaround which will be removed as soon as function emulation is
- * fully implemented in Dart.
- */
-Proxy $experimentalFunctionProxy(Function f) {
-  if (f == null) throw new ArgumentError("f must not be null");
-  if (! _FunctionProxy._map.containsKey(f)) {
-    throw new ArgumentError("f doesn't represent a JavaScript function. Failed to lookup proxy object.");
-  }
-  return _FunctionProxy._map[f];
 }
 
 // A table to managed local Dart objects that are proxied in JavaScript.
@@ -1180,18 +1131,6 @@ _serialize(var message) {
     return [ 'domref', _serializeElement(message) ];
   } else if (message is Callback) {
     return message._serialized;
-  } else if (message is Function) {
-    if (_FunctionProxy._map.containsKey(message)) {
-      // Remote cached function proxy.
-      var proxy = _FunctionProxy._map[message];
-      return [ 'funcref',
-                proxy._id,
-                proxy._port ];
-      //return serialized;
-    } else {
-      throw 'A function must be converted to a '
-            'Callback before it can be serialized.';
-    }
   } else if (message is Proxy) {
     // Remote object proxy.
     return [ 'objref', message._id, message._port ];
@@ -1212,8 +1151,7 @@ _deserialize(var message) {
       return _proxiedObjectTable.get(id);
     } else {
       // Remote function.  Forward to its port.
-      final proxy = new _FunctionProxy._internal(port, id);
-      return proxy._call;
+      return new FunctionProxy._internal(port, id);
     }
   }
 
