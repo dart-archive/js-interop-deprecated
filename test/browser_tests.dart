@@ -384,4 +384,12 @@ main() {
       expect(js.context.Bar.foo, "property_value");
     });
   });
+
+  test('retrieve same dart Object', () {
+    js.scoped(() {
+      final date = new Date.now();
+      js.context.dartDate = date;
+      expect(js.context.dartDate, equals(date));
+    });
+  });
 }
