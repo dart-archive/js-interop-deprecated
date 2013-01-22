@@ -4,5 +4,5 @@ homepage: https://github.com/dart-lang/js-interop
 description: Access JavaScript from Dart.
 version: 0.0.14
 dependencies:
-  browser: any
+  browser: ">=0.0.1 <0.0.2"
   unittest: any
