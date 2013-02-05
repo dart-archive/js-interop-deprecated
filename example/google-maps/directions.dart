@@ -46,8 +46,8 @@ void main() {
     map.controls[maps.ControlPosition.TOP].push(control);
 
     // Recalculate the route when the start or end points are changed.
-    query('#start').on.change.add(calcRoute);
-    query('#end').on.change.add(calcRoute);
+    query('#start').onChange.listen(calcRoute);
+    query('#end').onChange.listen(calcRoute);
   });
 }
 
