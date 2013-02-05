@@ -732,8 +732,7 @@ void release(Proxy proxy) {
  * Check if [proxy] is instance of [type].
  */
 bool instanceof(Proxy proxy, type) {
-  return _jsPortInstanceof.callSync([proxy, type].mappedBy(_serialize).
-      toList());
+  return _jsPortInstanceof.callSync([proxy, type].map(_serialize).toList());
 }
 
 /**
@@ -853,7 +852,7 @@ class Proxy {
    */
   factory Proxy.withArgList(FunctionProxy constructor, List arguments) {
     if (_depth == 0) throw 'Cannot create Proxy out of scope.';
-    final serialized = ([constructor]..addAll(arguments)).mappedBy(_serialize).
+    final serialized = ([constructor]..addAll(arguments)).map(_serialize).
         toList();
     final result = _jsPortCreate.callSync(serialized);
     return _deserialize(result);
@@ -880,7 +879,7 @@ class Proxy {
       }
       return ['map', entries];
     } else if (data is List) {
-      return ['list', data.mappedBy((e) => _serializeDataTree(e)).toList()];
+      return ['list', data.map((e) => _serializeDataTree(e)).toList()];
     } else {
       return ['simple', _serialize(data)];
     }
@@ -944,7 +943,7 @@ class Proxy {
   static _forward(Proxy receiver, String member, String kind, List args) {
     if (_depth == 0) throw 'Cannot access a JavaScript proxy out of scope.';
     var result = receiver._port.callSync([receiver._id, member, kind,
-                                          args.mappedBy(_serialize).toList()]);
+                                          args.map(_serialize).toList()]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
@@ -962,8 +961,7 @@ class FunctionProxy extends Proxy /*implements Function*/ {
   noSuchMethod(InvocationMirror invocation) {
     if (invocation.isMethod && invocation.memberName == 'call') {
       var message = [_id, '', 'apply',
-                     invocation.positionalArguments.mappedBy(_serialize).
-                     toList()];
+                     invocation.positionalArguments.map(_serialize).toList()];
       var result = _port.callSync(message);
       if (result[0] == 'throws') throw result[1];
       return _deserialize(result[1]);
@@ -1050,7 +1048,7 @@ class _ProxiedObjectTable {
           try {
             final receiver = _registry[msg[0]];
             final method = msg[1];
-            final args = msg[2].mappedBy(_deserialize).toList();
+            final args = msg[2].map(_deserialize).toList();
             if (method == '#call') {
               var result;
               switch (args.length) {
