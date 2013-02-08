@@ -41,6 +41,10 @@ function invokeCallback() {
   return callback();
 }
 
+function invokeCallbackWith11params() {
+  return callbackWith11params(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+}
+
 function returnElement(element) {
   return element;
 }

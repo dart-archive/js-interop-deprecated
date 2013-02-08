@@ -198,6 +198,15 @@ main() {
     });
   });
 
+  test('invoke Dart callback from JS with 11 parameters', () {
+    js.scoped(() {
+      js.context.callbackWith11params = new js.Callback.once((p1, p2, p3, p4,
+          p5, p6, p7, p8, p9, p10, p11) => '$p1$p2$p3$p4$p5$p6$p7$p8$p9$p10'
+          '$p11');
+      expect(js.context.invokeCallbackWith11params(), equals('1234567891011'));
+    });
+  });
+
   test('global scope', () {
     var x;
     var y;
