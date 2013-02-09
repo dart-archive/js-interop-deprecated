@@ -785,21 +785,10 @@ class Callback {
    * Creates a single-fire [Callback] that invokes [f].  The callback is
    * automatically disposed after the first invocation.
    */
-  // TODO(vsm): Is there a better way to handle varargs?
   Callback.once(Function f) {
-    _callback = ([arg1, arg2, arg3, arg4]) {
+    _callback = (args) {
       try {
-        if (!?arg1) {
-          return f();
-        } else if (!?arg2) {
-          return f(arg1);
-        } else if (!?arg3) {
-          return f(arg1, arg2);
-        } else if (!?arg4) {
-          return f(arg1, arg2, arg3);
-        } else {
-          return f(arg1, arg2, arg3, arg4);
-        }
+        return Function.apply(f, args);
       } finally {
         _dispose();
       }
@@ -812,7 +801,7 @@ class Callback {
    * explicitly disposed to avoid memory leaks.
    */
   Callback.many(Function f) {
-    _callback = f;
+    _callback = (args) => Function.apply(f, args);
     _initialize(true);
   }
 }
@@ -1050,26 +1039,7 @@ class _ProxiedObjectTable {
             final method = msg[1];
             final args = msg[2].map(_deserialize).toList();
             if (method == '#call') {
-              var result;
-              switch (args.length) {
-                case 0:
-                  result = _serialize(receiver());
-                  break;
-                case 1:
-                  result = _serialize(receiver(args[0]));
-                  break;
-                case 2:
-                  result = _serialize(receiver(args[0], args[1]));
-                  break;
-                case 3:
-                  result = _serialize(receiver(args[0], args[1], args[2]));
-                  break;
-                case 4:
-                  result =
-                  _serialize(receiver(args[0], args[1], args[2], args[3]));
-                  break;
-                default: throw 'Unsupported number of arguments.';
-              }
+              var result = _serialize(receiver(args));
               return ['return', result];
             } else {
               // TODO(vsm): Support a mechanism to register a handler here.
