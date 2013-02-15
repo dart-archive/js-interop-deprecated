@@ -10,6 +10,14 @@ import 'package:js/js.dart' as js;
 import 'package:unittest/unittest.dart';
 import 'package:unittest/html_config.dart';
 
+class Color implements js.Serializable {
+  static final RED = new Color._("red");
+  static final BLUE = new Color._("blue");
+  String _value;
+  Color._(this._value);
+  toJs() => this._value;
+}
+
 main() {
   useHtmlConfiguration();
 
@@ -399,6 +407,14 @@ main() {
       final date = new DateTime.now();
       js.context.dartDate = date;
       expect(js.context.dartDate, equals(date));
+    });
+  });
+
+  test('usage of Serializable', () {
+    js.scoped(() {
+      final red = Color.RED;
+      js.context.color = red;
+      expect(js.context.color, equals(red._value));
     });
   });
 }
