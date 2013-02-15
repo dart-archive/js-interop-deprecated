@@ -67,7 +67,7 @@ main() {
     js.scoped(() {
       // Note: JS Date counts months from 0 while Dart counts from 1.
       final a = new js.Proxy(js.context.Date, 1995, 11, 17);
-      final b = new Date(1995, 12, 17);
+      final b = new DateTime(1995, 12, 17);
       expect(a.getTime(), equals(b.millisecondsSinceEpoch));
     });
   });
@@ -77,7 +77,7 @@ main() {
       // Note: JS Date counts months from 0 while Dart counts from 1.
       final a = new js.Proxy.withArgList(js.context.Date,
                                          [1995, 11, 17, 3, 24, 0]);
-      final b = new Date(1995, 12, 17, 3, 24, 0);
+      final b = new DateTime(1995, 12, 17, 3, 24, 0);
       expect(a.getTime(), equals(b.millisecondsSinceEpoch));
     });
   });
@@ -408,7 +408,7 @@ main() {
 
   test('retrieve same dart Object', () {
     js.scoped(() {
-      final date = new Date.now();
+      final date = new DateTime.now();
       js.context.dartDate = date;
       expect(js.context.dartDate, equals(date));
     });
