@@ -481,10 +481,10 @@ final _JS_BOOTSTRAP = r"""
       // Dummy Type with correct constructor.
       var Type = function(){};
       Type.prototype = constructor.prototype;
-  
+
       // Create a new instance
       var instance = new Type();
-  
+
       // Call the original constructor.
       ret = constructor.apply(instance, args);
       ret = Object(ret) === ret ? ret : instance;
@@ -936,7 +936,11 @@ class Proxy {
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(receiver, member, args, {});
+      case 'none':
+        if (kind == 'get') {
+          return null;
+        }
+        throw new NoSuchMethodError(receiver, member, args, {});
       default: throw 'Invalid return value';
     }
   }
