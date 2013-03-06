@@ -10,12 +10,12 @@ import 'package:js/js.dart' as js;
 import 'package:unittest/unittest.dart';
 import 'package:unittest/html_config.dart';
 
-class Color implements js.Serializable {
+class Color implements js.Serializable<String> {
   static final RED = new Color._("red");
   static final BLUE = new Color._("blue");
   String _value;
   Color._(this._value);
-  toJs() => this._value;
+  String toJs() => this._value;
 }
 
 main() {
