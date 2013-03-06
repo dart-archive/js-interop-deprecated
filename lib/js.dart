@@ -997,7 +997,7 @@ class _ProxiedObjectTable {
 
   // Enters a new scope.
   enterScope() {
-    _scopeIndices.addLast(_handleStack.length);
+    _scopeIndices.add(_handleStack.length);
   }
 
   // Invalidates non-global IDs created in the current scope and
@@ -1067,7 +1067,7 @@ class _ProxiedObjectTable {
     // TODO(vsm): Cache x and reuse id.
     final id = '$_name-${_nextId++}';
     _registry[id] = x;
-    _handleStack.addLast(id);
+    _handleStack.add(id);
     return id;
   }
 
