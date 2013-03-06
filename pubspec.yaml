@@ -5,4 +5,5 @@ description: Access JavaScript from Dart.
 version: 0.0.17
 dependencies:
   browser: any
+  meta: any
   unittest: any
