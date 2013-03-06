@@ -26,11 +26,11 @@ String linkify(String text) {
   List words = text.split(' ');
   var buffer = new StringBuffer();
   for (var word in words) {
-    if (!buffer.isEmpty) buffer.add(' ');
+    if (!buffer.isEmpty) buffer.write(' ');
     if (word.startsWith('http://') || word.startsWith('https://')) {
-      buffer.add('<a href="$word">$word</a>');
+      buffer.write('<a href="$word">$word</a>');
     } else {
-      buffer.add(word);
+      buffer.write(word);
     }
   }
   return buffer.toString();
