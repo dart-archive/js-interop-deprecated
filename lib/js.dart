@@ -711,21 +711,21 @@ void $experimentalExitScope(int depth) {
   _exitScope(depth);
 }
 
-/*
- * Retains the given [proxy] beyond the current scope.
+/**
+ * Retains the given [object] beyond the current scope.
  * Instead, it will need to be explicitly released.
- * The given [proxy] is returned for convenience.
+ * The given [object] is returned for convenience.
  */
-Proxy retain(Proxy proxy) {
-  _jsGlobalize.callSync(_serialize(proxy));
-  return proxy;
+dynamic retain(Serializable<Proxy> object) {
+  _jsGlobalize.callSync(_serialize(object.toJs()));
+  return object;
 }
 
 /**
- * Releases a retained [proxy].
+ * Releases a retained [object].
  */
-void release(Proxy proxy) {
-  _jsInvalidate.callSync(_serialize(proxy));
+void release(Serializable<Proxy> object) {
+  _jsInvalidate.callSync(_serialize(object.toJs()));
 }
 
 /**
@@ -809,7 +809,7 @@ class Callback {
 /**
  * Proxies to JavaScript objects.
  */
-class Proxy {
+class Proxy implements Serializable<Proxy> {
   SendPortSync _port;
   final _id;
 
@@ -875,6 +875,8 @@ class Proxy {
   }
 
   Proxy._internal(this._port, this._id);
+
+  Proxy toJs() => this;
 
   // TODO(vsm): This is not required in Dartium, but
   // it is in Dart2JS.
