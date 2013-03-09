@@ -716,6 +716,10 @@ void $experimentalExitScope(int depth) {
  * Instead, it will need to be explicitly released.
  * The given [object] is returned for convenience.
  */
+// TODO(aa) : change dynamic to Serializable<Proxy> if http://dartbug.com/9023
+// is fixed.
+// TODO(aa) : change to "<T extends Serializable<Proxy>> T retain(T object)"
+// once generic methods have landed.
 dynamic retain(Serializable<Proxy> object) {
   _jsGlobalize.callSync(_serialize(object.toJs()));
   return object;
