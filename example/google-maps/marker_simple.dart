@@ -15,16 +15,16 @@ import 'package:js/js.dart' as js;
 
 final maps = js.retain(js.context.google.maps);
 
-class LatLng implements js.Serializable {
+class LatLng implements js.Serializable<js.Proxy> {
   final js.Proxy _proxy;
 
   LatLng(num lat, num lng) : this._(new js.Proxy(maps.LatLng, lat, lng));
   LatLng._(this._proxy);
 
-  toJs() => _proxy;
+  js.Proxy toJs() => _proxy;
 }
 
-class MapTypeId implements js.Serializable {
+class MapTypeId implements js.Serializable<String> {
   static final HYBRID = new MapTypeId._(maps.MapTypeId.HYBRID);
   static final ROADMAP = new MapTypeId._(maps.MapTypeId.ROADMAP);
   static final SATELLITE = new MapTypeId._(maps.MapTypeId.SATELLITE);
@@ -34,10 +34,10 @@ class MapTypeId implements js.Serializable {
 
   MapTypeId._(this._value);
 
-  toJs() => this._value;
+  String toJs() => this._value;
 }
 
-class MapOptions implements js.Serializable {
+class MapOptions implements js.Serializable<js.Proxy> {
   final js.Proxy _proxy;
 
   MapOptions() : this._(new js.Proxy(js.context.Object));
@@ -47,10 +47,10 @@ class MapOptions implements js.Serializable {
   set mapTypeId(MapTypeId mapTypeId) => _proxy.mapTypeId = mapTypeId;
   set zoom(num zoom) => _proxy.zoom = zoom;
 
-  toJs() => _proxy;
+  js.Proxy toJs() => _proxy;
 }
 
-class GMap implements js.Serializable {
+class GMap implements js.Serializable<js.Proxy> {
   final js.Proxy _proxy;
 
   GMap(Element container, MapOptions options) : this._(new js.Proxy(maps.Map, container, options));
@@ -60,10 +60,10 @@ class GMap implements js.Serializable {
   set mapTypeId(MapTypeId mapTypeId) => _proxy.mapTypeId = mapTypeId;
   set zoom(num zoom) => _proxy.zoom = zoom;
 
-  toJs() => _proxy;
+  js.Proxy toJs() => _proxy;
 }
 
-class MarkerOptions implements js.Serializable {
+class MarkerOptions implements js.Serializable<js.Proxy> {
   final js.Proxy _proxy;
 
   MarkerOptions() : this._(new js.Proxy(js.context.Object));
@@ -73,16 +73,16 @@ class MarkerOptions implements js.Serializable {
   set map(GMap map) => _proxy.map = map;
   set title(String title) => _proxy.title = title;
 
-  toJs() => _proxy;
+  js.Proxy toJs() => _proxy;
 }
 
-class Marker implements js.Serializable {
+class Marker implements js.Serializable<js.Proxy> {
   final js.Proxy _proxy;
 
   Marker(MarkerOptions options) : this._(new js.Proxy(maps.Marker, options));
   Marker._(this._proxy);
 
-  toJs() => _proxy;
+  js.Proxy toJs() => _proxy;
 }
 
 void main() {
