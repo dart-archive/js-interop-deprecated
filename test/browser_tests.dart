@@ -10,12 +10,23 @@ import 'package:js/js.dart' as js;
 import 'package:unittest/unittest.dart';
 import 'package:unittest/html_config.dart';
 
-class Color implements js.Serializable {
+class Foo implements js.Serializable<js.Proxy> {
+  final js.Proxy _proxy;
+
+  Foo(num a) : this._proxy = new js.Proxy(js.context.Foo, a);
+
+  js.Proxy toJs() => _proxy;
+
+  num get a => _proxy.a;
+  num bar() => _proxy.bar();
+}
+
+class Color implements js.Serializable<String> {
   static final RED = new Color._("red");
   static final BLUE = new Color._("blue");
   String _value;
   Color._(this._value);
-  toJs() => this._value;
+  String toJs() => this._value;
 }
 
 main() {
@@ -221,6 +232,24 @@ main() {
     js.scoped(() {
       x = new js.Proxy(js.context.Foo, 42);
       y = new js.Proxy(js.context.Foo, 38);
+      expect(x.a, equals(42));
+      expect(y.a, equals(38));
+      js.retain(y);
+    });
+    js.scoped(() {
+      expect(() => x.a, throws);
+      expect(y.a, equals(38));
+      js.release(y);
+      expect(() => y.a, throws);
+    });
+  });
+
+  test('global scope for Serializable', () {
+    Foo x;
+    Foo y;
+    js.scoped(() {
+      x = new Foo(42);
+      y = new Foo(38);
       expect(x.a, equals(42));
       expect(y.a, equals(38));
       js.retain(y);

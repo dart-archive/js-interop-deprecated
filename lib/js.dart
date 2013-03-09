@@ -711,21 +711,25 @@ void $experimentalExitScope(int depth) {
   _exitScope(depth);
 }
 
-/*
- * Retains the given [proxy] beyond the current scope.
+/**
+ * Retains the given [object] beyond the current scope.
  * Instead, it will need to be explicitly released.
- * The given [proxy] is returned for convenience.
+ * The given [object] is returned for convenience.
  */
-Proxy retain(Proxy proxy) {
-  _jsGlobalize.callSync(_serialize(proxy));
-  return proxy;
+// TODO(aa) : change dynamic to Serializable<Proxy> if http://dartbug.com/9023
+// is fixed.
+// TODO(aa) : change to "<T extends Serializable<Proxy>> T retain(T object)"
+// once generic methods have landed.
+dynamic retain(Serializable<Proxy> object) {
+  _jsGlobalize.callSync(_serialize(object.toJs()));
+  return object;
 }
 
 /**
- * Releases a retained [proxy].
+ * Releases a retained [object].
  */
-void release(Proxy proxy) {
-  _jsInvalidate.callSync(_serialize(proxy));
+void release(Serializable<Proxy> object) {
+  _jsInvalidate.callSync(_serialize(object.toJs()));
 }
 
 /**
@@ -809,7 +813,7 @@ class Callback {
 /**
  * Proxies to JavaScript objects.
  */
-class Proxy {
+class Proxy implements Serializable<Proxy> {
   SendPortSync _port;
   final _id;
 
@@ -875,6 +879,8 @@ class Proxy {
   }
 
   Proxy._internal(this._port, this._id);
+
+  Proxy toJs() => this;
 
   // TODO(vsm): This is not required in Dartium, but
   // it is in Dart2JS.
@@ -963,8 +969,8 @@ class FunctionProxy extends Proxy /*implements Function*/ {
 /// Marker class used to indicate it is serializable to js. If a class is a
 /// [Serializable] the "toJs" method will be called and the result will be used
 /// as value.
-abstract class Serializable {
-  dynamic toJs();
+abstract class Serializable<T> {
+  T toJs();
 }
 
 // A table to managed local Dart objects that are proxied in JavaScript.
