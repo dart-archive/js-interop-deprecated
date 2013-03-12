@@ -515,6 +515,11 @@ final _JS_BOOTSTRAP = r"""
     return deserialize(args[0]) instanceof deserialize(args[1]);
   }
 
+  // Return true if a JavaScript proxy is instance of a given type (instanceof).
+  function proxyDeleteProperty(args) {
+    delete deserialize(args[0])[deserialize(args[1])];
+  }
+
   function proxyConvert(args) {
     return serialize(deserializeDataTree(args));
   }
@@ -581,6 +586,7 @@ final _JS_BOOTSTRAP = r"""
   makeGlobalPort('dart-js-debug', debug);
   makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-instanceof', proxyInstanceof);
+  makeGlobalPort('dart-js-delete-property', proxyDeleteProperty);
   makeGlobalPort('dart-js-convert', proxyConvert);
   makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
   makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
@@ -612,6 +618,7 @@ SendPortSync _jsPortCreate = null;
 SendPortSync _jsPortDebug = null;
 SendPortSync _jsPortEquals = null;
 SendPortSync _jsPortInstanceof = null;
+SendPortSync _jsPortDeleteProperty = null;
 SendPortSync _jsPortConvert = null;
 SendPortSync _jsEnterJavaScriptScope = null;
 SendPortSync _jsExitJavaScriptScope = null;
@@ -643,6 +650,7 @@ void _initialize() {
   _jsPortDebug = window.lookupPort('dart-js-debug');
   _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
+  _jsPortDeleteProperty = window.lookupPort('dart-js-delete-property');
   _jsPortConvert = window.lookupPort('dart-js-convert');
   _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
   _jsExitJavaScriptScope = window.lookupPort('dart-js-exit-scope');
@@ -737,6 +745,13 @@ void release(Serializable<Proxy> object) {
  */
 bool instanceof(Proxy proxy, type) {
   return _jsPortInstanceof.callSync([proxy, type].map(_serialize).toList());
+}
+
+/**
+ * Delete the [name] property of [proxy].
+ */
+void deleteProperty(Proxy proxy, String name) {
+  _jsPortDeleteProperty.callSync([proxy, name].map(_serialize).toList());
 }
 
 /**
