@@ -403,6 +403,17 @@ main() {
     });
   });
 
+  test('test deleteProperty', () {
+    js.scoped(() {
+      var object = js.map({});
+      object.a = 1;
+      expect(js.context.Object.keys(object).length, 1);
+      expect(js.context.Object.keys(object)[0], "a");
+      js.deleteProperty(object, "a");
+      expect(js.context.Object.keys(object).length, 0);
+    });
+  });
+
   test('test index get and set', () {
     js.scoped(() {
       final myArray = js.context.myArray;
