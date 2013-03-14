@@ -297,6 +297,57 @@ main() {
     });
   });
 
+  group('JsObjectToMapAdapter', () {
+    test('get keys', () {
+      js.scoped(() {
+        final m = new jsw.JsObjectToMapAdapter<int>.fromProxy(
+            js.map({"a": 1, "b": 2}));
+        final keys = m.keys;
+        expect(keys.length, equals(2));
+        expect(keys, contains("a"));
+        expect(keys, contains("b"));
+      });
+    });
+    test('operator []', () {
+      js.scoped(() {
+        final m = new jsw.JsObjectToMapAdapter.fromProxy(
+            js.map({"a": 1, "b": "c"}));
+        expect(m["a"], equals(1));
+        expect(m["b"], equals("c"));
+      });
+    });
+    test('operator []=', () {
+      js.scoped(() {
+        final m = new jsw.JsObjectToMapAdapter.fromProxy(js.map({}));
+        m["a"] = 1;
+        expect(m["a"], equals(1));
+        expect(m.length, equals(1));
+        m["b"] = "c";
+        expect(m["b"], equals("c"));
+        expect(m.length, equals(2));
+      });
+    });
+    test('remove', () {
+      js.scoped(() {
+        final m = new jsw.JsObjectToMapAdapter.fromProxy(
+            js.map({"a": 1, "b": "c"}));
+        expect(m.remove("a"), equals(1));
+        expect(m["b"], equals("c"));
+        expect(m.length, equals(1));
+      });
+    });
+
+    test('bidirectionnal serialization of Proxy', () {
+      js.scoped(() {
+        final myMap = new jsw.JsObjectToMapAdapter<PersonTP>.fromProxy(
+            js.map({}), new jsw.TranslatorForProxy<PersonTP>((p) =>
+                new PersonTP.fromProxy(p)));
+        myMap["a"] = new PersonTP('John', 'Doe');
+        expect(myMap["a"].firstname, 'John');
+      });
+    });
+  });
+
   test('retain/release', () {
     PersonTP john;
     js.scoped(() {

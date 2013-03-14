@@ -14,3 +14,4 @@ part 'src/wrapping/magic_proxy.dart';
 part 'src/wrapping/util.dart';
 part 'src/wrapping/js/array_to_list_adapter.dart';
 part 'src/wrapping/js/date_to_datetime_adapter.dart';
+part 'src/wrapping/js/object_to_map_adapter.dart';
