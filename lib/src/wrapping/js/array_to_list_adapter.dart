@@ -12,8 +12,8 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
   /// Like [JsArrayToListAdapter.fromProxy] but with `null` handling for
   /// [proxy].
   static JsArrayToListAdapter cast(Proxy proxy, [Translator translator]) =>
-      mapNotNull(proxy, (proxy) =>
-          new JsArrayToListAdapter.fromProxy(proxy, translator));
+      proxy != null ? new JsArrayToListAdapter.fromProxy(proxy, translator)
+      : null;
 
   final Translator<E> _translator;
 
@@ -27,40 +27,34 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
 
   // Collection
   @override void add(E value) { $unsafe.push(_toJs(value)); }
-  @override void clear() { $unsafe.splice(0, length); }
+  @override void clear() { this.length = 0; }
   @override void remove(Object element) { removeAt(indexOf(element)); }
 
   // List
-  @override E operator [](int index) => mapNotNull($unsafe[index], _fromJs);
+  @override E operator [](int index) {
+    if (index < 0 || index >= this.length) throw new RangeError.value(index);
+    return _fromJs($unsafe[index]);
+  }
   @override void operator []=(int index, E value) {
+    if (index < 0 || index >= this.length) throw new RangeError.value(index);
     $unsafe[index] = _toJs(value);
   }
-  @override void set length(int newLength) {
-    final length = this.length;
-    if (length < newLength) {
-      final nulls = new List<E>(newLength - length);
-      addAll(nulls);
-    }
-    if (length > newLength) {
-      removeRange(newLength, length - newLength);
-    }
-  }
+  @override void set length(int length) { $unsafe.length = length; }
   @override void sort([int compare(E a, E b)]) {
     final sortedList = _asList()..sort(compare);
-    clear();
-    addAll(sortedList);
+    setRange(0, sortedList.length, sortedList);
   }
-  @override E removeAt(int index) =>
-      (mapNotNull($unsafe.splice(index, 1), (proxy) =>
-          new JsArrayToListAdapter<E>.fromProxy(proxy, _translator))
-          as JsArrayToListAdapter<E>)[0];
-  @override E removeLast() => mapNotNull($unsafe.pop(), _fromJs);
+  @override E removeAt(int index) {
+    if (index < 0 || index >= this.length) throw new RangeError.value(index);
+    return _fromJs($unsafe.splice(index, 1)[0]);
+  }
+  @override E removeLast() => _fromJs($unsafe.pop());
   @override List<E> getRange(int start, int length) =>
       _asList().getRange(start, length);
   @override void setRange(int start, int length, List<E> from,
                           [int startFrom = 0]) {
-    final args = [start, 0];
-    for(int i = startFrom; i < length; i++) {
+    final args = [start, length];
+    for(int i = startFrom; i < startFrom + length; i++) {
       args.add(_toJs(from[i]));
     }
     $unsafe["splice"].apply($unsafe, array(args));
@@ -91,7 +85,8 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
 
   // default implementation for most method
   // TODO : waiting for mixins
-  @override Iterable map(f(E element)) => IterableMixinWorkaround.map(this, f);
+  @override Iterable map(f(E element)) =>
+      IterableMixinWorkaround.mapList(this, f);
   @override Iterable<E> where(bool f(E element)) =>
       IterableMixinWorkaround.where(this, f);
   @override Iterable expand(Iterable f(E element)) =>
