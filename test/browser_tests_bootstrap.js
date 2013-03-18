@@ -4,6 +4,8 @@
 
 var x = 42;
 
+var _x = 123;
+
 var myArray = ["value1"];
 
 var foreignDoc = (function(){
@@ -13,7 +15,7 @@ var foreignDoc = (function(){
   doc.documentElement.appendChild(element);
   return doc;
 })();
-  
+
 function razzle() {
   return x;
 }
