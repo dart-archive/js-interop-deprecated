@@ -44,6 +44,14 @@ main() {
     });
   });
 
+  test('read global field with underscore', () {
+    js.scoped(() {
+      expect(js.context._x, equals(123));
+      expect(js.context['_x'], equals(123));
+      expect(() => js.context._y, throwsA(isNoSuchMethodError));
+    });
+  });
+
   test('js instantiation : new Array()', () {
     js.scoped(() {
       final a = new js.Proxy(js.context.Array);

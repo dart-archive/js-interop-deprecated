@@ -918,6 +918,13 @@ class Proxy implements Serializable<Proxy> {
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(InvocationMirror invocation) {
     String member = invocation.memberName;
+    // If trying to access a JavaScript field/variable that starts with
+    // _ (underscore), Dart treats it a library private and member name
+    // it suffixed with '@internalLibraryIdentifier' which we have to
+    // strip before sending over to the JS side.
+    if (member.indexOf('@') != -1) {
+      member = member.substring(0, member.indexOf('@'));
+    }
     String kind;
     List args = invocation.positionalArguments;
     if (args == null) args = [];
@@ -1218,7 +1225,7 @@ _serializeElement(Element e) {
     while (true) {
       if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
         final oldValue = top.attributes[_DART_TEMPORARY_ATTACHED];
-        final newValue = oldValue.concat('a');
+        final newValue = oldValue + 'a';
         top.attributes[_DART_TEMPORARY_ATTACHED] = newValue;
         break;
       }
