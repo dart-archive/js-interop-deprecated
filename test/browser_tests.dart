@@ -40,7 +40,8 @@ main() {
     js.scoped(() {
       expect(js.context.x, equals(42));
       expect(js.context['x'], equals(42));
-      expect(() => js.context.y, throwsA(isNoSuchMethodError));
+      expect(js.context.y, isNull);
+      expect(() => js.context.y(), throwsA(isNoSuchMethodError));
     });
   });
 
