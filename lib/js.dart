@@ -1225,7 +1225,7 @@ _serializeElement(Element e) {
     while (true) {
       if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
         final oldValue = top.attributes[_DART_TEMPORARY_ATTACHED];
-        final newValue = oldValue.concat('a');
+        final newValue = oldValue + 'a';
         top.attributes[_DART_TEMPORARY_ATTACHED] = newValue;
         break;
       }
