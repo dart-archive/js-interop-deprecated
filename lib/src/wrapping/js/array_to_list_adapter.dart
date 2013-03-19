@@ -44,12 +44,17 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
     final sortedList = _asList()..sort(compare);
     setRange(0, sortedList.length, sortedList);
   }
+  @override void insert(int index, E element) {
+    this.insertRange(index, 1, element);
+  }
   @override E removeAt(int index) {
     if (index < 0 || index >= this.length) throw new RangeError.value(index);
     return _fromJs($unsafe.splice(index, 1)[0]);
   }
   @override E removeLast() => _fromJs($unsafe.pop());
-  @override List<E> getRange(int start, int length) =>
+  @override List<E> sublist(int start, [int end]) =>
+      _asList().sublist(start, end);
+  @deprecated @override List<E> getRange(int start, int length) =>
       _asList().getRange(start, length);
   @override void setRange(int start, int length, List<E> from,
                           [int startFrom = 0]) {
@@ -122,12 +127,12 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
   @override E get first => IterableMixinWorkaround.first(this);
   @override E get last => IterableMixinWorkaround.last(this);
   @override E get single => IterableMixinWorkaround.single(this);
-  @override E firstMatching(bool test(E value), { E orElse() }) =>
-      IterableMixinWorkaround.firstMatching(this, test, orElse);
-  @override E lastMatching(bool test(E value), {E orElse()}) =>
-      IterableMixinWorkaround.lastMatching(this, test, orElse);
-  @override E singleMatching(bool test(E value)) =>
-      IterableMixinWorkaround.singleMatching(this, test);
+  @override E firstWhere(bool test(E value), { E orElse() }) =>
+      IterableMixinWorkaround.firstWhere(this, test, orElse);
+  @override E lastWhere(bool test(E value), {E orElse()}) =>
+      IterableMixinWorkaround.lastWhere(this, test, orElse);
+  @override E singleWhere(bool test(E value)) =>
+      IterableMixinWorkaround.singleWhere(this, test);
   @override E elementAt(int index) =>
       IterableMixinWorkaround.elementAt(this, index);
 
@@ -141,10 +146,10 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
       IterableMixinWorkaround.removeAll(this, elements);
   @override void retainAll(Iterable elements) =>
       IterableMixinWorkaround.retainAll(this, elements);
-  @override void removeMatching(bool test(E element)) =>
-      IterableMixinWorkaround.removeMatching(this, test);
-  @override void retainMatching(bool test(E element)) =>
-      IterableMixinWorkaround.retainMatching(this, test);
+  @override void removeWhere(bool test(E element)) =>
+      IterableMixinWorkaround.removeWhere(this, test);
+  @override void retainWhere(bool test(E element)) =>
+      IterableMixinWorkaround.retainWhere(this, test);
 
   // List
   @deprecated @override void addLast(E value) { add(value); }

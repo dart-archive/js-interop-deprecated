@@ -187,6 +187,18 @@ main() {
         expect(m[2], equals("c"));
       });
     });
+    test('insert', () {
+      js.scoped(() {
+        final m = new jsw.JsArrayToListAdapter<String>.fromProxy(
+            js.array(["a", "b", "c"]));
+        m.insert(1, "d");
+        expect(m.length, equals(4));
+        expect(m[0], equals("a"));
+        expect(m[1], equals("d"));
+        expect(m[2], equals("b"));
+        expect(m[3], equals("c"));
+      });
+    });
     test('removeAt', () {
       js.scoped(() {
         final m = new jsw.JsArrayToListAdapter<String>.fromProxy(
@@ -209,19 +221,18 @@ main() {
         expect(m.length, equals(0));
       });
     });
-    test('getRange', () {
+    test('sublist', () {
       js.scoped(() {
         final m = new jsw.JsArrayToListAdapter<String>.fromProxy(
             js.array(["a", "b", "c", null]));
-        final r1 = m.getRange(1, 2);
-        expect(r1.length, equals(2));
-        expect(r1[0], equals("b"));
-        expect(r1[1], equals("c"));
-        final r2 = m.getRange(1, 0);
-        expect(r2.length, equals(0));
-        final r3 = m.getRange(3, 1);
-        expect(r3.length, equals(1));
-        expect(r3[0], isNull);
+        final sl1 = m.sublist(2);
+        expect(sl1.length, equals(2));
+        expect(sl1[0], equals("c"));
+        expect(sl1[1], isNull);
+        final sl2 = m.sublist(1, 3);
+        expect(sl2.length, equals(2));
+        expect(sl2[0], equals("b"));
+        expect(sl2[1], equals("c"));
       });
     });
     test('setRange', () {
