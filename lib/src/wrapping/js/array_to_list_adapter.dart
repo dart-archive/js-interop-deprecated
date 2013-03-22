@@ -12,8 +12,15 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
   /// Like [JsArrayToListAdapter.fromProxy] but with `null` handling for
   /// [proxy].
   static JsArrayToListAdapter cast(Proxy proxy, [Translator translator]) =>
-      proxy != null ? new JsArrayToListAdapter.fromProxy(proxy, translator)
-      : null;
+      proxy == null ? null :
+          new JsArrayToListAdapter.fromProxy(proxy, translator);
+
+  /// Same as [cast] but for array containing [Serializable] elements.
+  static JsArrayToListAdapter castListOfSerializables(Proxy proxy,
+      Mapper<dynamic, Serializable> fromJs, {mapOnlyNotNull: false}) =>
+          proxy == null ? null : new JsArrayToListAdapter.fromProxy(proxy,
+              new TranslatorForSerializable(fromJs,
+                  mapOnlyNotNull: mapOnlyNotNull));
 
   final Translator<E> _translator;
 

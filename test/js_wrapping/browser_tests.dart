@@ -20,12 +20,21 @@ class PersonMP extends jsw.MagicProxy implements _Person {
 }
 
 class PersonTP extends jsw.TypedProxy {
+  static PersonTP cast(js.Proxy proxy) => proxy == null ? null :
+      new PersonTP.fromProxy(proxy);
+
   PersonTP(String firstname,  String lastname) :
       super(js.context.Person, [firstname, lastname]);
   PersonTP.fromProxy(js.Proxy proxy) : super.fromProxy(proxy);
 
   set firstname(String firstname) => $unsafe.firstname = firstname;
   String get firstname => $unsafe.firstname;
+
+  List<PersonTP> get children =>
+      jsw.JsArrayToListAdapter.castListOfSerializables($unsafe.children,
+          PersonTP.cast);
+  set father(PersonTP father) => $unsafe.father = father;
+  PersonTP get father => PersonTP.cast($unsafe.father);
 
   String sayHello() => $unsafe.sayHello();
 }
@@ -279,13 +288,27 @@ main() {
       js.scoped(() {
         js.context.myArray = js.array([]);
         final myList = new jsw.JsArrayToListAdapter<PersonTP>.fromProxy(
-            js.context.myArray, new jsw.TranslatorForProxy<PersonTP>((p) =>
-                new PersonTP.fromProxy(p)));
+            js.context.myArray, new jsw.TranslatorForSerializable<PersonTP>(
+                (p) => new PersonTP.fromProxy(p)));
 
         myList.add(new PersonTP('John', 'Doe'));
         myList.add(null);
         expect(myList[0].firstname, 'John');
         expect(myList[1], isNull);
+      });
+    });
+
+    test('family', () {
+      js.scoped(() {
+        final father = new PersonTP("John", "Doe");
+        final child1 = new PersonTP("Lewis", "Doe")
+          ..father = father;
+        final child2 = new PersonTP("Andy", "Doe")
+          ..father = father;
+        father.children.addAll([child1, child2]);
+        expect(father.children.length, 2);
+        expect(father.children.map((p) => p.firstname).join(","), "Lewis,Andy");
+        expect(child1.father.firstname, "John");
       });
     });
 
@@ -351,7 +374,7 @@ main() {
     test('bidirectionnal serialization of Proxy', () {
       js.scoped(() {
         final myMap = new jsw.JsObjectToMapAdapter<PersonTP>.fromProxy(
-            js.map({}), new jsw.TranslatorForProxy<PersonTP>((p) =>
+            js.map({}), new jsw.TranslatorForSerializable<PersonTP>((p) =>
                 new PersonTP.fromProxy(p)));
         myMap["a"] = new PersonTP('John', 'Doe');
         expect(myMap["a"].firstname, 'John');

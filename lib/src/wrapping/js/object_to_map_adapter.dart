@@ -6,8 +6,13 @@ part of js.wrapping;
 
 class JsObjectToMapAdapter<V> extends TypedProxy implements Map<String,V> {
   static JsObjectToMapAdapter cast(Proxy proxy, [Translator translator]) =>
-      proxy != null ? new JsObjectToMapAdapter.fromProxy(proxy, translator)
-      : null;
+      proxy == null ? null :
+          new JsObjectToMapAdapter.fromProxy(proxy, translator);
+  static JsObjectToMapAdapter castMapOfSerializables(Proxy proxy,
+      Mapper<dynamic, Serializable> fromJs, {mapOnlyNotNull: false}) =>
+          proxy == null ? null : new JsObjectToMapAdapter.fromProxy(proxy,
+              new TranslatorForSerializable(fromJs,
+                  mapOnlyNotNull: mapOnlyNotNull));
 
   final Translator<V> _translator;
 

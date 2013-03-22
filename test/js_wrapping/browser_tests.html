@@ -19,6 +19,8 @@
 function Person(firstname, lastname){
   this.firstname = firstname;
   this.lastname = lastname;
+  this.father = null;
+  this.children = [];
 };
 Person.prototype.sayHello = function() { return "Hello, I'm " + this.firstname + " " + this.lastname; };
 

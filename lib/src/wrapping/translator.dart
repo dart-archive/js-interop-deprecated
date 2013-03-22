@@ -11,14 +11,13 @@ class Translator<E> {
   Translator(this.fromJs, this.toJs);
 }
 
-class TranslatorForProxy<E extends Serializable<Proxy>>
+class TranslatorForSerializable<E extends Serializable>
     implements Translator<E> {
   Mapper<dynamic, E> _fromJs;
   Mapper<E, dynamic> _toJs;
 
-  TranslatorForProxy(final Mapper<Proxy, E> fromJs, {mapOnlyNotNull : true}) {
-    this._fromJs = (Proxy p) => mapOnlyNotNull ? mapNotNull(p, fromJs) :
-      fromJs(p);
+  TranslatorForSerializable(Mapper<dynamic, E> fromJs, {mapOnlyNotNull: true}) {
+    this._fromJs = (o) => mapOnlyNotNull ? mapNotNull(o, fromJs) : fromJs(o);
     this._toJs = (E s) => s != null ? s.toJs() : null;
   }
 
