@@ -7,6 +7,8 @@ description: Access JavaScript from Dart.
 homepage: https://github.com/dart-lang/js-interop
 environment:
   sdk: '>=0.4.1+0.r19425'
+dependencies:
+  meta: any
 dev_dependencies:
   unittest: any
   browser: any
