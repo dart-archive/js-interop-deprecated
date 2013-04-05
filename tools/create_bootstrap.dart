@@ -35,7 +35,7 @@ createFile(Path source, Path target) {
       final js = JS_PATTERN.firstMatch(text).group(1);
       final out = new File.fromPath(target);
       out.create()
-        .then((out) => out.open(FileMode.WRITE)
+        .then((out) => out.open(mode: FileMode.WRITE)
           .then((file) => file.writeString(HEADER)
             .then((file) => file.writeString(js)
               .then((file) => file.close()))));
