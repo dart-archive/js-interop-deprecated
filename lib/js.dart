@@ -89,6 +89,36 @@ final _JS_BOOTSTRAP = r"""
 
   var globalContext = window;
 
+  // Support for binding the receiver (this) in proxied functions.
+  function bindIfFunction(f, _this) {
+    if (typeof(f) != "function") {
+      return f;
+    } else {
+      return new BoundFunction(_this, f);
+    }
+  }
+
+  function unbind(obj) {
+    if (obj instanceof BoundFunction) {
+      return obj.object;
+    } else {
+      return obj;
+    }
+  }
+
+  function getBoundThis(obj) {
+    if (obj instanceof BoundFunction) {
+      return obj._this;
+    } else {
+      return globalContext;
+    }
+  }
+
+  function BoundFunction(_this, object) {
+    this._this = _this;
+    this.object = object;
+  }
+
   // Table for local objects and functions that are proxied.
   function ProxiedObjectTable() {
     // Name for debugging.
@@ -204,7 +234,8 @@ final _JS_BOOTSTRAP = r"""
     this.port.receive(function (message) {
       // TODO(vsm): Support a mechanism to register a handler here.
       try {
-        var receiver = table.get(message[0]);
+        var object = table.get(message[0]);
+        var receiver = unbind(object);
         var member = message[1];
         var kind = message[2];
         var args = message[3].map(deserialize);
@@ -212,7 +243,8 @@ final _JS_BOOTSTRAP = r"""
           // Getter.
           var field = member;
           if (field in receiver && args.length == 0) {
-            return [ 'return', serialize(receiver[field]) ];
+            var result = bindIfFunction(receiver[field], receiver);
+            return [ 'return', serialize(result) ];
           }
         } else if (kind == 'set') {
           // Setter.
@@ -222,15 +254,17 @@ final _JS_BOOTSTRAP = r"""
           }
         } else if (kind == 'apply') {
           // Direct function invocation.
-          // TODO(vsm): Should we capture _this_ automatically?
-          return [ 'return', serialize(receiver.apply(null, args)) ];
+          var _this = getBoundThis(object);
+          return [ 'return', serialize(receiver.apply(_this, args)) ];
         } else if (member == '[]' && args.length == 1) {
           // Index getter.
-          return [ 'return', serialize(receiver[args[0]]) ];
+          var result = bindIfFunction(receiver[args[0]], receiver);
+          return [ 'return', serialize(result) ];
         } else if (member == '[]=' && args.length == 2) {
           // Index setter.
           return [ 'return', serialize(receiver[args[0]] = args[1]) ];
         } else {
+          // Member function invocation.
           var f = receiver[member];
           if (f) {
             var result = f.apply(receiver, args);
@@ -353,6 +387,12 @@ final _JS_BOOTSTRAP = r"""
     } else if (message instanceof Element &&
         (message.ownerDocument == null || message.ownerDocument == document)) {
       return [ 'domref', serializeElement(message) ];
+    } else if (message instanceof BoundFunction &&
+               typeof(message.object) == 'function') {
+      // Local function proxy.
+      return [ 'funcref',
+               proxiedObjectTable.add(message),
+               proxiedObjectTable.sendPort ];
     } else if (typeof(message) == 'function') {
       if ('_dart_id' in message) {
         // Remote function proxy.
@@ -443,7 +483,7 @@ final _JS_BOOTSTRAP = r"""
   // serialized constructor and arguments.
   function construct(args) {
     args = args.map(deserialize);
-    var constructor = args[0];
+    var constructor = unbind(args[0]);
     args = Array.prototype.slice.call(args, 1);
 
     // Until 10 args, the 'new' operator is used. With more arguments we use a
@@ -512,12 +552,16 @@ final _JS_BOOTSTRAP = r"""
 
   // Return true if a JavaScript proxy is instance of a given type (instanceof).
   function proxyInstanceof(args) {
-    return deserialize(args[0]) instanceof deserialize(args[1]);
+    var obj = unbind(deserialize(args[0]));
+    var type = unbind(deserialize(args[1]));
+    return obj instanceof type;
   }
 
   // Return true if a JavaScript proxy is instance of a given type (instanceof).
   function proxyDeleteProperty(args) {
-    delete deserialize(args[0])[deserialize(args[1])];
+    var obj = unbind(deserialize(args[0]));
+    var member = unbind(deserialize(args[1]));
+    delete obj[member];
   }
 
   function proxyConvert(args) {
@@ -825,6 +869,19 @@ class Callback {
   }
 }
 
+// Detect unspecified arguments.
+class _Undefined {
+  const _Undefined();
+}
+const _undefined = const _Undefined();
+List _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6) {
+  // This assumes no argument
+  final args = [arg1, arg2, arg3, arg4, arg5, arg6];
+  final index = args.indexOf(_undefined);
+  if (index < 0) return args;
+  return args.sublist(0, index);
+}
+
 /**
  * Proxies to JavaScript objects.
  */
@@ -837,19 +894,14 @@ class Proxy implements Serializable<Proxy> {
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy(FunctionProxy constructor, [arg1, arg2, arg3, arg4]) {
-      var arguments;
-      if (?arg4) {
-        arguments = [arg1, arg2, arg3, arg4];
-      } else if (?arg3) {
-        arguments = [arg1, arg2, arg3];
-      } else if (?arg2) {
-        arguments = [arg1, arg2];
-      } else if (?arg1) {
-        arguments = [arg1];
-      } else {
-        arguments = [];
-      }
+  factory Proxy(FunctionProxy constructor,
+      [arg1 = _undefined,
+       arg2 = _undefined,
+       arg3 = _undefined,
+       arg4 = _undefined,
+       arg5 = _undefined,
+       arg6 = _undefined]) {
+      var arguments = _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6);
       return new Proxy.withArgList(constructor, arguments);
   }
 
@@ -897,20 +949,16 @@ class Proxy implements Serializable<Proxy> {
 
   Proxy toJs() => this;
 
-  // TODO(vsm): This is not required in Dartium, but
-  // it is in Dart2JS.
   // Resolve whether this is needed.
   operator[](arg) => _forward(this, '[]', 'method', [ arg ]);
 
-  // TODO(vsm): This is not required in Dartium, but
-  // it is in Dart2JS.
   // Resolve whether this is needed.
   operator[]=(key, value) => _forward(this, '[]=', 'method', [ key, value ]);
 
   // Test if this is equivalent to another Proxy.  This essentially
   // maps to JavaScript's == operator.
   // TODO(vsm): Can we avoid forwarding to JS?
-  operator==(Proxy other) => identical(this, other)
+  operator==(other) => identical(this, other)
       ? true
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
@@ -950,6 +998,10 @@ class Proxy implements Serializable<Proxy> {
     } else if (member.startsWith('set:')) {
       kind = 'set';
       member = member.substring(4);
+    } else if (member == 'call') {
+      // A 'call' (probably) means that this proxy was invoked directly
+      // as if it was a function.  Map this to JS function application.
+      kind = 'apply';
     } else {
       kind = 'method';
     }
@@ -975,16 +1027,16 @@ class Proxy implements Serializable<Proxy> {
 class FunctionProxy extends Proxy /*implements Function*/ {
   FunctionProxy._internal(port, id) : super._internal(port, id);
 
-  noSuchMethod(InvocationMirror invocation) {
-    if (invocation.isMethod && invocation.memberName == 'call') {
-      var message = [_id, '', 'apply',
-                     invocation.positionalArguments.map(_serialize).toList()];
-      var result = _port.callSync(message);
-      if (result[0] == 'throws') throw result[1];
-      return _deserialize(result[1]);
-    } else {
-      return super.noSuchMethod(invocation);
-    }
+  // TODO(vsm): This allows calls with a limited number of arguments
+  // in the context of dartbug.com/9283.  Eliminate pending the resolution
+  // of this bug.  Note, if this Proxy is called with more arguments then
+  // allowed below, it will trigger the 'call' path in Proxy.noSuchMethod
+  // - and still work correctly in unminified mode.
+  call([arg1 = _undefined, arg2 = _undefined,
+        arg3 = _undefined, arg4 = _undefined,
+        arg5 = _undefined, arg6 = _undefined]) {
+    var arguments = _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6);
+    return Proxy._forward(this, '', 'apply', arguments);
   }
 }
 

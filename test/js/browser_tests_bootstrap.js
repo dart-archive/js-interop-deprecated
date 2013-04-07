@@ -20,13 +20,27 @@ function razzle() {
   return x;
 }
 
+function varArgs() {
+  var args = arguments;
+  var sum = 0;
+  for (var i = 0; i < args.length; ++i) {
+    sum += args[i];
+  }
+  return sum;
+}
+
 function Foo(a) {
   this.a = a;
 }
 
+Foo.b = 38;
+
 Foo.prototype.bar = function() {
   return this.a;
 }
+
+var container = new Object();
+container.Foo = Foo;
 
 function isArray(a) {
   return a instanceof Array;

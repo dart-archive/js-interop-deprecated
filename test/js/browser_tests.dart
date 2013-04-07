@@ -52,6 +52,15 @@ main() {
     });
   });
 
+  test('js instantiation : new Foo()', () {
+    js.scoped(() {
+      final Foo2 = js.context.container.Foo;
+      final foo = new js.Proxy(Foo2, 42);
+      expect(foo.a, 42);
+      expect(Foo2.b, 38);
+    });
+  });
+
   test('js instantiation : new Array()', () {
     js.scoped(() {
       final a = new js.Proxy(js.context.Array);
@@ -128,6 +137,28 @@ main() {
     });
   });
 
+  test('js instantiation via map notation : new Array()', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context['Array']);
+      expect(a, isNotNull);
+      expect(a['length'], equals(0));
+
+      a['push']("value 1");
+      expect(a['length'], equals(1));
+      expect(a[0], equals("value 1"));
+
+      a['pop']();
+      expect(a['length'], equals(0));
+    });
+  });
+
+  test('js instantiation via map notation : new Date()', () {
+    js.scoped(() {
+      final a = new js.Proxy(js.context['Date']);
+      expect(a['getTime'](), isNotNull);
+    });
+  });
+
   test('js instantiation : typed array', () {
     js.scoped(() {
       final codeUnits = "test".codeUnits;
@@ -158,6 +189,20 @@ main() {
     js.scoped(() {
       expect(js.context.razzle(), equals(42));
       expect(() => js.context.dazzle(), throwsA(isNoSuchMethodError));
+    });
+  });
+
+  test('call JS function via map notation', () {
+    js.scoped(() {
+      expect(js.context['razzle'](), equals(42));
+      expect(() => js.context['dazzle'](), throwsA(isNoSuchMethodError));
+    });
+  });
+
+  test('call JS function with varargs', () {
+    js.scoped(() {
+      expect(js.context.varArgs(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+        equals(55));
     });
   });
 
