@@ -9,16 +9,14 @@ import 'dart:json';
 import 'package:js/js.dart' as js;
 
 void main() {
-  js.scoped(() {
-    // Create a JavaScript function called display that forwards to the Dart
-    // function.
-    js.context.display = new js.Callback.once(display);
+  // Create a JavaScript function called display that forwards to the Dart
+  // function.
+  js.context.display = new js.Callback.once(display);
 
-    // Inject a JSONP request to Twitter invoking the JavaScript display
-    // function.
-    document.body.nodes.add(new ScriptElement()..src =
-        "https://search.twitter.com/search.json?q=dartlang&rpp=20&callback=display");
-  });
+  // Inject a JSONP request to Twitter invoking the JavaScript display
+  // function.
+  document.body.nodes.add(new ScriptElement()..src =
+    "https://search.twitter.com/search.json?q=dartlang&rpp=20&callback=display");
 }
 
 // Convert URLs in the text to links.

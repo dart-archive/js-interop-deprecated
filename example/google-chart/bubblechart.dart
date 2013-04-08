@@ -42,8 +42,6 @@ main() {
     chart.draw(data, options);
   }
 
-  js.scoped(() {
-    js.context.google.setOnLoadCallback(
-        new js.Callback.once(drawVisualization));
-  });
+  js.context.google.setOnLoadCallback(
+      new js.Callback.once(drawVisualization));
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -18,26 +18,23 @@
  *     import 'package:js/js.dart' as js;
  *
  *     void main() {
- *       js.scoped(() {
- *         js.context.alert('Hello from Dart via JavaScript');
- *       });
+ *       js.context.alert('Hello from Dart via JavaScript');
  *     }
  *
  * js.context.alert creates a proxy to the top-level alert function in
  * JavaScript.  It is invoked from Dart as a regular function that forwards to
- * the underlying JavaScript one.  The proxies allocated within the scope are
- * released once the scope is exited.
+ * the underlying JavaScript one.  By default, proxies are released when
+ * the currently executing event completes, e.g., when main is completes
+ * in this example.
  *
  * The library also enables JavaScript proxies to Dart objects and functions.
  * For example, the following Dart code:
  *
- *     scoped(() {
- *       js.context.dartCallback = new Callback.once((x) => print(x*2));
- *     });
+ *     js.context.dartCallback = new Callback.once((x) => print(x*2));
  *
  * defines a top-level JavaScript function 'dartCallback' that is a proxy to
  * the corresponding Dart function.  The [Callback.once] constructor allows the
- * proxy to the Dart function to be retained beyond the end of the scope;
+ * proxy to the Dart function to be retained across multiple events;
  * instead it is released after the first invocation.  (This is a common
  * pattern for asychronous callbacks.)
  *
@@ -68,12 +65,14 @@
  *
  * See [samples](http://dart-lang.github.com/js-interop/example) for more
  * examples of usage.
+ *
+ * See this [article](http://www.dartlang.org/articles/js-dart-interop) for
+ * more detailed discussion.
  */
-
-// TODO(vsm): Add a link to an article.
 
 library js;
 
+import 'dart:async';
 import 'dart:html';
 import 'dart:isolate';
 
@@ -537,12 +536,11 @@ final _JS_BOOTSTRAP = r"""
     return serialize(globalContext);
   }
 
-  // Remote handler for debugging.
-  function debug() {
+  // Remote handler to track number of live / allocated proxies.
+  function proxyCount() {
     var live = proxiedObjectTable.count();
     var total = proxiedObjectTable.total();
-    return 'JS objects Live : ' + live +
-           ' (out of ' + total + ' ever allocated).';
+    return [live, total];
   }
 
   // Return true if two JavaScript proxies are equal (==).
@@ -627,7 +625,7 @@ final _JS_BOOTSTRAP = r"""
 
   makeGlobalPort('dart-js-context', context);
   makeGlobalPort('dart-js-create', construct);
-  makeGlobalPort('dart-js-debug', debug);
+  makeGlobalPort('dart-js-proxy-count', proxyCount);
   makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-instanceof', proxyInstanceof);
   makeGlobalPort('dart-js-delete-property', proxyDeleteProperty);
@@ -659,7 +657,7 @@ void _inject(code) {
 // Global ports to manage communication from Dart to JS.
 SendPortSync _jsPortSync = null;
 SendPortSync _jsPortCreate = null;
-SendPortSync _jsPortDebug = null;
+SendPortSync _jsPortProxyCount = null;
 SendPortSync _jsPortEquals = null;
 SendPortSync _jsPortInstanceof = null;
 SendPortSync _jsPortDeleteProperty = null;
@@ -691,7 +689,7 @@ void _initialize() {
   }
 
   _jsPortCreate = window.lookupPort('dart-js-create');
-  _jsPortDebug = window.lookupPort('dart-js-debug');
+  _jsPortProxyCount = window.lookupPort('dart-js-proxy-count');
   _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
   _jsPortDeleteProperty = window.lookupPort('dart-js-delete-property');
@@ -713,12 +711,21 @@ void _initialize() {
  * Returns a proxy to the global JavaScript context for this page.
  */
 Proxy get context {
-  if (_depth == 0) throw 'Cannot get JavaScript context out of scope.';
+  _enterScopeIfNeeded();
   return _deserialize(_jsPortSync.callSync([]));
 }
 
 // Depth of current scope.  Return 0 if no scope.
 get _depth => _proxiedObjectTable._scopeIndices.length;
+
+// If we are not already in a scope, enter one and register a
+// corresponding exit once we return to the event loop.
+void _enterScopeIfNeeded() {
+  if (_depth == 0) {
+    var depth = _enterScope();
+    runAsync(() => _exitScope(depth));
+  }
+}
 
 /**
  * Executes the closure [f] within a scope.  Any proxies created within this
@@ -733,14 +740,14 @@ scoped(f) {
   }
 }
 
-_enterScope() {
+int _enterScope() {
   _initialize();
   _proxiedObjectTable.enterScope();
   _jsEnterJavaScriptScope.callSync([]);
   return _proxiedObjectTable._scopeIndices.length;
 }
 
-_exitScope(depth) {
+void _exitScope(int depth) {
   assert(_proxiedObjectTable._scopeIndices.length == depth);
   _jsExitJavaScriptScope.callSync([]);
   _proxiedObjectTable.exitScope();
@@ -911,7 +918,7 @@ class Proxy implements Serializable<Proxy> {
    * primitive values, DOM elements, or Proxies.
    */
   factory Proxy.withArgList(FunctionProxy constructor, List arguments) {
-    if (_depth == 0) throw 'Cannot create Proxy out of scope.';
+    _enterScopeIfNeeded();
     final serialized = ([constructor]..addAll(arguments)).map(_serialize).
         toList();
     final result = _jsPortCreate.callSync(serialized);
@@ -923,7 +930,7 @@ class Proxy implements Serializable<Proxy> {
    * Dart map or list.
    */
   factory Proxy._json(data) {
-    if (_depth == 0) throw 'Cannot create Proxy out of scope.';
+    _enterScopeIfNeeded();
     return _convert(data);
   }
 
@@ -1010,7 +1017,7 @@ class Proxy implements Serializable<Proxy> {
 
   // Forward member accesses to the backing JavaScript object.
   static _forward(Proxy receiver, String member, String kind, List args) {
-    if (_depth == 0) throw 'Cannot access a JavaScript proxy out of scope.';
+    _enterScopeIfNeeded();
     var result = receiver._port.callSync([receiver._id, member, kind,
                                           args.map(_serialize).toList()]);
     switch (result[0]) {
@@ -1328,14 +1335,51 @@ Element _deserializeElement(var id) {
   return e;
 }
 
+// Fetch the number of proxies to JavaScript objects.
+// This returns a 2 element list.  The first is the number of currently
+// live proxies.  The second is the total number of proxies ever
+// allocated.
+List _proxyCountJavaScript() {
+  return _jsPortProxyCount.callSync([]);
+}
+
 /**
- * Prints the number of live handles in Dart and JavaScript.  This is for
- * debugging / profiling purposes.
+ * Returns the number of allocated proxy objects matching the given
+ * conditions.  By default, the total number of live proxy objects are
+ * return.  In a well behaved program, this should stay below a small
+ * bound.
+ *
+ * Set [all] to true to return the total number of proxies ever allocated.
+ * Set [dartOnly] to only count proxies to Dart objects (live or all).
+ * Set [jsOnly] to only count proxies to JavaScript objects (live or all).
  */
-void proxyDebug([String message = '']) {
+int proxyCount({all: false, dartOnly: false, jsOnly: false}) {
+  final js = !dartOnly;
+  final dart = !jsOnly;
+  final jsCounts = js ? _proxyCountJavaScript() : null;
+  var sum = 0;
+  if (!all) {
+    if (js)
+      sum += jsCounts[0];
+    if (dart)
+      sum += _proxiedObjectTable.count;
+  } else {
+    if (js)
+      sum += jsCounts[1];
+    if (dart)
+      sum += _proxiedObjectTable.total;
+  }
+  return sum;
+}
+
+// Prints the number of live handles in Dart and JavaScript.  This is for
+// debugging / profiling purposes.
+void _proxyDebug([String message = '']) {
   print('Proxy status $message:');
-  var live = _proxiedObjectTable.count;
-  var total = _proxiedObjectTable.total;
-  print('  Dart objects Live : $live (out of $total ever allocated).');
-  print('  ${_jsPortDebug.callSync([])}');
+  var dartLive = proxyCount(dartOnly: true);
+  var dartTotal = proxyCount(dartOnly: true, all: true);
+  var jsLive = proxyCount(jsOnly: true);
+  var jsTotal = proxyCount(jsOnly: true, all: true);
+  print('  Dart objects Live : $dartLive (out of $dartTotal ever allocated).');
+  print('  JS objects Live : $jsLive (out of $jsTotal ever allocated).');
 }

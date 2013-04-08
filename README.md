@@ -42,9 +42,7 @@ library in the editor:
         import 'package:js/js.dart' as js;
         
         void main() {
-          js.scoped(() {
-            js.context.alert('Hello from Dart via JS');
-          });
+          js.context.alert('Hello from Dart via JS');
         }
 
 Running Tests
