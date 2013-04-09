@@ -107,9 +107,12 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
       IterableMixinWorkaround.contains(this, element);
   @override void forEach(void f(E element)) =>
       IterableMixinWorkaround.forEach(this, f);
-  @override dynamic reduce(var initialValue,
+  @deprecated @override dynamic reduce(var initialValue,
                            dynamic combine(var previousValue, E element)) =>
       IterableMixinWorkaround.reduce(this, initialValue, combine);
+  @override dynamic fold(var initialValue,
+                         dynamic combine(var previousValue, E element)) =>
+      IterableMixinWorkaround.fold(this, initialValue, combine);
   @override bool every(bool f(E element)) =>
       IterableMixinWorkaround.every(this, f);
   @override String join([String separator]) =>
@@ -118,9 +121,9 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
   @override List<E> toList({ bool growable: true }) =>
       new List<E>.from(this, growable: growable);
   @override Set<E> toSet() => new Set<E>.from(this);
-  @override E min([int compare(E a, E b)]) =>
+  @deprecated @override E min([int compare(E a, E b)]) =>
       IterableMixinWorkaround.min(this, compare);
-  @override E max([int compare(E a, E b)]) =>
+  @deprecated @override E max([int compare(E a, E b)]) =>
       IterableMixinWorkaround.max(this, compare);
   @override bool get isEmpty => IterableMixinWorkaround.isEmpty(this);
   @override Iterable<E> take(int n) =>
@@ -159,7 +162,6 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
       IterableMixinWorkaround.retainWhere(this, test);
 
   // List
-  @deprecated @override void addLast(E value) { add(value); }
   @override Iterable<E> get reversed =>
       IterableMixinWorkaround.reversedList(this);
   @override int indexOf(E element, [int start = 0]) =>
