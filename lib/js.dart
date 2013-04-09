@@ -449,7 +449,9 @@ final _JS_BOOTSTRAP = r"""
       var f = function () {
         var depth = enterScope();
         try {
-          var args = Array.prototype.slice.apply(arguments).map(serialize);
+          var args = Array.prototype.slice.apply(arguments);
+          args.splice(0, 0, this);
+          args = args.map(serialize);
           var result = port.callSync([id, '#call', args]);
           if (result[0] == 'throws') throw deserialize(result[1]);
           return deserialize(result[1]);
@@ -825,7 +827,7 @@ Proxy array(List list) => new Proxy._json(list);
  *   invocation, or
  * - multi-fire, in which case it must be explicitly disposed.
  */
-class Callback {
+class Callback implements Constructor {
   var _manualDispose;
   var _id;
   var _callback;
@@ -855,10 +857,10 @@ class Callback {
    * Creates a single-fire [Callback] that invokes [f].  The callback is
    * automatically disposed after the first invocation.
    */
-  Callback.once(Function f) {
-    _callback = (args) {
+  Callback.once(Function f, {bool withThis: false}) {
+    _callback = (List args) {
       try {
-        return Function.apply(f, args);
+        return Function.apply(f, withThis ? args : args.skip(1).toList());
       } finally {
         _dispose();
       }
@@ -870,8 +872,8 @@ class Callback {
    * Creates a multi-fire [Callback] that invokes [f].  The callback must be
    * explicitly disposed to avoid memory leaks.
    */
-  Callback.many(Function f) {
-    _callback = (args) => Function.apply(f, args);
+  Callback.many(Function f, {bool withThis: false}) {
+    _callback = (List args) => Function.apply(f, withThis ? args : args.skip(1).toList());
     _initialize(true);
   }
 }
@@ -890,6 +892,11 @@ List _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6) {
 }
 
 /**
+ * Indicates that the class is usable to instantiate a new [Proxy].
+ */
+abstract class Constructor {}
+
+/**
  * Proxies to JavaScript objects.
  */
 class Proxy implements Serializable<Proxy> {
@@ -901,7 +908,7 @@ class Proxy implements Serializable<Proxy> {
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy(FunctionProxy constructor,
+  factory Proxy(Constructor constructor,
       [arg1 = _undefined,
        arg2 = _undefined,
        arg3 = _undefined,
@@ -917,7 +924,7 @@ class Proxy implements Serializable<Proxy> {
    * JavaScript [constructor].  The [arguments] list should contain either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy.withArgList(FunctionProxy constructor, List arguments) {
+  factory Proxy.withArgList(Constructor constructor, List arguments) {
     _enterScopeIfNeeded();
     final serialized = ([constructor]..addAll(arguments)).map(_serialize).
         toList();
@@ -1031,7 +1038,7 @@ class Proxy implements Serializable<Proxy> {
 
 // TODO(aa) make FunctionProxy implements Function once it is allowed
 /// A [Proxy] subtype to JavaScript functions.
-class FunctionProxy extends Proxy /*implements Function*/ {
+class FunctionProxy extends Proxy implements Constructor /*,Function*/ {
   FunctionProxy._internal(port, id) : super._internal(port, id);
 
   // TODO(vsm): This allows calls with a limited number of arguments
