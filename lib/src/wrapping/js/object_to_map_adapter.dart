@@ -29,7 +29,7 @@ class JsObjectToMapAdapter<V> extends TypedProxy implements Map<String,V> {
     return value;
   }
   @override Iterable<String> get keys =>
-      JsArrayToListAdapter.cast(context.Object.keys($unsafe));
+      JsArrayToListAdapter.cast(context['Object']['keys']($unsafe));
 
   // use Maps to implement functions
   @override bool containsValue(V value) => Maps.containsValue(this, value);

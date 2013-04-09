@@ -15,7 +15,7 @@ abstract class _Person {
 }
 class PersonMP extends jsw.MagicProxy implements _Person {
   PersonMP(String firstname,  String lastname) :
-      super(js.context.Person, [firstname, lastname]);
+      super(js.context['Person'], [firstname, lastname]);
   PersonMP.fromProxy(js.Proxy proxy) : super.fromProxy(proxy);
 }
 
@@ -24,19 +24,19 @@ class PersonTP extends jsw.TypedProxy {
       new PersonTP.fromProxy(proxy);
 
   PersonTP(String firstname,  String lastname) :
-      super(js.context.Person, [firstname, lastname]);
+      super(js.context['Person'], [firstname, lastname]);
   PersonTP.fromProxy(js.Proxy proxy) : super.fromProxy(proxy);
 
-  set firstname(String firstname) => $unsafe.firstname = firstname;
-  String get firstname => $unsafe.firstname;
+  set firstname(String firstname) => $unsafe['firstname'] = firstname;
+  String get firstname => $unsafe['firstname'];
 
   List<PersonTP> get children =>
-      jsw.JsArrayToListAdapter.castListOfSerializables($unsafe.children,
+      jsw.JsArrayToListAdapter.castListOfSerializables($unsafe['children'],
           PersonTP.cast);
-  set father(PersonTP father) => $unsafe.father = father;
-  PersonTP get father => PersonTP.cast($unsafe.father);
+  set father(PersonTP father) => $unsafe['father'] = father;
+  PersonTP get father => PersonTP.cast($unsafe['father']);
 
-  String sayHello() => $unsafe.sayHello();
+  String sayHello() => $unsafe['sayHello']();
 }
 
 class Color implements js.Serializable<String> {
@@ -83,7 +83,7 @@ main() {
     final jsDate = new jsw.JsDateToDateTimeAdapter(date);
     expect(jsDate.millisecondsSinceEpoch,
         equals(date.millisecondsSinceEpoch));
-    jsDate.$unsafe.setFullYear(2000);
+    jsDate.$unsafe['setFullYear'](2000);
     expect(jsDate.year, equals(2000));
   });
 
@@ -245,9 +245,9 @@ main() {
     });
 
     test('bidirectionnal serialization of Proxy', () {
-      js.context.myArray = js.array([]);
+      js.context['myArray'] = js.array([]);
       final myList = new jsw.JsArrayToListAdapter<PersonTP>.fromProxy(
-          js.context.myArray, new jsw.TranslatorForSerializable<PersonTP>(
+          js.context['myArray'], new jsw.TranslatorForSerializable<PersonTP>(
               (p) => new PersonTP.fromProxy(p)));
 
       myList.add(new PersonTP('John', 'Doe'));
@@ -269,9 +269,9 @@ main() {
     });
 
     test('bidirectionnal serialization of Serializable', () {
-      js.context.myArray = js.array([]);
+      js.context['myArray'] = js.array([]);
       final myList = new jsw.JsArrayToListAdapter<Color>.fromProxy(
-          js.context.myArray,
+          js.context['myArray'],
           new jsw.Translator<Color>(
               (e) => e != null ? new Color._(e) : null,
               (e) => e != null ? e.toJs() : null

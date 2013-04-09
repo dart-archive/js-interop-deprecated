@@ -15,7 +15,7 @@ class JsDateToDateTimeAdapter extends TypedProxy implements DateTime {
 
   /// Create a new adapter from a dart [dateTime].
   JsDateToDateTimeAdapter(DateTime dateTime) :
-      super(context.Date, [dateTime.millisecondsSinceEpoch]);
+      super(context['Date'], [dateTime.millisecondsSinceEpoch]);
 
   /// Create a new adapter from a [proxy] of a Js Date object.
   JsDateToDateTimeAdapter.fromProxy(Proxy proxy) : super.fromProxy(proxy);
@@ -60,5 +60,5 @@ class JsDateToDateTimeAdapter extends TypedProxy implements DateTime {
       _asDateTime().difference(other);
 
   DateTime _asDateTime() =>
-      new DateTime.fromMillisecondsSinceEpoch($unsafe.getTime());
+      new DateTime.fromMillisecondsSinceEpoch($unsafe['getTime']());
 }
