@@ -229,6 +229,19 @@ main() {
     expect(() => js.context.invokeCallback(), throws);
   });
 
+  test('invoke Dart callback from JS with this', () {
+    js.scoped(() {
+      final constructor = new js.Callback.once(($this, arg1) {
+        $this.a = 42;
+        $this.b = js.array(["a", arg1]);
+      }, withThis: true);
+      var o = new js.Proxy(constructor, "b");
+      expect(o.a, equals(42));
+      expect(o.b[0], equals("a"));
+      expect(o.b[1], equals("b"));
+    });
+  });
+
   test('invoke Dart callback from JS with 11 parameters', () {
     js.context.callbackWith11params = new js.Callback.once((p1, p2, p3, p4,
         p5, p6, p7, p8, p9, p10, p11) => '$p1$p2$p3$p4$p5$p6$p7$p8$p9$p10'
