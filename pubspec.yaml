@@ -9,6 +9,6 @@ environment:
   sdk: '>=0.4.1+0.r19425'
 dependencies:
   meta: any
+  browser: any
 dev_dependencies:
   unittest: any
-  browser: any
