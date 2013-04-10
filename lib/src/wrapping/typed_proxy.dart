@@ -9,7 +9,7 @@ class TypedProxy implements Serializable {
   final Proxy $unsafe;
 
   TypedProxy([FunctionProxy function, List args]) : this.fromProxy(
-      new Proxy.withArgList(function != null ? function : context.Object,
+      new Proxy.withArgList(function != null ? function : context['Object'],
           args != null ? args : []));
   TypedProxy.fromProxy(this.$unsafe);
 

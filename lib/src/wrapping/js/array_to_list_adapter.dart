@@ -30,10 +30,10 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
 
   // Iterable
   @override Iterator<E> get iterator => new _JsIterator<E>(this);
-  @override int get length => $unsafe.length;
+  @override int get length => $unsafe['length'];
 
   // Collection
-  @override void add(E value) { $unsafe.push(_toJs(value)); }
+  @override void add(E value) { $unsafe['push'](_toJs(value)); }
   @override void clear() { this.length = 0; }
   @override void remove(Object element) { removeAt(indexOf(element)); }
 
@@ -46,7 +46,7 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
     if (index < 0 || index >= this.length) throw new RangeError.value(index);
     $unsafe[index] = _toJs(value);
   }
-  @override void set length(int length) { $unsafe.length = length; }
+  @override void set length(int length) { $unsafe['length'] = length; }
   @override void sort([int compare(E a, E b)]) {
     final sortedList = _asList()..sort(compare);
     setRange(0, sortedList.length, sortedList);
@@ -56,9 +56,9 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
   }
   @override E removeAt(int index) {
     if (index < 0 || index >= this.length) throw new RangeError.value(index);
-    return _fromJs($unsafe.splice(index, 1)[0]);
+    return _fromJs($unsafe['splice'](index, 1)[0]);
   }
-  @override E removeLast() => _fromJs($unsafe.pop());
+  @override E removeLast() => _fromJs($unsafe['pop']());
   @override List<E> sublist(int start, [int end]) =>
       _asList().sublist(start, end);
   @deprecated @override List<E> getRange(int start, int length) =>
@@ -69,17 +69,17 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
     for(int i = startFrom; i < startFrom + length; i++) {
       args.add(_toJs(from[i]));
     }
-    $unsafe["splice"].apply($unsafe, array(args));
+    $unsafe['splice']['apply']($unsafe, array(args));
   }
   @override void removeRange(int start, int length) {
-    $unsafe.splice(start, length);
+    $unsafe['splice'](start, length);
   }
   @override void insertRange(int start, int length, [E initialValue]) {
     final args = [start, 0];
     for (int i = 0; i < length; i++) {
       args.add(_toJs(initialValue));
     }
-    $unsafe["splice"].apply($unsafe, array(args));
+    $unsafe['splice']['apply']($unsafe, array(args));
   }
 
   // private methods
@@ -107,9 +107,12 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
       IterableMixinWorkaround.contains(this, element);
   @override void forEach(void f(E element)) =>
       IterableMixinWorkaround.forEach(this, f);
-  @override dynamic reduce(var initialValue,
+  @deprecated @override dynamic reduce(var initialValue,
                            dynamic combine(var previousValue, E element)) =>
       IterableMixinWorkaround.reduce(this, initialValue, combine);
+  @override dynamic fold(var initialValue,
+                         dynamic combine(var previousValue, E element)) =>
+      IterableMixinWorkaround.fold(this, initialValue, combine);
   @override bool every(bool f(E element)) =>
       IterableMixinWorkaround.every(this, f);
   @override String join([String separator]) =>
@@ -118,9 +121,9 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
   @override List<E> toList({ bool growable: true }) =>
       new List<E>.from(this, growable: growable);
   @override Set<E> toSet() => new Set<E>.from(this);
-  @override E min([int compare(E a, E b)]) =>
+  @deprecated @override E min([int compare(E a, E b)]) =>
       IterableMixinWorkaround.min(this, compare);
-  @override E max([int compare(E a, E b)]) =>
+  @deprecated @override E max([int compare(E a, E b)]) =>
       IterableMixinWorkaround.max(this, compare);
   @override bool get isEmpty => IterableMixinWorkaround.isEmpty(this);
   @override Iterable<E> take(int n) =>
@@ -159,7 +162,6 @@ class JsArrayToListAdapter<E> extends TypedProxy implements List<E> {
       IterableMixinWorkaround.retainWhere(this, test);
 
   // List
-  @deprecated @override void addLast(E value) { add(value); }
   @override Iterable<E> get reversed =>
       IterableMixinWorkaround.reversedList(this);
   @override int indexOf(E element, [int start = 0]) =>
