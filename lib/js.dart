@@ -977,6 +977,14 @@ class Proxy implements Serializable<Proxy> {
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
+  String toString() {
+    try {
+      return _forward(this, 'toString', 'method', []);
+    } catch(e) {
+      return super.toString();
+    }
+  }
+
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(InvocationMirror invocation) {
     String member = invocation.memberName;
