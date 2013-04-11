@@ -6,9 +6,10 @@ part of js.wrapping;
 
 /// base class to simplify declaration of [TypedProxy].
 class MagicProxy extends TypedProxy {
-  MagicProxy([FunctionProxy function, List args]) : this.fromProxy(
-      new Proxy.withArgList(function != null ? function : context.Object,
-          args != null ? args : []));
+  MagicProxy([Serializable<FunctionProxy> function, List args]) :
+    this.fromProxy(new Proxy.withArgList(
+        function != null ? function : context.Object,
+        args != null ? args : []));
   MagicProxy.fromProxy(Proxy proxy) : super.fromProxy(proxy);
 
   // TODO(aa): add @warnOnUndefinedMethod once supported http://dartbug.com/6111
