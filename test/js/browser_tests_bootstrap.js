@@ -20,6 +20,10 @@ function razzle() {
   return x;
 }
 
+function getTypeOf(o) {
+  return typeof(o);
+}
+
 function varArgs() {
   var args = arguments;
   var sum = 0;

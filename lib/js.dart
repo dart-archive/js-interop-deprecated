@@ -443,7 +443,7 @@ final _JS_BOOTSTRAP = r"""
     // TODO(vsm): Add a more robust check for a local SendPortSync.
     if ("receivePort" in port) {
       // Local function.
-      return proxiedObjectTable.get(id);
+      return unbind(proxiedObjectTable.get(id));
     } else {
       // Remote function.  Forward to its port.
       var f = function () {
@@ -1203,6 +1203,9 @@ _serialize(var message) {
     return [ 'domref', _serializeElement(message) ];
   } else if (message is Callback) {
     return message._serialized;
+  } else if (message is FunctionProxy) {
+    // Remote object proxy.
+    return [ 'funcref', message._id, message._port ];
   } else if (message is Proxy) {
     // Remote object proxy.
     return [ 'objref', message._id, message._port ];
