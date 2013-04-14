@@ -38,6 +38,9 @@ Foo.b = 38;
 Foo.prototype.bar = function() {
   return this.a;
 }
+Foo.prototype.toString = function() {
+  return "I'm a Foo a=" + this.a;
+}
 
 var container = new Object();
 container.Foo = Foo;
