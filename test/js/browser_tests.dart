@@ -182,6 +182,13 @@ main() {
     expect(() => foo.baz(), throwsA(isNoSuchMethodError));
   });
 
+  test('call toString()', () {
+    var foo = new js.Proxy(js.context.Foo, 42);
+    expect(foo.toString(), equals("I'm a Foo a=42"));
+    var container = js.context.container;
+    expect(container.toString(), equals("[object Object]"));
+  });
+
   test('allocate simple JS array', () {
     final list = [1, 2, 3, 4, 5, 6, 7, 8];
     var array = js.array(list);

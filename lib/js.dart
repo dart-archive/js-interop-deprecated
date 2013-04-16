@@ -974,8 +974,16 @@ class Proxy implements Serializable<Proxy> {
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
+  String toString() {
+    try {
+      return _forward(this, 'toString', 'method', []);
+    } catch(e) {
+      return super.toString();
+    }
+  }
+
   // Forward member accesses to the backing JavaScript object.
-  noSuchMethod(InvocationMirror invocation) {
+  noSuchMethod(Invocation invocation) {
     String member = invocation.memberName;
     // If trying to access a JavaScript field/variable that starts with
     // _ (underscore), Dart treats it a library private and member name
@@ -1102,7 +1110,9 @@ class _ProxiedObjectTable {
         _deletedCount++;
       }
     }
-    _handleStack.removeRange(start, _handleStack.length - start);
+    if (start != _handleStack.length) {
+      _handleStack.removeRange(start, _handleStack.length - start);
+    }
   }
 
   // Converts an ID to a global.
@@ -1137,7 +1147,8 @@ class _ProxiedObjectTable {
             final method = msg[1];
             final args = msg[2].map(_deserialize).toList();
             if (method == '#call') {
-              var result = _serialize(receiver(args));
+              final func = receiver as Function;
+              var result = _serialize(func(args));
               return ['return', result];
             } else {
               // TODO(vsm): Support a mechanism to register a handler here.
