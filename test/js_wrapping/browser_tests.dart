@@ -265,22 +265,10 @@ main() {
       js.scoped(() {
         final m = new jsw.JsArrayToListAdapter<String>.fromProxy(
             js.array(["a", "b", "c", null]));
-        m.removeRange(1, 2);
+        m.removeRange(1, 3);
         expect(m.length, equals(2));
         expect(m[0], equals("a"));
         expect(m[1], isNull);
-      });
-    });
-    test('insertRange', () {
-      js.scoped(() {
-        final m = new jsw.JsArrayToListAdapter<String>.fromProxy(
-            js.array(["a", null]));
-        m.insertRange(1, 2, "b");
-        expect(m.length, equals(4));
-        expect(m[0], equals("a"));
-        expect(m[1], equals("b"));
-        expect(m[2], equals("b"));
-        expect(m[3], isNull);
       });
     });
 

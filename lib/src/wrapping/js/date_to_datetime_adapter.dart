@@ -25,14 +25,6 @@ class JsDateToDateTimeAdapter extends TypedProxy implements DateTime {
 
   // from Date
   @override bool operator ==(DateTime other) => _asDateTime() == other;
-  @deprecated @override bool operator <(DateTime other) =>
-      _asDateTime() < other;
-  @deprecated @override bool operator <=(DateTime other) =>
-      _asDateTime() <= other;
-  @deprecated @override bool operator >(DateTime other) =>
-      _asDateTime() > other;
-  @deprecated @override bool operator >=(DateTime other) =>
-      _asDateTime() >= other;
   @override bool isBefore(DateTime other) => _asDateTime().isBefore(other);
   @override bool isAfter(DateTime other) => _asDateTime().isAfter(other);
   @override bool isAtSameMomentAs(DateTime other) =>
