@@ -72,4 +72,5 @@ void calcRoute(e) {
       document.query('#directions_panel').innerHtml = "<b>Err, try flying.</b>";
     }
   }));
+  print('Live ${js.proxyCount()} proxies out of ${js.proxyCount(all: true)} ever allocated.');
 }

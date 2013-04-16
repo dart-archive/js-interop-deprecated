@@ -37,16 +37,17 @@ String linkify(String text) {
 // Display the JSON data on the web page.
 // Note callbacks are automatically executed within a scope.
 void display(var data) {
+  // The data and results objects are proxies to JavaScript object.
   var results = data.results;
-  // The data and results objects are proxies to JavaScript object,
-  // so we cannot iterate directly on them.
-  for (var i = 0; i < results.length; ++i) {
+  int length = results.length;
+
+  for (int i = 0; i < results.length; ++i) {
     var result = results[i];
-    var user = result.from_user_name;
-    var time = result.created_at;
-    var text = linkify(result.text);
-    var div = new DivElement();
-    div.innerHtml = '<div>From: $user</div><div>$text</div><p>';
+    String user = result.from_user_name;
+    String text = linkify(result.text);
+
+    var div = new DivElement()
+      ..innerHtml = '<div>From: $user</div><div>$text</div><p>';
     document.body.nodes.add(div);
   }
 }

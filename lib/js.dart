@@ -827,12 +827,10 @@ Proxy array(List list) => new Proxy._json(list);
  *   invocation, or
  * - multi-fire, in which case it must be explicitly disposed.
  */
-class Callback implements Constructor {
+class Callback implements Serializable<FunctionProxy> {
   var _manualDispose;
   var _id;
   var _callback;
-
-  get _serialized => [ 'funcref', _id, _proxiedObjectTable.sendPort ];
 
   _initialize(manualDispose) {
     _manualDispose = manualDispose;
@@ -843,6 +841,9 @@ class Callback implements Constructor {
   _dispose() {
     var c = _proxiedObjectTable.invalidate(_id);
   }
+
+  FunctionProxy toJs() =>
+      new FunctionProxy._internal(_proxiedObjectTable.sendPort, _id);
 
   /**
    * Disposes this [Callback] so that it may be collected.
@@ -892,11 +893,6 @@ List _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6) {
 }
 
 /**
- * Indicates that the class is usable to instantiate a new [Proxy].
- */
-abstract class Constructor {}
-
-/**
  * Proxies to JavaScript objects.
  */
 class Proxy implements Serializable<Proxy> {
@@ -908,7 +904,7 @@ class Proxy implements Serializable<Proxy> {
    * JavaScript [constructor].  The arguments should be either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy(Constructor constructor,
+  factory Proxy(Serializable<FunctionProxy> constructor,
       [arg1 = _undefined,
        arg2 = _undefined,
        arg3 = _undefined,
@@ -924,7 +920,8 @@ class Proxy implements Serializable<Proxy> {
    * JavaScript [constructor].  The [arguments] list should contain either
    * primitive values, DOM elements, or Proxies.
    */
-  factory Proxy.withArgList(Constructor constructor, List arguments) {
+  factory Proxy.withArgList(Serializable<FunctionProxy> constructor,
+      List arguments) {
     _enterScopeIfNeeded();
     final serialized = ([constructor]..addAll(arguments)).map(_serialize).
         toList();
@@ -977,8 +974,16 @@ class Proxy implements Serializable<Proxy> {
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
+  String toString() {
+    try {
+      return _forward(this, 'toString', 'method', []);
+    } catch(e) {
+      return super.toString();
+    }
+  }
+
   // Forward member accesses to the backing JavaScript object.
-  noSuchMethod(InvocationMirror invocation) {
+  noSuchMethod(Invocation invocation) {
     String member = invocation.memberName;
     // If trying to access a JavaScript field/variable that starts with
     // _ (underscore), Dart treats it a library private and member name
@@ -1038,8 +1043,8 @@ class Proxy implements Serializable<Proxy> {
 
 // TODO(aa) make FunctionProxy implements Function once it is allowed
 /// A [Proxy] subtype to JavaScript functions.
-class FunctionProxy extends Proxy implements Constructor /*,Function*/ {
-  FunctionProxy._internal(port, id) : super._internal(port, id);
+class FunctionProxy extends Proxy implements Serializable<FunctionProxy> /*,Function*/ {
+  FunctionProxy._internal(SendPortSync port, id) : super._internal(port, id);
 
   // TODO(vsm): This allows calls with a limited number of arguments
   // in the context of dartbug.com/9283.  Eliminate pending the resolution
@@ -1105,7 +1110,9 @@ class _ProxiedObjectTable {
         _deletedCount++;
       }
     }
-    _handleStack.removeRange(start, _handleStack.length - start);
+    if (start != _handleStack.length) {
+      _handleStack.removeRange(start, _handleStack.length - start);
+    }
   }
 
   // Converts an ID to a global.
@@ -1140,7 +1147,8 @@ class _ProxiedObjectTable {
             final method = msg[1];
             final args = msg[2].map(_deserialize).toList();
             if (method == '#call') {
-              var result = _serialize(receiver(args));
+              final func = receiver as Function;
+              var result = _serialize(func(args));
               return ['return', result];
             } else {
               // TODO(vsm): Support a mechanism to register a handler here.
@@ -1201,8 +1209,8 @@ _serialize(var message) {
   } else if (message is Element &&
       (message.document == null || message.document == document)) {
     return [ 'domref', _serializeElement(message) ];
-  } else if (message is Callback) {
-    return message._serialized;
+  } else if (message is FunctionProxy) {
+    return [ 'funcref', message._id, message._port ];
   } else if (message is Proxy) {
     // Remote object proxy.
     return [ 'objref', message._id, message._port ];
