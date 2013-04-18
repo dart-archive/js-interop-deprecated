@@ -75,6 +75,7 @@ library js;
 import 'dart:async';
 import 'dart:html';
 import 'dart:isolate';
+import 'dart:mirrors';
 
 // JavaScript bootstrapping code.
 // TODO(vsm): Migrate this to use a builtin resource mechanism once we have
@@ -984,7 +985,8 @@ class Proxy implements Serializable<Proxy> {
 
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(Invocation invocation) {
-    String member = invocation.memberName;
+    Symbol symbol = invocation.memberName;
+    String member = MirrorSystem.getName(symbol);
     // If trying to access a JavaScript field/variable that starts with
     // _ (underscore), Dart treats it a library private and member name
     // it suffixed with '@internalLibraryIdentifier' which we have to
