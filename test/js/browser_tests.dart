@@ -236,6 +236,10 @@ main() {
     expect(() => js.context.invokeCallback(), throws);
   });
 
+  test('callback as parameter', () {
+    expect(js.context.getTypeOf(js.context.razzle), equals("function"));
+  });
+
   test('invoke Dart callback from JS with this', () {
     js.scoped(() {
       final constructor = new js.Callback.once(($this, arg1) {
