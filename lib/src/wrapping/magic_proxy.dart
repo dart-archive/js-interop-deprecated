@@ -13,6 +13,6 @@ class MagicProxy extends TypedProxy {
   MagicProxy.fromProxy(Proxy proxy) : super.fromProxy(proxy);
 
   // TODO(aa): add @warnOnUndefinedMethod once supported http://dartbug.com/6111
-  @override noSuchMethod(InvocationMirror invocation) =>
+  @override noSuchMethod(Invocation invocation) =>
       $unsafe.noSuchMethod(invocation);
 }
