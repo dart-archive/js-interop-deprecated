@@ -985,8 +985,10 @@ class Proxy implements Serializable<Proxy> {
 
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(Invocation invocation) {
-    Symbol symbol = invocation.memberName;
-    String member = MirrorSystem.getName(symbol);
+    // TODO(vsm): Fold this away (symbol will be type Symbol) on the
+    // next integration release.
+    var symbol = invocation.memberName;
+    String member = symbol is String ? symbol : MirrorSystem.getName(symbol);
     // If trying to access a JavaScript field/variable that starts with
     // _ (underscore), Dart treats it a library private and member name
     // it suffixed with '@internalLibraryIdentifier' which we have to
