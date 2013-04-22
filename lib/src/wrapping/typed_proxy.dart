@@ -5,7 +5,7 @@
 part of js.wrapping;
 
 /// base class to wrap a [Proxy] in a strong typed object.
-class TypedProxy implements Serializable {
+class TypedProxy implements Serializable<Proxy> {
   final Proxy $unsafe;
 
   TypedProxy([Serializable<FunctionProxy> function, List args])
