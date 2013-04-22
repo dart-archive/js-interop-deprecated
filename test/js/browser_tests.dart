@@ -199,6 +199,18 @@ main() {
     }
   });
 
+  test('allocate JS array with iterable', () {
+    js.scoped(() {
+      final set = new Set.from([1, 2, 3, 4, 5, 6, 7, 8]);
+      var array = js.array(set);
+      expect(js.context.isArray(array), isTrue);
+      expect(array.length, equals(set.length));
+      for (var i = 0; i < array.length ; i++) {
+        expect(set.contains(array[i]), isTrue);
+      }
+    });
+  });
+
   test('allocate simple JS map', () {
     var map = {'a': 1, 'b': 2, 'c': 3};
     var jsMap = js.map(map);
