@@ -951,7 +951,7 @@ class Proxy implements Serializable<Proxy> {
       }
       return ['map', entries];
     } else if (data is Iterable) {
-      return ['list', data.map((e) => _serializeDataTree(e)).toList()];
+      return ['list', data.map(_serializeDataTree).toList()];
     } else {
       return ['simple', _serialize(data)];
     }
