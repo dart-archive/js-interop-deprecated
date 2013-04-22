@@ -797,15 +797,16 @@ void release(Serializable<Proxy> object) {
 /**
  * Check if [proxy] is instance of [type].
  */
-bool instanceof(Proxy proxy, type) {
-  return _jsPortInstanceof.callSync([proxy, type].map(_serialize).toList());
-}
+bool instanceof(Serializable<Proxy> proxy, Serializable<FunctionProxy> type) =>
+    _jsPortInstanceof.callSync([proxy.toJs(), type.toJs()].map(_serialize)
+        .toList());
+
 
 /**
  * Delete the [name] property of [proxy].
  */
-void deleteProperty(Proxy proxy, String name) {
-  _jsPortDeleteProperty.callSync([proxy, name].map(_serialize).toList());
+void deleteProperty(Serializable<Proxy> proxy, String name) {
+  _jsPortDeleteProperty.callSync([proxy.toJs(), name].map(_serialize).toList());
 }
 
 /**
@@ -875,7 +876,8 @@ class Callback implements Serializable<FunctionProxy> {
    * explicitly disposed to avoid memory leaks.
    */
   Callback.many(Function f, {bool withThis: false}) {
-    _callback = (List args) => Function.apply(f, withThis ? args : args.skip(1).toList());
+    _callback = (List args) =>
+        Function.apply(f, withThis ? args : args.skip(1).toList());
     _initialize(true);
   }
 }
@@ -1047,7 +1049,8 @@ class Proxy implements Serializable<Proxy> {
 
 // TODO(aa) make FunctionProxy implements Function once it is allowed
 /// A [Proxy] subtype to JavaScript functions.
-class FunctionProxy extends Proxy implements Serializable<FunctionProxy> /*,Function*/ {
+class FunctionProxy extends Proxy
+    implements Serializable<FunctionProxy> /*,Function*/ {
   FunctionProxy._internal(SendPortSync port, id) : super._internal(port, id);
 
   // TODO(vsm): This allows calls with a limited number of arguments
@@ -1359,9 +1362,7 @@ Element _deserializeElement(var id) {
 // This returns a 2 element list.  The first is the number of currently
 // live proxies.  The second is the total number of proxies ever
 // allocated.
-List _proxyCountJavaScript() {
-  return _jsPortProxyCount.callSync([]);
-}
+List _proxyCountJavaScript() => _jsPortProxyCount.callSync([]);
 
 /**
  * Returns the number of allocated proxy objects matching the given
