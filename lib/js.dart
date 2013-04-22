@@ -814,9 +814,9 @@ void deleteProperty(Proxy proxy, String name) {
 Proxy map(Map data) => new Proxy._json(data);
 
 /**
- * Converts a Dart [list] to a JavaScript array and return a [Proxy] to it.
+ * Converts a Dart [Iterable] to a JavaScript array and return a [Proxy] to it.
  */
-Proxy array(List list) => new Proxy._json(list);
+Proxy array(Iterable data) => new Proxy._json(data);
 
 /**
  * Converts a local Dart function to a callback that can be passed to
@@ -950,7 +950,7 @@ class Proxy implements Serializable<Proxy> {
         entries.add([key, _serializeDataTree(data[key])]);
       }
       return ['map', entries];
-    } else if (data is List) {
+    } else if (data is Iterable) {
       return ['list', data.map((e) => _serializeDataTree(e)).toList()];
     } else {
       return ['simple', _serialize(data)];
