@@ -1167,9 +1167,7 @@ class _ProxiedObjectTable {
 
   // Adds a new object to the table and return a new ID for it.
   String add(x) {
-    if (_scopeIndices.length == 0) {
-      throw "Must be inside scope to allocate.";
-    }
+    _enterScopeIfNeeded();
     // TODO(vsm): Cache x and reuse id.
     final id = '$_name-${_nextId++}';
     _registry[id] = x;

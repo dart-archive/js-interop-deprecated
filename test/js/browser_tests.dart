@@ -272,6 +272,20 @@ main() {
     expect(js.context.invokeCallbackWith11params(), equals('1234567891011'));
   });
 
+  test('create a Dart callback outside a scope', () {
+    // Note, the test framework does not guarantee that each test runs as a
+    // separate event.  This test creates a new asynchronous event and
+    // ensures that a callback can be created without a scope (i.e., that the
+    // scope is created on demand).
+    final subtest = () {
+      var callback = new js.Callback.once(() => 42);
+      js.context.callback = callback;
+      expect(js.context.invokeCallback(), equals(42));
+    };
+
+    runAsync(expectAsync0(subtest));
+  });
+
   test('global scope', () {
     var x;
     var y;
