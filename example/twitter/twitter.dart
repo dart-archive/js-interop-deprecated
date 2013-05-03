@@ -41,7 +41,7 @@ void display(var data) {
   var results = data.results;
   int length = results.length;
 
-  for (int i = 0; i < results.length; ++i) {
+  for (int i = 0; i < length; ++i) {
     var result = results[i];
     String user = result.from_user_name;
     String text = linkify(result.text);
