@@ -12,6 +12,9 @@ class MagicProxy extends TypedProxy {
             args != null ? args : []));
   MagicProxy.fromProxy(Proxy proxy) : super.fromProxy(proxy);
 
+  operator[](arg) => $unsafe[arg];
+  operator[]=(key, value) => $unsafe[key] = value;
+
   // TODO(aa): add @warnOnUndefinedMethod once supported http://dartbug.com/6111
   @override noSuchMethod(Invocation invocation) =>
       $unsafe.noSuchMethod(invocation);
