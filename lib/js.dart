@@ -512,10 +512,10 @@ final _JS_BOOTSTRAP = r"""
                             args[5], args[6]);
     } else if (args.length === 8) {
       ret = new constructor(args[0], args[1], args[2], args[3], args[4],
-                            args[5], args[6]);
+                            args[5], args[6], args[7]);
     } else if (args.length === 9) {
       ret = new constructor(args[0], args[1], args[2], args[3], args[4],
-                            args[5], args[6]);
+                            args[5], args[6], args[7], args[8]);
     } else if (args.length === 10) {
       ret = new constructor(args[0], args[1], args[2], args[3], args[4],
                             args[5], args[6], args[7], args[8], args[9]);
