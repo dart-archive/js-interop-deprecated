@@ -318,6 +318,22 @@ main() {
     });
   });
 
+  test('retain and release in the same scope', () {
+    var x;
+    js.scoped(() {
+      x = new js.Proxy(js.context.Foo, 42);
+      expect(x.a, equals(42));
+      js.retain(x);
+      expect(x.a, equals(42));
+      js.release(x);
+      // expect(x.a, equals(42));
+      expect(() => x.a, throws);
+    });
+    js.scoped(() {
+      expect(() => x.a, throws);
+    });
+  });
+
   test('pass unattached Dom Element', () {
     final div = new DivElement();
     div.classes.add('a');
