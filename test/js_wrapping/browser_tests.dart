@@ -330,6 +330,14 @@ main() {
         expect(keys, contains("b"));
       });
     });
+    test('containsKey', () {
+      js.scoped(() {
+        final m = new jsw.JsObjectToMapAdapter.fromProxy(
+            js.map({"a": 1, "b": "c"}));
+        expect(m.containsKey("a"), equals(true));
+        expect(m.containsKey("d"), equals(false));
+      });
+    });
     test('operator []', () {
       js.scoped(() {
         final m = new jsw.JsObjectToMapAdapter.fromProxy(

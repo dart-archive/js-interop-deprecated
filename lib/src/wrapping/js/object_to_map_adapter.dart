@@ -29,11 +29,12 @@ class JsObjectToMapAdapter<V> extends TypedProxy implements Map<String,V> {
     return value;
   }
   @override Iterable<String> get keys =>
-      JsArrayToListAdapter.cast(context.Object.keys($unsafe));
+      JsArrayToListAdapter.cast(context['Object'].keys($unsafe));
 
   // use Maps to implement functions
   @override bool containsValue(V value) => Maps.containsValue(this, value);
-  @override bool containsKey(String key) => Maps.containsKey(this, key);
+  @override bool containsKey(String key) =>
+      context['Object'].keys($unsafe).indexOf(key) != -1;
   @override V putIfAbsent(String key, V ifAbsent()) =>
       Maps.putIfAbsent(this, key, ifAbsent);
   @override void clear() => Maps.clear(this);
