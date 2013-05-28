@@ -558,7 +558,14 @@ final _JS_BOOTSTRAP = r"""
     return obj instanceof type;
   }
 
-  // Return true if a JavaScript proxy is instance of a given type (instanceof).
+  // Return true if a JavaScript proxy has a given property.
+  function proxyHasProperty(args) {
+    var obj = unbind(deserialize(args[0]));
+    var member = unbind(deserialize(args[1]));
+    return member in obj;
+  }
+
+  // Delete a given property of object.
   function proxyDeleteProperty(args) {
     var obj = unbind(deserialize(args[0]));
     var member = unbind(deserialize(args[1]));
@@ -631,6 +638,7 @@ final _JS_BOOTSTRAP = r"""
   makeGlobalPort('dart-js-proxy-count', proxyCount);
   makeGlobalPort('dart-js-equals', proxyEquals);
   makeGlobalPort('dart-js-instanceof', proxyInstanceof);
+  makeGlobalPort('dart-js-has-property', proxyHasProperty);
   makeGlobalPort('dart-js-delete-property', proxyDeleteProperty);
   makeGlobalPort('dart-js-convert', proxyConvert);
   makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
@@ -663,6 +671,7 @@ SendPortSync _jsPortCreate = null;
 SendPortSync _jsPortProxyCount = null;
 SendPortSync _jsPortEquals = null;
 SendPortSync _jsPortInstanceof = null;
+SendPortSync _jsPortHasProperty = null;
 SendPortSync _jsPortDeleteProperty = null;
 SendPortSync _jsPortConvert = null;
 SendPortSync _jsEnterJavaScriptScope = null;
@@ -695,6 +704,7 @@ void _initialize() {
   _jsPortProxyCount = window.lookupPort('dart-js-proxy-count');
   _jsPortEquals = window.lookupPort('dart-js-equals');
   _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
+  _jsPortHasProperty = window.lookupPort('dart-js-has-property');
   _jsPortDeleteProperty = window.lookupPort('dart-js-delete-property');
   _jsPortConvert = window.lookupPort('dart-js-convert');
   _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
@@ -801,6 +811,11 @@ bool instanceof(Serializable<Proxy> proxy, Serializable<FunctionProxy> type) =>
     _jsPortInstanceof.callSync([proxy.toJs(), type.toJs()].map(_serialize)
         .toList());
 
+/**
+ * Check if [proxy] has a [name] property.
+ */
+bool hasProperty(Serializable<Proxy> proxy, String name) =>
+  _jsPortHasProperty.callSync([proxy.toJs(), name].map(_serialize).toList());
 
 /**
  * Delete the [name] property of [proxy].

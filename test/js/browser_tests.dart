@@ -449,6 +449,13 @@ main() {
     expect(js.instanceof(foo, js.context.String), isFalse);
   });
 
+  test('test hasProperty', () {
+    var object = js.map({});
+    object.a = 1;
+    expect(js.hasProperty(object, "a"), isTrue);
+    expect(js.hasProperty(object, "b"), isFalse);
+  });
+
   test('test deleteProperty', () {
     var object = js.map({});
     object.a = 1;
