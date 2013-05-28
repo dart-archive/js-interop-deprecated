@@ -200,15 +200,13 @@ main() {
   });
 
   test('allocate JS array with iterable', () {
-    js.scoped(() {
-      final set = new Set.from([1, 2, 3, 4, 5, 6, 7, 8]);
-      var array = js.array(set);
-      expect(js.context.isArray(array), isTrue);
-      expect(array.length, equals(set.length));
-      for (var i = 0; i < array.length ; i++) {
-        expect(set.contains(array[i]), isTrue);
-      }
-    });
+    final set = new Set.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    var array = js.array(set);
+    expect(js.context.isArray(array), isTrue);
+    expect(array.length, equals(set.length));
+    for (var i = 0; i < array.length ; i++) {
+      expect(set.contains(array[i]), isTrue);
+    }
   });
 
   test('allocate simple JS map', () {
@@ -253,16 +251,14 @@ main() {
   });
 
   test('invoke Dart callback from JS with this', () {
-    js.scoped(() {
-      final constructor = new js.Callback.once(($this, arg1) {
-        $this.a = 42;
-        $this.b = js.array(["a", arg1]);
-      }, withThis: true);
-      var o = new js.Proxy(constructor, "b");
-      expect(o.a, equals(42));
-      expect(o.b[0], equals("a"));
-      expect(o.b[1], equals("b"));
-    });
+    final constructor = new js.Callback.once(($this, arg1) {
+      $this.a = 42;
+      $this.b = js.array(["a", arg1]);
+    }, withThis: true);
+    var o = new js.Proxy(constructor, "b");
+    expect(o.a, equals(42));
+    expect(o.b[0], equals("a"));
+    expect(o.b[1], equals("b"));
   });
 
   test('invoke Dart callback from JS with 11 parameters', () {
