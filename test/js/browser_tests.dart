@@ -200,15 +200,13 @@ main() {
   });
 
   test('allocate JS array with iterable', () {
-    js.scoped(() {
-      final set = new Set.from([1, 2, 3, 4, 5, 6, 7, 8]);
-      var array = js.array(set);
-      expect(js.context.isArray(array), isTrue);
-      expect(array.length, equals(set.length));
-      for (var i = 0; i < array.length ; i++) {
-        expect(set.contains(array[i]), isTrue);
-      }
-    });
+    final set = new Set.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    var array = js.array(set);
+    expect(js.context.isArray(array), isTrue);
+    expect(array.length, equals(set.length));
+    for (var i = 0; i < array.length ; i++) {
+      expect(set.contains(array[i]), isTrue);
+    }
   });
 
   test('allocate simple JS map', () {
@@ -253,16 +251,14 @@ main() {
   });
 
   test('invoke Dart callback from JS with this', () {
-    js.scoped(() {
-      final constructor = new js.Callback.once(($this, arg1) {
-        $this.a = 42;
-        $this.b = js.array(["a", arg1]);
-      }, withThis: true);
-      var o = new js.Proxy(constructor, "b");
-      expect(o.a, equals(42));
-      expect(o.b[0], equals("a"));
-      expect(o.b[1], equals("b"));
-    });
+    final constructor = new js.Callback.once(($this, arg1) {
+      $this.a = 42;
+      $this.b = js.array(["a", arg1]);
+    }, withThis: true);
+    var o = new js.Proxy(constructor, "b");
+    expect(o.a, equals(42));
+    expect(o.b[0], equals("a"));
+    expect(o.b[1], equals("b"));
   });
 
   test('invoke Dart callback from JS with 11 parameters', () {
@@ -319,6 +315,21 @@ main() {
       expect(y.a, equals(38));
       js.release(y);
       expect(() => y.a, throws);
+    });
+  });
+
+  test('retain and release in the same scope', () {
+    var x;
+    js.scoped(() {
+      x = new js.Proxy(js.context.Foo, 42);
+      expect(x.a, equals(42));
+      js.retain(x);
+      expect(x.a, equals(42));
+      js.release(x);
+      expect(() => x.a, throws);
+    });
+    js.scoped(() {
+      expect(() => x.a, throws);
     });
   });
 
@@ -435,6 +446,13 @@ main() {
     expect(js.instanceof(foo, js.context.Foo), isTrue);
     expect(js.instanceof(foo, js.context.Object), isTrue);
     expect(js.instanceof(foo, js.context.String), isFalse);
+  });
+
+  test('test hasProperty', () {
+    var object = js.map({});
+    object.a = 1;
+    expect(js.hasProperty(object, "a"), isTrue);
+    expect(js.hasProperty(object, "b"), isFalse);
   });
 
   test('test deleteProperty', () {
