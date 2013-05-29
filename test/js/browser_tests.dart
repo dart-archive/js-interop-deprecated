@@ -326,7 +326,6 @@ main() {
       js.retain(x);
       expect(x.a, equals(42));
       js.release(x);
-      // expect(x.a, equals(42));
       expect(() => x.a, throws);
     });
     js.scoped(() {
