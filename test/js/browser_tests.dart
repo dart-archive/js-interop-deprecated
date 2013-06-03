@@ -333,6 +333,18 @@ main() {
     });
   });
 
+  test('retain and release a function', () {
+    var razzle;
+    js.scoped(() {
+      razzle = js.retain(js.context.razzle);
+    });
+    js.scoped(() {
+      expect(razzle(), 42);
+      js.release(razzle);
+      expect(() => razzle(), throws);
+    });
+  });
+
   test('pass unattached Dom Element', () {
     final div = new DivElement();
     div.classes.add('a');
