@@ -215,7 +215,6 @@ final _JS_BOOTSTRAP = r"""
     delete this.globalIds[id];
     delete this.map[id];
     this._deletedCount++;
-    return old;
   }
 
   // Gets the object or function corresponding to this ID.
@@ -644,13 +643,11 @@ final _JS_BOOTSTRAP = r"""
   makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
   makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
   makeGlobalPort('dart-js-globalize', function(data) {
-    if (data[0] == "objref") return proxiedObjectTable.globalize(data[1]);
-    // TODO(vsm): Do we ever need to globalize functions?
+    if (data[0] == "objref" || data[0] == "funcref") return proxiedObjectTable.globalize(data[1]);
     throw 'Illegal type: ' + data[0];
   });
   makeGlobalPort('dart-js-invalidate', function(data) {
-    if (data[0] == "objref") return proxiedObjectTable.invalidate(data[1]);
-    // TODO(vsm): Do we ever need to globalize functions?
+    if (data[0] == "objref" || data[0] == "funcref") return proxiedObjectTable.invalidate(data[1]);
     throw 'Illegal type: ' + data[0];
   });
 })();
