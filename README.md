@@ -44,6 +44,11 @@ library in the editor:
         void main() {
           js.context.alert('Hello from Dart via JS');
         }
+        
+6.  Add the script to your HTML page:
+
+        <script src="packages/browser/dart.js"></script>
+        <script src="packages/browser/interop.js"></script> 
 
 Running Tests
 -------------
