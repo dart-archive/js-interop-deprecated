@@ -8,7 +8,7 @@ allow Dart code to easily interact with third-party JavaScript libraries.
 Documentation
 -------------
 
-See [API documentation][docs]. 
+See [API documentation][docs]. You should also watch this [video tutorial][video].
 
 Samples
 -------
@@ -69,3 +69,4 @@ and then open **test/browser_tests.html** in any browser.
 [docs]: http://dart-lang.github.com/js-interop
 [samples]: http://dart-lang.github.com/js-interop/example
 [editor]: http://www.dartlang.org/docs/editor/getting-started/
+[video]: http://www.youtube.com/watch?v=QFuCFUd2Zsw
