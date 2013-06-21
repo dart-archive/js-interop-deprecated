@@ -999,10 +999,7 @@ class Proxy implements Serializable<Proxy> {
 
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(Invocation invocation) {
-    // TODO(vsm): Fold this away (symbol will be type Symbol) on the
-    // next integration release.
-    var symbol = invocation.memberName;
-    String member = symbol is String ? symbol : MirrorSystem.getName(symbol);
+    String member = MirrorSystem.getName(invocation.memberName);
     // If trying to access a JavaScript field/variable that starts with
     // _ (underscore), Dart treats it a library private and member name
     // it suffixed with '@internalLibraryIdentifier' which we have to
@@ -1013,28 +1010,13 @@ class Proxy implements Serializable<Proxy> {
     String kind;
     List args = invocation.positionalArguments;
     if (args == null) args = [];
-    // TODO(vsm): Clean this up once InvocationMirrors settle down.  The 'get:'
-    // and 'set:' form is still used by Dartium and the trunk version of
-    // Dart2JS.
     if (invocation.isGetter) {
       kind = 'get';
-      if (member.startsWith('get:')) {
-        member = member.substring(4);
-      }
     } else if (invocation.isSetter) {
       kind = 'set';
       if (member.endsWith('=')) {
         member = member.substring(0, member.length - 1);
       }
-      if (member.startsWith('set:')) {
-        member = member.substring(4);
-      }
-    } else if (member.startsWith('get:')) {
-      kind = 'get';
-      member = member.substring(4);
-    } else if (member.startsWith('set:')) {
-      kind = 'set';
-      member = member.substring(4);
     } else if (member == 'call') {
       // A 'call' (probably) means that this proxy was invoked directly
       // as if it was a function.  Map this to JS function application.
