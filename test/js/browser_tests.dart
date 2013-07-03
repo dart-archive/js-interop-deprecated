@@ -149,6 +149,13 @@ main() {
     }
   });
 
+  test('hashCode and equals', () {
+    final o1 = js.context.Object;
+    final o2 = js.context.Object;
+    expect(o1 == o2, isTrue);
+    expect(o1.hashCode == o2.hashCode, isTrue);
+  });
+
   test('write global field', () {
     js.context.y = 42;
     expect(js.context.y, equals(42));
