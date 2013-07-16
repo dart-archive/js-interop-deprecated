@@ -611,7 +611,7 @@ final _JS_BOOTSTRAP = r"""
   function enterScope() {
     enterJavaScriptScope();
     if (!_dartEnterScopePort) {
-      _dartEnterScopePort = window.lookupPort('js-dart-enter-scope');
+      _dartEnterScopePort = window.lookupPort('js-dart-interop-enter-scope');
     }
     return _dartEnterScopePort.callSync([]);
   }
@@ -627,26 +627,26 @@ final _JS_BOOTSTRAP = r"""
   function exitScope(depth) {
     exitJavaScriptScope();
     if (!_dartExitScopePort) {
-      _dartExitScopePort = window.lookupPort('js-dart-exit-scope');
+      _dartExitScopePort = window.lookupPort('js-dart-interop-exit-scope');
     }
     return _dartExitScopePort.callSync([ depth ]);
   }
 
-  makeGlobalPort('dart-js-context', context);
-  makeGlobalPort('dart-js-create', construct);
-  makeGlobalPort('dart-js-proxy-count', proxyCount);
-  makeGlobalPort('dart-js-equals', proxyEquals);
-  makeGlobalPort('dart-js-instanceof', proxyInstanceof);
-  makeGlobalPort('dart-js-has-property', proxyHasProperty);
-  makeGlobalPort('dart-js-delete-property', proxyDeleteProperty);
-  makeGlobalPort('dart-js-convert', proxyConvert);
-  makeGlobalPort('dart-js-enter-scope', enterJavaScriptScope);
-  makeGlobalPort('dart-js-exit-scope', exitJavaScriptScope);
-  makeGlobalPort('dart-js-globalize', function(data) {
+  makeGlobalPort('dart-js-interop-context', context);
+  makeGlobalPort('dart-js-interop-create', construct);
+  makeGlobalPort('dart-js-interop-proxy-count', proxyCount);
+  makeGlobalPort('dart-js-interop-equals', proxyEquals);
+  makeGlobalPort('dart-js-interop-instanceof', proxyInstanceof);
+  makeGlobalPort('dart-js-interop-has-property', proxyHasProperty);
+  makeGlobalPort('dart-js-interop-delete-property', proxyDeleteProperty);
+  makeGlobalPort('dart-js-interop-convert', proxyConvert);
+  makeGlobalPort('dart-js-interop-enter-scope', enterJavaScriptScope);
+  makeGlobalPort('dart-js-interop-exit-scope', exitJavaScriptScope);
+  makeGlobalPort('dart-js-interop-globalize', function(data) {
     if (data[0] == "objref" || data[0] == "funcref") return proxiedObjectTable.globalize(data[1]);
     throw 'Illegal type: ' + data[0];
   });
-  makeGlobalPort('dart-js-invalidate', function(data) {
+  makeGlobalPort('dart-js-interop-invalidate', function(data) {
     if (data[0] == "objref" || data[0] == "funcref") return proxiedObjectTable.invalidate(data[1]);
     throw 'Illegal type: ' + data[0];
   });
@@ -686,7 +686,7 @@ void _initialize() {
 
   // Test if the port is already defined.
   try {
-    _jsPortSync = window.lookupPort('dart-js-context');
+    _jsPortSync = window.lookupPort('dart-js-interop-context');
   } catch (e) {
     // TODO(vsm): Suppress the exception until dartbug.com/5854 is fixed.
   }
@@ -694,27 +694,27 @@ void _initialize() {
   // If not, try injecting the script.
   if (_jsPortSync == null) {
     _inject(_JS_BOOTSTRAP);
-    _jsPortSync = window.lookupPort('dart-js-context');
+    _jsPortSync = window.lookupPort('dart-js-interop-context');
   }
 
-  _jsPortCreate = window.lookupPort('dart-js-create');
-  _jsPortProxyCount = window.lookupPort('dart-js-proxy-count');
-  _jsPortEquals = window.lookupPort('dart-js-equals');
-  _jsPortInstanceof = window.lookupPort('dart-js-instanceof');
-  _jsPortHasProperty = window.lookupPort('dart-js-has-property');
-  _jsPortDeleteProperty = window.lookupPort('dart-js-delete-property');
-  _jsPortConvert = window.lookupPort('dart-js-convert');
-  _jsEnterJavaScriptScope = window.lookupPort('dart-js-enter-scope');
-  _jsExitJavaScriptScope = window.lookupPort('dart-js-exit-scope');
-  _jsGlobalize = window.lookupPort('dart-js-globalize');
-  _jsInvalidate = window.lookupPort('dart-js-invalidate');
+  _jsPortCreate = window.lookupPort('dart-js-interop-create');
+  _jsPortProxyCount = window.lookupPort('dart-js-interop-proxy-count');
+  _jsPortEquals = window.lookupPort('dart-js-interop-equals');
+  _jsPortInstanceof = window.lookupPort('dart-js-interop-instanceof');
+  _jsPortHasProperty = window.lookupPort('dart-js-interop-has-property');
+  _jsPortDeleteProperty = window.lookupPort('dart-js-interop-delete-property');
+  _jsPortConvert = window.lookupPort('dart-js-interop-convert');
+  _jsEnterJavaScriptScope = window.lookupPort('dart-js-interop-enter-scope');
+  _jsExitJavaScriptScope = window.lookupPort('dart-js-interop-exit-scope');
+  _jsGlobalize = window.lookupPort('dart-js-interop-globalize');
+  _jsInvalidate = window.lookupPort('dart-js-interop-invalidate');
 
   _dartEnterDartScope = new ReceivePortSync()
     ..receive((_) => _enterScope());
   _dartExitDartScope = new ReceivePortSync()
     ..receive((args) => _exitScope(args[0]));
-  window.registerPort('js-dart-enter-scope', _dartEnterDartScope.toSendPort());
-  window.registerPort('js-dart-exit-scope', _dartExitDartScope.toSendPort());
+  window.registerPort('js-dart-interop-enter-scope', _dartEnterDartScope.toSendPort());
+  window.registerPort('js-dart-interop-exit-scope', _dartExitDartScope.toSendPort());
 }
 
 /**
