@@ -11,4 +11,5 @@ dependencies:
   browser: any
   meta: any
 dev_dependencies:
+  ghpages_generator: any
   unittest: any
