@@ -393,17 +393,9 @@ final _JS_BOOTSTRAP = r"""
                proxiedObjectTable.add(message),
                proxiedObjectTable.sendPort ];
     } else if (typeof(message) == 'function') {
-      if ('_dart_id' in message) {
-        // Remote function proxy.
-        var remoteId = message._dart_id;
-        var remoteSendPort = message._dart_port;
-        return [ 'funcref', remoteId, remoteSendPort ];
-      } else {
-        // Local function proxy.
-        return [ 'funcref',
-                 proxiedObjectTable.add(message),
-                 proxiedObjectTable.sendPort ];
-      }
+      return [ 'funcref',
+               proxiedObjectTable.add(message),
+               proxiedObjectTable.sendPort ];
     } else if (message instanceof DartProxy) {
       // Remote object proxy.
       return [ 'objref', message.id, message.port ];
@@ -459,9 +451,6 @@ final _JS_BOOTSTRAP = r"""
           exitScope(depth);
         }
       };
-      // Cache the remote id and port.
-      f._dart_id = id;
-      f._dart_port = port;
       return f;
     }
   }

@@ -246,6 +246,13 @@ main() {
     expect(() => js.context.invokeCallback(), throws);
   });
 
+  test('invoke Dart callback from Dart', () {
+    js.context.myFunction = new js.Callback.once((js.FunctionProxy callback) =>
+        callback("test"));
+    expect(js.context.myFunction(
+        new js.Callback.once((String s) => s.toUpperCase())), equals("TEST"));
+  });
+
   test('callback as parameter', () {
     expect(js.context.getTypeOf(js.context.razzle), equals("function"));
   });
