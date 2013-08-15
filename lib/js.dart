@@ -720,7 +720,7 @@ void _initialize() {
 /**
  * Returns a proxy to the global JavaScript context for this page.
  */
-Proxy get context {
+get context {
   _enterScopeIfNeeded();
   return _deserialize(_jsPortSync.callSync([]));
 }
