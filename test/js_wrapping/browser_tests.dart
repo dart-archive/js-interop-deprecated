@@ -227,13 +227,13 @@ main() {
     test('setRange', () {
       final m = new jsw.JsArrayToListAdapter<String>.fromProxy(
           js.array(["a", "b", "c", null]));
-      m.setRange(1, 2, [null, null]);
+      m.setRange(1, 3, [null, null]);
       expect(m.length, equals(4));
       expect(m[0], equals("a"));
       expect(m[1], isNull);
       expect(m[2], isNull);
       expect(m[3], isNull);
-      m.setRange(3, 1, [null, "c", null], 1);
+      m.setRange(3, 4, [null, "c", null], 1);
       expect(m[0], equals("a"));
       expect(m[1], isNull);
       expect(m[2], isNull);
