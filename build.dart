@@ -5,15 +5,18 @@
 
 library build;
 
-import 'tools/create_bootstrap.dart' as createBootstrap;
 import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
+import 'tool/create_bootstrap.dart' as createBootstrap;
 
 void main() {
   final options = new Options();
-  final scriptPath = new Path(options.script).directoryPath;
-  final libPath = scriptPath.append('lib');
+  final scriptPath = p.dirname(options.script);
+  final libPath = p.join(scriptPath, 'lib');
 
-  final changedOpt = "--changed=${libPath.append('js.dart')}";
+  final changedOpt = "--changed=${p.normalize(p.join(libPath, 'js.dart'))}";
   for (String arg in new Options().arguments) {
     if (arg == changedOpt) {
       createBootstrap.create(libPath);

@@ -15,6 +15,8 @@ library create_bootstrap;
 
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 final JS_PATTERN = new RegExp(r'final _JS_BOOTSTRAP = r"""((.*\n)*)""";');
 
 final HEADER = """
@@ -28,12 +30,13 @@ final HEADER = """
 // http://dartbug.com/6101.
 """;
 
-createFile(Path source, Path target) {
-  final f = new File.fromPath(source);
+createFile(String source, String target) {
+  print('hello');
+  final f = new File(source);
   f.readAsString()
     .then((text) {
       final js = JS_PATTERN.firstMatch(text).group(1);
-      final out = new File.fromPath(target);
+      final out = new File(target);
       out.create()
         .then((out) => out.open(mode: FileMode.WRITE)
           .then((file) => file.writeString(HEADER)
@@ -42,15 +45,15 @@ createFile(Path source, Path target) {
     });
 }
 
-create(Path libPath) {
-  final source = libPath.append('js.dart');
-  final target = libPath.append('dart_interop.js');
+create(String libPath) {
+  final source = p.join(libPath, 'js.dart');
+  final target = p.join(libPath, 'dart_interop.js');
   createFile(source, target);
 }
 
 main() {
   final options = new Options();
-  final scriptPath = new Path(options.script).directoryPath;
-  final libPath = scriptPath.join(new Path('../lib'));
+  final scriptPath = p.dirname(options.script);
+  final libPath = p.join(scriptPath, '../lib');
   create(libPath);
 }
