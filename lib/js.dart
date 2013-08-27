@@ -77,6 +77,8 @@ import 'dart:html';
 import 'dart:isolate';
 import 'dart:mirrors';
 
+import 'package:meta/meta.dart';
+
 // JavaScript bootstrapping code.
 // TODO(vsm): Migrate this to use a builtin resource mechanism once we have
 // one.
@@ -912,6 +914,7 @@ List _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6) {
 /**
  * Proxies to JavaScript objects.
  */
+@proxy
 class Proxy implements Serializable<Proxy> {
   SendPortSync _port;
   final _id;

@@ -5,6 +5,7 @@
 part of js.wrapping;
 
 /// base class to simplify declaration of [TypedProxy].
+@proxy
 class MagicProxy extends TypedProxy {
   MagicProxy([Serializable<FunctionProxy> function, List args])
       : this.fromProxy(new Proxy.withArgList(
@@ -15,7 +16,6 @@ class MagicProxy extends TypedProxy {
   operator[](arg) => $unsafe[arg];
   operator[]=(key, value) => $unsafe[key] = value;
 
-  // TODO(aa): add @warnOnUndefinedMethod once supported http://dartbug.com/6111
   @override noSuchMethod(Invocation invocation) =>
       $unsafe.noSuchMethod(invocation);
 }
