@@ -12,4 +12,5 @@ dependencies:
   meta: any
 dev_dependencies:
   ghpages_generator: any
+  path: any
   unittest: any
