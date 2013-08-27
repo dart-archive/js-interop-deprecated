@@ -15,7 +15,7 @@ library create_bootstrap;
 
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 
 final JS_PATTERN = new RegExp(r'final _JS_BOOTSTRAP = r"""((.*\n)*)""";');
 
@@ -46,14 +46,14 @@ createFile(String source, String target) {
 }
 
 create(String libPath) {
-  final source = p.join(libPath, 'js.dart');
-  final target = p.join(libPath, 'dart_interop.js');
+  final source = path.join(libPath, 'js.dart');
+  final target = path.join(libPath, 'dart_interop.js');
   createFile(source, target);
 }
 
 main() {
   final options = new Options();
-  final scriptPath = p.dirname(options.script);
-  final libPath = p.join(scriptPath, '../lib');
+  final scriptPath = path.dirname(options.script);
+  final libPath = path.join(scriptPath, '../lib');
   create(libPath);
 }
