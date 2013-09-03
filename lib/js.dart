@@ -722,9 +722,7 @@ void _initialize() {
 /**
  * Returns a proxy to the global JavaScript context for this page.
  */
-// TODO: restore the type annotation pending the resolution of:
-// https://code.google.com/p/dart/issues/detail?id=6111
-/*Proxy*/get context {
+Proxy get context {
   _enterScopeIfNeeded();
   return _deserialize(_jsPortSync.callSync([]));
 }
