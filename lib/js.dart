@@ -991,6 +991,8 @@ class Proxy implements Serializable<Proxy> {
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
+  int get hashCode => 0;
+
   String toString() {
     try {
       return _forward(this, 'toString', 'method', []);
@@ -1251,7 +1253,6 @@ _deserialize(var message) {
       return new Proxy._internal(port, id);
     }
   }
-
 
   if (message == null) {
     return null;  // Convert undefined to null.
