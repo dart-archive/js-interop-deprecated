@@ -522,10 +522,10 @@ final _JS_BOOTSTRAP = r"""
       // Dummy Type with correct constructor.
       var Type = function(){};
       Type.prototype = constructor.prototype;
-  
+
       // Create a new instance
       var instance = new Type();
-  
+
       // Call the original constructor.
       ret = constructor.apply(instance, args);
       ret = Object(ret) === ret ? ret : instance;
@@ -656,9 +656,9 @@ final _JS_BOOTSTRAP = r"""
 // Injects JavaScript source code onto the page.
 // This is only used to load the bootstrapping code above.
 void _inject(code) {
-  final script = new ScriptElement();
-  script.type = 'text/javascript';
-  script.innerHtml = code;
+  final script = new ScriptElement()
+      ..type = 'text/javascript'
+      ..text = code;
   document.body.nodes.add(script);
 }
 
