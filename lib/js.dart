@@ -284,6 +284,7 @@ final _JS_BOOTSTRAP = r"""
   var _localNextElementId = 0;
   var _DART_ID = 'data-dart_id';
   var _DART_TEMPORARY_ATTACHED = 'data-dart_temporary_attached';
+  var _DART_TEMPORARY_ATTACHED_SHADOW = 'data-dart_temporary_attached_shadow_';
 
   function serializeElement(e) {
     // TODO(vsm): Use an isolate-specific id.
@@ -310,34 +311,87 @@ final _JS_BOOTSTRAP = r"""
           top.setAttribute(_DART_TEMPORARY_ATTACHED, newValue);
           break;
         }
-        if (top.parentNode == null) {
+        if ((typeof(ShadowRoot) !== "undefined" && 
+            top.parentNode instanceof ShadowRoot) ||
+            (typeof(WebKitShadowRoot) !== "undefined" && 
+            top.parentNode instanceof WebKitShadowRoot)) {
+          var host = top.parentNode.host;
+          if (host !== null) {
+            var shadowId = _DART_TEMPORARY_ATTACHED_SHADOW + id;
+            host.setAttribute(shadowId, '');
+            top = host;
+            continue;
+          } else {
+            throw 'ShadowRoot must have a "host" attribute ' +
+                'to be transfered between Dart and Js';
+          }
+        }
+        if (top.parentElement == null) {
           top.setAttribute(_DART_TEMPORARY_ATTACHED, "a");
           document.documentElement.appendChild(top);
           break;
         }
-        if (top.parentNode === document.documentElement) {
+        if (top.parentElement === document.documentElement) {
           // e was already attached to dom
           break;
         }
-        top = top.parentNode;
+        top = top.parentElement;
       }
     }
     return id;
   }
 
   function deserializeElement(id) {
-    // TODO(vsm): Clear the attribute.
-    var list = document.querySelectorAll('[' + _DART_ID + '="' + id + '"]');
-
-    if (list.length > 1) throw 'Non unique ID: ' + id;
-    if (list.length == 0) {
+    var e = deserializeElementDeep(id);
+    if (e == null) {
       throw 'Element must be attached to the document: ' + id;
     }
-    var e = list[0];
+    return e;
+  }
+  function deserializeElementDeep(id, shadowRoot) {
+    var list;
+    var target;
+    var e;
+    if (!shadowRoot) {
+      list = document.querySelectorAll('[' + _DART_ID + '="' + id + '"]');
+    } else {
+      list = shadowRoot.querySelectorAll('[' + _DART_ID + '="' + id + '"]');
+    }
+    if (list.length > 1) throw 'Non unique ID: ' + id;
+    if (list.length === 1) {
+      target = e = list[0];
+    } else {
+      // looking into shadow nodes
+      var shadowId = _DART_TEMPORARY_ATTACHED_SHADOW + id;
+      var hosts;
+      if (shadowRoot == null) {
+        hosts = document.querySelectorAll('[' + shadowId + ']');
+      } else {
+        hosts = shadowRoot.querySelectorAll('[' + shadowId + ']');
+      }
+      for (var i in hosts) {
+        var host = hosts[i];
+        var hostShadowRoot = (host.shadowRoot || host.webkitShadowRoot);
+        // register host to have the most registrations
+        hostShadowRoot.host = host;
+        // find element in this sub-tree
+        target = deserializeElementDeep(id, hostShadowRoot);
+        if (target != null) {
+          host.removeAttribute(shadowId);
+          if (shadowRoot == null) {
+            e = host;
+            break;
+          } else {
+            return target;
+          }
+        }
+      }
+    }
+
     if (e !== document.documentElement) {
       // detach temporary attached element
       var top = e;
-      while (true) {
+      while (top !== null) {
         if (top.hasAttribute(_DART_TEMPORARY_ATTACHED)) {
           var oldValue = top.getAttribute(_DART_TEMPORARY_ATTACHED);
           var newValue = oldValue.substring(1);
@@ -349,14 +403,14 @@ final _JS_BOOTSTRAP = r"""
           }
           break;
         }
-        if (top.parentNode === document.documentElement) {
+        if (top.parentElement === document.documentElement) {
           // e was already attached to dom
           break;
         }
-        top = top.parentNode;
+        top = top.parentElement;
       }
     }
-    return e;
+    return target;
   }
 
 
@@ -1279,6 +1333,7 @@ int _localNextElementId = 0;
 
 const _DART_ID = 'data-dart_id';
 const _DART_TEMPORARY_ATTACHED = 'data-dart_temporary_attached';
+const _DART_TEMPORARY_ATTACHED_SHADOW = 'data-dart_temporary_attached_shadow_';
 
 _serializeElement(Element e) {
   // TODO(vsm): Use an isolate-specific id.
@@ -1305,6 +1360,18 @@ _serializeElement(Element e) {
         top.attributes[_DART_TEMPORARY_ATTACHED] = newValue;
         break;
       }
+      if (top.parentNode is ShadowRoot) {
+        final host = _shadowRootHosts[top.parentNode];
+        if (host != null) {
+          final shadowId = _DART_TEMPORARY_ATTACHED_SHADOW + id;
+          host.attributes[shadowId] = '';
+          top = host;
+          continue;
+        } else {
+          throw new ArgumentError('ShadowRoot must have a "host" attribute '
+              'to be transfered between Dart and Js');
+        }
+      }
       if (top.parent == null) {
         top.attributes[_DART_TEMPORARY_ATTACHED] = 'a';
         document.documentElement.children.add(top);
@@ -1321,16 +1388,56 @@ _serializeElement(Element e) {
 }
 
 Element _deserializeElement(var id) {
-  var list = queryAll('[$_DART_ID="$id"]');
-  if (list.length > 1) throw 'Non unique ID: $id';
-  if (list.length == 0) {
+  final e = _deserializeElementDeep(id);
+  if (e == null) {
     throw 'Only elements attached to document can be serialized: $id';
   }
-  final e = list[0];
+  return e;
+}
+
+Element _deserializeElementDeep(var id, [ShadowRoot shadowRoot]) {
+  ElementList list;
+  Element target;
+  Element e;
+  if (shadowRoot == null) {
+    list = queryAll('[$_DART_ID="$id"]');
+  } else {
+    list = shadowRoot.queryAll('[$_DART_ID="$id"]');
+  }
+  if (list.length > 1) throw 'Non unique ID: $id';
+  if (list.length == 1) {
+    target = e = list[0];
+  } else {
+    // looking into shadow nodes
+    final shadowId = _DART_TEMPORARY_ATTACHED_SHADOW + id;
+    ElementList hosts;
+    if (shadowRoot == null) {
+      hosts = queryAll('[$shadowId]');
+    } else {
+      hosts = shadowRoot.queryAll('[$shadowId]');
+    }
+    for (final host in hosts) {
+      final hostShadowRoot = host.shadowRoot;
+      // register host to have the most registrations
+      registerHost(hostShadowRoot, host);
+      // find element in this sub-tree
+      target = _deserializeElementDeep(id, hostShadowRoot);
+      if (target != null) {
+        host.attributes.remove(shadowId);
+        if (shadowRoot == null) {
+          e = host;
+          break;
+        } else {
+          return target;
+        }
+      }
+    }
+  }
+
   if (!identical(e, document.documentElement)) {
     // detach temporary attached element
     var top = e;
-    while (true) {
+    while (top != null) {
       if (top.attributes.containsKey(_DART_TEMPORARY_ATTACHED)) {
         final oldValue = top.attributes[_DART_TEMPORARY_ATTACHED];
         final newValue = oldValue.substring(1);
@@ -1349,7 +1456,7 @@ Element _deserializeElement(var id) {
       top = top.parent;
     }
   }
-  return e;
+  return target;
 }
 
 // Fetch the number of proxies to JavaScript objects.
@@ -1398,3 +1505,12 @@ void _proxyDebug([String message = '']) {
   print('  Dart objects Live : $dartLive (out of $dartTotal ever allocated).');
   print('  JS objects Live : $jsLive (out of $jsTotal ever allocated).');
 }
+
+/**
+ * Register the [host] of [shadowRoot] to allow transfert of [Element] inside
+ * the [shadowRoot].
+ */
+void registerHost(ShadowRoot shadowRoot, Element host) {
+  _shadowRootHosts[shadowRoot] = host;
+}
+Expando<Element> _shadowRootHosts = new Expando<Element>('shadowRootHosts');

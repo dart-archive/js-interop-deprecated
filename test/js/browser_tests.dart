@@ -519,4 +519,25 @@ main() {
     // cleared first.
     runAsync(verifyNoLeaks);
   });
+
+  group('shadowDom', (){
+    if (!js.context.ShadowTest.isShadowAvailable()) return;
+
+    test('Dart to Js', (){
+      final host = new Element.div();
+      final root = host.createShadowRoot();
+      js.registerHost(root, host);
+      root.innerHtml = "<b>Dart is awesome !</b>";
+      js.context.ShadowTest.modifyText(host.shadowRoot.query("b"));
+      expect(root.firstChild.text, equals("Dart is awesome ! (hacked by JS)"));
+    });
+
+    test('Js to Dart', (){
+      bool result = js.context.ShadowTest.testJsToDart(
+          new js.Callback.once((Element e) {
+            e.text = e.text + " (hacked by Dart)";
+          }));
+      expect(result, isTrue);
+    });
+  });
 }
