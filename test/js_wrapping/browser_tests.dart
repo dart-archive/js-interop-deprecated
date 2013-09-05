@@ -1,8 +1,5 @@
 library tests;
 
-import 'dart:html';
-import 'dart:json';
-
 import 'package:js/js.dart' as js;
 import 'package:js/js_wrapping.dart' as jsw;
 import 'package:unittest/unittest.dart';
@@ -17,6 +14,8 @@ class PersonMP extends jsw.MagicProxy implements _Person {
   PersonMP(String firstname,  String lastname) :
       super(js.context.Person, [firstname, lastname]);
   PersonMP.fromProxy(js.Proxy proxy) : super.fromProxy(proxy);
+
+  noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class PersonTP extends jsw.TypedProxy {

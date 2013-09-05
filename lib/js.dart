@@ -1038,7 +1038,9 @@ class Proxy implements Serializable<Proxy> {
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(receiver, member, args, {});
+      // TODO(aa) what to do with members starting by underscore ?
+      case 'none': throw new NoSuchMethodError(receiver,
+          member.startsWith('_') ? null : new Symbol(member), args, {});
       default: throw 'Invalid return value';
     }
   }

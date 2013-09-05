@@ -5,7 +5,6 @@
 part of js.wrapping;
 
 /// base class to simplify declaration of [TypedProxy].
-@proxy
 class MagicProxy extends TypedProxy {
   MagicProxy([Serializable<FunctionProxy> function, List args])
       : this.fromProxy(new Proxy.withArgList(
