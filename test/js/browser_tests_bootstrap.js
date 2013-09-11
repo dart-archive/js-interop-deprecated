@@ -97,3 +97,24 @@ function Bar() {
   return "ret_value";
 }
 Bar.foo = "property_value";
+
+// shadowRoot tests
+ShadowTest = {};
+
+ShadowTest.isShadowAvailable = function() {
+  return typeof(WebKitShadowRoot) != "undefined" ||
+      typeof(ShadowRoot) != "undefined";
+}
+
+ShadowTest.modifyText = function(e){
+  return e.innerText = e.innerText + " (hacked by JS)";
+}
+
+ShadowTest.testJsToDart = function(fn){
+  var host = document.createElement('div');
+  var root = host.webkitCreateShadowRoot();
+  root.host = host;
+  root.innerHTML = "<b>JS is awesome !</b>";
+  fn(root.querySelector('b'));
+  return root.firstChild.innerText === "JS is awesome ! (hacked by Dart)";
+}
