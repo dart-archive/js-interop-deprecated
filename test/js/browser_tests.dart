@@ -53,6 +53,7 @@ main() {
     expect(js.context._x, equals(123));
     expect(js.context['_x'], equals(123));
     expect(() => js.context._y, throwsA(isNoSuchMethodError));
+    expect(js.context['_y'], equals(null));
   });
 
   test('js instantiation : new Foo()', () {

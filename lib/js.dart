@@ -992,13 +992,8 @@ class Proxy implements Serializable<Proxy> {
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
-  String toString() {
-    try {
-      return _forward(this, 'toString', 'method', []);
-    } catch(e) {
-      return super.toString();
-    }
-  }
+  String toString() =>
+      _forward(this, 'toString', 'method', [], onNone: () => super.toString());
 
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(Invocation invocation) {
@@ -1027,20 +1022,20 @@ class Proxy implements Serializable<Proxy> {
     } else {
       kind = 'method';
     }
-    return _forward(this, member, kind, args);
+    return _forward(this, member, kind, args,
+        onNone: () => super.noSuchMethod(invocation));
   }
 
   // Forward member accesses to the backing JavaScript object.
-  static _forward(Proxy receiver, String member, String kind, List args) {
+  static _forward(Proxy receiver, String member, String kind, List args,
+      {onNone()}) {
     _enterScopeIfNeeded();
     var result = receiver._port.callSync([receiver._id, member, kind,
                                           args.map(_serialize).toList()]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      // TODO(aa) what to do with members starting by underscore ?
-      case 'none': throw new NoSuchMethodError(receiver,
-          member.startsWith('_') ? null : new Symbol(member), args, {});
+      case 'none': return onNone == null ? null : onNone();
       default: throw 'Invalid return value';
     }
   }
