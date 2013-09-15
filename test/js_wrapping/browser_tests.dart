@@ -15,6 +15,7 @@ class PersonMP extends jsw.MagicProxy implements _Person {
       super(js.context.Person, [firstname, lastname]);
   PersonMP.fromProxy(js.Proxy proxy) : super.fromProxy(proxy);
 
+  // noSuchMethod is here to suppress warning "Missing inherited members"
   noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
