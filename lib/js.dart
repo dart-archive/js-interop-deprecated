@@ -77,6 +77,8 @@ import 'dart:html';
 import 'dart:isolate';
 import 'dart:mirrors';
 
+import 'package:meta/meta.dart';
+
 // JavaScript bootstrapping code.
 // TODO(vsm): Migrate this to use a builtin resource mechanism once we have
 // one.
@@ -720,9 +722,7 @@ void _initialize() {
 /**
  * Returns a proxy to the global JavaScript context for this page.
  */
-// TODO: restore the type annotation pending the resolution of:
-// https://code.google.com/p/dart/issues/detail?id=6111
-/*Proxy*/get context {
+Proxy get context {
   _enterScopeIfNeeded();
   return _deserialize(_jsPortSync.callSync([]));
 }
@@ -912,6 +912,7 @@ List _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6) {
 /**
  * Proxies to JavaScript objects.
  */
+@proxy
 class Proxy implements Serializable<Proxy> {
   SendPortSync _port;
   final _id;
@@ -991,13 +992,8 @@ class Proxy implements Serializable<Proxy> {
       : (other is Proxy &&
          _jsPortEquals.callSync([_serialize(this), _serialize(other)]));
 
-  String toString() {
-    try {
-      return _forward(this, 'toString', 'method', []);
-    } catch(e) {
-      return super.toString();
-    }
-  }
+  String toString() =>
+      _forward(this, 'toString', 'method', [], onNone: () => super.toString());
 
   // Forward member accesses to the backing JavaScript object.
   noSuchMethod(Invocation invocation) {
@@ -1026,18 +1022,20 @@ class Proxy implements Serializable<Proxy> {
     } else {
       kind = 'method';
     }
-    return _forward(this, member, kind, args);
+    return _forward(this, member, kind, args,
+        onNone: () => super.noSuchMethod(invocation));
   }
 
   // Forward member accesses to the backing JavaScript object.
-  static _forward(Proxy receiver, String member, String kind, List args) {
+  static _forward(Proxy receiver, String member, String kind, List args,
+      {onNone()}) {
     _enterScopeIfNeeded();
     var result = receiver._port.callSync([receiver._id, member, kind,
                                           args.map(_serialize).toList()]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(receiver, member, args, {});
+      case 'none': return onNone == null ? null : onNone();
       default: throw 'Invalid return value';
     }
   }
@@ -1114,7 +1112,7 @@ class _ProxiedObjectTable {
       }
     }
     if (start != _handleStack.length) {
-      _handleStack.removeRange(start, _handleStack.length - start);
+      _handleStack.removeRange(start, _handleStack.length);
     }
   }
 

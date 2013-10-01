@@ -53,6 +53,7 @@ main() {
     expect(js.context._x, equals(123));
     expect(js.context['_x'], equals(123));
     expect(() => js.context._y, throwsA(isNoSuchMethodError));
+    expect(js.context['_y'], equals(null));
   });
 
   test('js instantiation : new Foo()', () {
@@ -510,6 +511,24 @@ main() {
     final red = Color.RED;
     js.context.color = red;
     expect(js.context.color, equals(red._value));
+  });
+
+  test('check for dart proxy count with inner scopes', () {
+    js.scoped((){
+      js.context.a = new Object();
+      js.context.a = new Object();
+      js.scoped((){
+        js.context.a = new Object();
+        js.scoped((){
+          js.context.a = new Object();
+          js.context.a = new Object();
+          expect(5, js.proxyCount(dartOnly: true));
+        });
+        expect(3, js.proxyCount(dartOnly: true));
+      });
+      expect(2, js.proxyCount(dartOnly: true));
+    });
+    expect(0, js.proxyCount(dartOnly: true));
   });
 
   test('check for leaks', () {
