@@ -978,10 +978,11 @@ class Proxy implements Serializable<Proxy> {
   Proxy toJs() => this;
 
   // Resolve whether this is needed.
-  operator[](arg) => _forward(this, '[]', 'method', [ arg ]);
+  operator[](arg) => _forward(this, '[]', #[], 'method', [ arg ]);
 
   // Resolve whether this is needed.
-  operator[]=(key, value) => _forward(this, '[]=', 'method', [ key, value ]);
+  operator[]=(key, value) => _forward(this, '[]=', #[]=, 'method', 
+      [ key, value ]);
 
   // Test if this is equivalent to another Proxy.  This essentially
   // maps to JavaScript's == operator.
@@ -993,7 +994,7 @@ class Proxy implements Serializable<Proxy> {
 
   String toString() {
     try {
-      return _forward(this, 'toString', 'method', []);
+      return _forward(this, 'toString', #toString, 'method', []);
     } catch(e) {
       return super.toString();
     }
@@ -1026,18 +1027,19 @@ class Proxy implements Serializable<Proxy> {
     } else {
       kind = 'method';
     }
-    return _forward(this, member, kind, args);
+    return _forward(this, member, invocation.memberName, kind, args);
   }
 
   // Forward member accesses to the backing JavaScript object.
-  static _forward(Proxy receiver, String member, String kind, List args) {
+  static _forward(Proxy receiver, String member, Symbol memberName, String kind, 
+      List args) {
     _enterScopeIfNeeded();
     var result = receiver._port.callSync([receiver._id, member, kind,
                                           args.map(_serialize).toList()]);
     switch (result[0]) {
       case 'return': return _deserialize(result[1]);
       case 'throws': throw _deserialize(result[1]);
-      case 'none': throw new NoSuchMethodError(receiver, member, args, {});
+      case 'none': throw new NoSuchMethodError(receiver, memberName, args, {});
       default: throw 'Invalid return value';
     }
   }
@@ -1058,7 +1060,7 @@ class FunctionProxy extends Proxy
         arg3 = _undefined, arg4 = _undefined,
         arg5 = _undefined, arg6 = _undefined]) {
     var arguments = _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6);
-    return Proxy._forward(this, '', 'apply', arguments);
+    return Proxy._forward(this, '', const Symbol(''), 'apply', arguments);
   }
 }
 
@@ -1114,7 +1116,7 @@ class _ProxiedObjectTable {
       }
     }
     if (start != _handleStack.length) {
-      _handleStack.removeRange(start, _handleStack.length - start);
+      _handleStack.removeRange(start, _handleStack.length);
     }
   }
 
