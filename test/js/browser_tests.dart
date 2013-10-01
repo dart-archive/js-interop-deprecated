@@ -519,4 +519,16 @@ main() {
     // cleared first.
     runAsync(verifyNoLeaks);
   });
+  
+  test('check for dart proxy count with inner scopes', () {
+    js.scoped((){
+      js.context.a = new Object();
+      js.context.a = new Object();
+      js.scoped((){
+        js.context.a = new Object();
+      });
+      expect(2, js.proxyCount(dartOnly: true));
+    });
+    expect(0, js.proxyCount(dartOnly: true));
+  });
 }
