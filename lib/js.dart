@@ -1114,7 +1114,7 @@ class _ProxiedObjectTable {
       }
     }
     if (start != _handleStack.length) {
-      _handleStack.removeRange(start, _handleStack.length - start);
+      _handleStack.removeRange(start, _handleStack.length);
     }
   }
 
