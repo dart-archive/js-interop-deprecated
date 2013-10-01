@@ -513,6 +513,24 @@ main() {
     expect(js.context.color, equals(red._value));
   });
 
+  test('check for dart proxy count with inner scopes', () {
+    js.scoped((){
+      js.context.a = new Object();
+      js.context.a = new Object();
+      js.scoped((){
+        js.context.a = new Object();
+        js.scoped((){
+          js.context.a = new Object();
+          js.context.a = new Object();
+          expect(5, js.proxyCount(dartOnly: true));
+        });
+        expect(3, js.proxyCount(dartOnly: true));
+      });
+      expect(2, js.proxyCount(dartOnly: true));
+    });
+    expect(0, js.proxyCount(dartOnly: true));
+  });
+
   test('check for leaks', () {
     // Verify that the number of live objects is zero.
     final verifyNoLeaks = expectAsync0(() => expect(0, js.proxyCount()));
