@@ -15,7 +15,6 @@ class MagicProxy extends TypedProxy {
   operator[](arg) => $unsafe[arg];
   operator[]=(key, value) => $unsafe[key] = value;
 
-  // TODO(aa): add @warnOnUndefinedMethod once supported http://dartbug.com/6111
   @override noSuchMethod(Invocation invocation) =>
       $unsafe.noSuchMethod(invocation);
 }
