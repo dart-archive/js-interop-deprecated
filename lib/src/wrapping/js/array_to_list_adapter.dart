@@ -7,7 +7,8 @@ part of js.wrapping;
 /// Adapter to handle a js array as a dart [List].
 /// You can provide a translator to automatically wrap contained Proxy to some
 /// TypedProxy or something else.
-class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/ implements List<E> {
+class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
+    implements List<E> {
 
   /// Like [JsArrayToListAdapter.fromProxy] but with `null` handling for
   /// [proxy].
@@ -74,6 +75,11 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/ implement
   }
   @override void removeRange(int start, int end) {
     $unsafe.splice(start, end - start);
+  }
+
+  @override void shuffle([Random random]) {
+    var shuffled = _asList().shuffle(random);
+    setRange(0, shuffled.length, shuffled);
   }
 
   // private methods

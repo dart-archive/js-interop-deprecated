@@ -81,7 +81,7 @@ import 'package:meta/meta.dart' show proxy;
 /**
  * Returns a proxy to the global JavaScript context for this page.
  */
-Proxy context = new Proxy._(js.context);
+final Proxy context = new Proxy._(js.context);
 
 /**
  * Executes the closure [f] within a scope.  Any proxies created within this

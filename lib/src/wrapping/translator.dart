@@ -22,5 +22,8 @@ class TranslatorForSerializable<E extends Serializable>
   }
 
   Mapper<dynamic, E> get fromJs => this._fromJs;
+  void set fromJs(v) => throw "final";
+
   Mapper<E, dynamic> get toJs => this._toJs;
+  void set toJs(v) => throw "final";
 }
