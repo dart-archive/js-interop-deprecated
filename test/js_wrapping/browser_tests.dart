@@ -377,25 +377,4 @@ main() {
       });
     });
   });
-
-  test('retain/release', () {
-    PersonTP john;
-    js.scoped(() {
-      john = new PersonTP('John', 'Doe');
-    });
-    js.scoped((){
-      expect(() => john.sayHello(), throws);
-    });
-    js.scoped(() {
-      john = new PersonTP('John', 'Doe');
-      js.retain(john);
-    });
-    js.scoped((){
-      expect(() => john.sayHello(), returnsNormally);
-      js.release(john);
-    });
-    js.scoped((){
-      expect(() => john.sayHello(), throws);
-    });
-  });
 }
