@@ -6,9 +6,11 @@ authors:
 description: Access JavaScript from Dart.
 homepage: https://github.com/dart-lang/js-interop
 dependencies:
-  browser: any
-  meta: any
+  browser: '>=0.8.7'
+  meta: '>=0.8.7'
 dev_dependencies:
-  ghpages_generator: any
-  path: any
-  unittest: any
+  ghpages_generator: '>=0.0.1'
+  path: '>=0.8.7'
+  unittest: '>=0.8.7'
+environment:
+  sdk: '>=0.8.7'
