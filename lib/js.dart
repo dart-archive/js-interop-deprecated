@@ -13,7 +13,7 @@
  * with cross-runtime interoperation.
  *
  * The top-level [context] getter provides a [Proxy] to the global JavaScript
- * context for the page your Dart code is running on.  In the following example:
+ * context for the page your Dart code is running on. In the following example:
  *
  *     import 'package:js/js.dart' as js;
  *
@@ -23,27 +23,24 @@
  *
  * js.context.alert creates a proxy to the top-level alert function in
  * JavaScript.  It is invoked from Dart as a regular function that forwards to
- * the underlying JavaScript one.  By default, proxies are released when
+ * the underlying JavaScript one. By default, proxies are released when
  * the currently executing event completes, e.g., when main is completes
  * in this example.
  *
  * The library also enables JavaScript proxies to Dart objects and functions.
  * For example, the following Dart code:
  *
- *     js.context.dartCallback = new Callback.once((x) => print(x*2));
+ *     js.context.dartCallback = (x) => print(x*2);
  *
  * defines a top-level JavaScript function 'dartCallback' that is a proxy to
- * the corresponding Dart function.  The [Callback.once] constructor allows the
- * proxy to the Dart function to be retained across multiple events;
- * instead it is released after the first invocation.  (This is a common
- * pattern for asychronous callbacks.)
+ * the corresponding Dart function.
  *
  * Note, parameters and return values are intuitively passed by value for
- * primitives and by reference for non-primitives.  In the latter case, the
+ * primitives and by reference for non-primitives. In the latter case, the
  * references are automatically wrapped and unwrapped as proxies by the library.
  *
  * This library also allows construction of JavaScripts objects given a [Proxy]
- * to a corresponding JavaScript constructor.  For example, if the following
+ * to a corresponding JavaScript constructor. For example, if the following
  * JavaScript is loaded on the page:
  *
  *     function Foo(x) {
@@ -79,47 +76,9 @@ import 'package:meta/meta.dart' show proxy;
 
 
 /**
- * Returns a proxy to the global JavaScript context for this page.
+ * A proxy on the global JavaScript context for this page.
  */
 final Proxy context = new Proxy._(js.context);
-
-/**
- * Executes the closure [f] within a scope.  Any proxies created within this
- * scope are invalidated afterward unless they are converted to a global proxy.
- */
-@deprecated
-scoped(f) => f();
-
-/*
- * Enters a scope and returns the depth of the scope stack.
- */
-/// WARNING: This API is experimental and may be removed.
-@deprecated
-int $experimentalEnterScope() => 0;
-
-/*
- * Exits a scope.  The [depth] must match that returned by the corresponding
- * enter scope call.
- */
-/// WARNING: This API is experimental and may be removed.
-@deprecated
-void $experimentalExitScope(int depth) {}
-
-/**
- * Retains the given [object] beyond the current scope.
- * Instead, it will need to be explicitly released.
- * The given [object] is returned for convenience.
- */
-// TODO(aa) : change to "<T extends Serializable<Proxy>> T retain(T object)"
-// once generic methods have landed.
-@deprecated
-dynamic retain(Serializable<Proxy> object) => object;
-
-/**
- * Releases a retained [object].
- */
-@deprecated
-void release(Serializable<Proxy> object) {}
 
 /**
  * Check if [proxy] is instance of [type].
@@ -150,62 +109,13 @@ Proxy map(Map data) => new Proxy._json(data);
  */
 Proxy array(Iterable data) => new Proxy._json(data);
 
-/**
- * Converts a local Dart function to a callback that can be passed to
- * JavaScript.
- *
- * A callback can either be:
- *
- * - single-fire, in which case it is automatically invalidated after the first
- *   invocation, or
- * - multi-fire, in which case it must be explicitly disposed.
- *
- * *Deprecated* Use the callback directly or use [FunctionProxy.withThis(f)] to
- * capture the js `this`.
- */
-@deprecated
-class Callback implements Serializable<FunctionProxy> {
-  final FunctionProxy _functionProxy;
-
-  Callback._(this._functionProxy);
-
-  factory Callback(Function f) => new Callback._(new FunctionProxy(f));
-
-  factory Callback.withThis(Function f) =>
-      new Callback._(new FunctionProxy.withThis(f));
-
-
-  /**
-   * Creates a single-fire [Callback] that invokes [f]. The callback is
-   * automatically disposed after the first invocation.
-   */
-  @deprecated
-  factory Callback.once(Function f, {bool withThis: false}) => withThis ?
-      new Callback.withThis(f) : new Callback(f);
-
-  /**
-   * Creates a multi-fire [Callback] that invokes [f]. The callback must be
-   * explicitly disposed to avoid memory leaks.
-   */
-  @deprecated
-  factory Callback.many(Function f, {bool withThis: false}) => withThis ?
-      new Callback.withThis(f) : new Callback(f);
-
-  FunctionProxy toJs() => _functionProxy;
-
-  /**
-   * Disposes this [Callback] so that it may be collected.
-   * Once a [Callback] is disposed, it is an error to invoke it from JavaScript.
-   */
-  @deprecated
-  dispose() {}
-}
-
 // Detect unspecified arguments.
 class _Undefined {
   const _Undefined();
 }
+
 const _undefined = const _Undefined();
+
 List _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6) {
   // This assumes no argument
   final args = [arg1, arg2, arg3, arg4, arg5, arg6];
@@ -323,6 +233,7 @@ class _CallbackFunction implements Function {
 
   call() => throw new StateError('There should always been at least 1 parameter'
       '(js this).');
+
   noSuchMethod(Invocation invocation) {
     final args = invocation.positionalArguments.skip(
         withThis != null && withThis ? 0 : 1);
@@ -348,19 +259,10 @@ class FunctionProxy extends Proxy
   factory FunctionProxy.withThis(Function f) => new FunctionProxy._(
       new js.JsFunction.withThis(new _CallbackFunction(f, withThis: true)));
 
-  // TODO(vsm): This allows calls with a limited number of arguments
-  // in the context of dartbug.com/9283. Eliminate pending the resolution
-  // of this bug. Note, if this Proxy is called with more arguments then
-  // allowed below, it will trigger the 'call' path in Proxy.noSuchMethod
-  // - and still work correctly in unminified mode.
-  call([arg1 = _undefined, arg2 = _undefined,
-        arg3 = _undefined, arg4 = _undefined,
-        arg5 = _undefined, arg6 = _undefined]) {
-    var arguments = _pruneUndefined(arg1, arg2, arg3, arg4, arg5, arg6);
-    return _deserialize(_jsFunction.apply(
-        arguments.map(_serialize).toList(), thisArg: _serialize(_thisArg))
-        , thisArg: this);
-  }
+  // We need to implement call() to satisfy the Function "interface"
+  // This handles the no-arg case, noSuchMethod handles the rest.
+  call() => _deserialize(_jsFunction.apply([], thisArg: _serialize(_thisArg)),
+      thisArg: this);
 
   noSuchMethod(Invocation invocation) {
     String member = MirrorSystem.getName(invocation.memberName);
@@ -414,16 +316,3 @@ _deserialize(var o, {thisArg}) {
     return o;
   }
 }
-
-/**
- * Returns the number of allocated proxy objects matching the given
- * conditions.  By default, the total number of live proxy objects are
- * return.  In a well behaved program, this should stay below a small
- * bound.
- *
- * Set [all] to true to return the total number of proxies ever allocated.
- * Set [dartOnly] to only count proxies to Dart objects (live or all).
- * Set [jsOnly] to only count proxies to JavaScript objects (live or all).
- */
-@deprecated
-int proxyCount({all: false, dartOnly: false, jsOnly: false}) => 0;
