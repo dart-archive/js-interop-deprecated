@@ -52,8 +52,7 @@ create(String libPath) {
 }
 
 main() {
-  final options = new Options();
-  final scriptPath = path.dirname(options.script);
+  final scriptPath = path.dirname(Platform.script);
   final libPath = path.join(scriptPath, '../lib');
   create(libPath);
 }
