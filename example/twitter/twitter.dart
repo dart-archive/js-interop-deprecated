@@ -10,7 +10,7 @@ import 'package:js/js.dart' as js;
 void main() {
   // Create a JavaScript function called display that forwards to the Dart
   // function.
-  js.context.display = new js.Callback.once(display);
+  js.context.display = display;
 
   // Inject a JSONP request to Twitter invoking the JavaScript display
   // function.

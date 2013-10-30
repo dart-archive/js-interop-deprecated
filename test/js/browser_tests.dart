@@ -70,19 +70,18 @@ main() {
     expect(a.getTime(), isNotNull);
   });
 
-  test('js instantiation : new Date(12345678)', () {
+  test('js instantiation : new Date(int)', () {
     final a = new js.Proxy(js.context.Date, 12345678);
     expect(a.getTime(), equals(12345678));
   });
 
-  test('js instantiation : new Date("December 17, 1995 03:24:00 GMT+01:00")',
-      () {
+  test('js instantiation : new Date(String)', () {
     final a = new js.Proxy(js.context.Date,
-                           "December 17, 1995 03:24:00 GMT+01:00");
+        "December 17, 1995 03:24:00 GMT+01:00");
     expect(a.getTime(), equals(819167040000));
   });
 
-  test('js instantiation : new Date(1995,11,17)', () {
+  test('js instantiation : new Date(int, int, int)', () {
     // Note: JS Date counts months from 0 while Dart counts from 1.
     final a = new js.Proxy(js.context.Date, 1995, 11, 17);
     final b = new DateTime(1995, 12, 17);
@@ -92,7 +91,7 @@ main() {
   test('js instantiation : new Date(1995,11,17,3,24,0)', () {
     // Note: JS Date counts months from 0 while Dart counts from 1.
     final a = new js.Proxy.withArgList(js.context.Date,
-                                       [1995, 11, 17, 3, 24, 0]);
+        [1995, 11, 17, 3, 24, 0]);
     final b = new DateTime(1995, 12, 17, 3, 24, 0);
     expect(a.getTime(), equals(b.millisecondsSinceEpoch));
   });
@@ -231,8 +230,8 @@ main() {
   test('invoke Dart callback from JS(with js.Callback)', () {
     expect(() => js.context.invokeCallback(), throws);
 
-    js.context.callback = new js.Callback.once(() => 42);
-    expect(js.context.invokeCallback(), equals(42));
+    js.context.callback = () => 42;
+    expect(js.context.invokeCallback(), 42);
 
     js.deleteProperty(js.context, 'callback');
   });
@@ -250,17 +249,6 @@ main() {
     expect(js.context.getTypeOf(js.context.razzle), equals("function"));
   });
 
-  test('invoke Dart callback from JS with this(with js.Callback)', () {
-    final constructor = new js.Callback.once(($this, arg1) {
-      $this.a = 42;
-      $this.b = js.array(["a", arg1]);
-    }, withThis: true);
-    var o = new js.Proxy(constructor, "b");
-    expect(o.a, equals(42));
-    expect(o.b[0], equals("a"));
-    expect(o.b[1], equals("b"));
-  });
-
   test('invoke Dart callback from JS with this', () {
     final constructor = new js.FunctionProxy.withThis(($this, arg1) {
       $this.a = 42;
@@ -270,13 +258,6 @@ main() {
     expect(o.a, equals(42));
     expect(o.b[0], equals("a"));
     expect(o.b[1], equals("b"));
-  });
-
-  test('invoke Dart callback from JS with 11 parameters(with js.Callback)', () {
-    js.context.callbackWith11params = new js.Callback.once((p1, p2, p3, p4,
-        p5, p6, p7, p8, p9, p10, p11) => '$p1$p2$p3$p4$p5$p6$p7$p8$p9$p10'
-        '$p11');
-    expect(js.context.invokeCallbackWith11params(), equals('1234567891011'));
   });
 
   test('invoke Dart callback from JS with 11 parameters', () {
@@ -357,12 +338,6 @@ main() {
     var result = js.context.getNewDivElement();
     expect(result is DivElement, isTrue);
     expect(!document.documentElement.contains(result), isTrue);
-  });
-
-  test('return a JS proxy to JavaScript(with js.Callback)', () {
-    var result = js.context.testJsMap(
-        new js.Callback.once(() => js.map({ 'value': 42 })));
-    expect(result, 42);
   });
 
   test('return a JS proxy to JavaScript', () {

@@ -13,7 +13,7 @@
 import 'dart:html';
 import 'package:js/js.dart' as js;
 
-final maps = js.retain(js.context.google.maps);
+final maps = js.context.google.maps;
 
 class LatLng implements js.Serializable<js.Proxy> {
   final js.Proxy _proxy;
@@ -86,19 +86,17 @@ class Marker implements js.Serializable<js.Proxy> {
 }
 
 void main() {
-  js.scoped(() {
-    final myLatlng = new LatLng(-25.363882,131.044922);
-    final mapOptions = new MapOptions()
-      ..zoom = 4
-      ..center = myLatlng
-      ..mapTypeId = MapTypeId.ROADMAP
-      ;
-    final map = new GMap(query("#map_canvas"), mapOptions);
+  final myLatlng = new LatLng(-25.363882,131.044922);
+  final mapOptions = new MapOptions()
+    ..zoom = 4
+    ..center = myLatlng
+    ..mapTypeId = MapTypeId.ROADMAP
+    ;
+  final map = new GMap(query("#map_canvas"), mapOptions);
 
-    final marker = new Marker(new MarkerOptions()
-      ..position = myLatlng
-      ..map = map
-      ..title = "Hello World!"
-    );
-  });
+  final marker = new Marker(new MarkerOptions()
+    ..position = myLatlng
+    ..map = map
+    ..title = "Hello World!"
+  );
 }

@@ -32,15 +32,15 @@ void drawVisualization() {
   var tableData = gviz.arrayToDataTable(arrayData);
 
   var options = js.map({
-    'title': 'Correlation between life expectancy, fertility rate and population of some world countries (2010)',
+    'title': 'Correlation between life expectancy, '
+        'fertility rate and population of some world countries (2010)',
     'hAxis': {'title': 'Life Expectancy'},
     'vAxis': {'title': 'Fertility Rate'},
     'bubble': {'textStyle': {'fontSize': 11}}
   });
 
   // Create and draw the visualization.
-  var chart = new js.Proxy(gviz.BubbleChart,
-      query('#visualization'));
+  var chart = new js.Proxy(gviz.BubbleChart, querySelector('#visualization'));
   chart.draw(tableData, options);
 }
 
@@ -48,6 +48,6 @@ main() {
   js.context.google.load('visualization', '1', js.map(
     {
       'packages': ['corechart'],
-      'callback': new js.Callback.once(drawVisualization)
+      'callback': drawVisualization,
     }));
 }
