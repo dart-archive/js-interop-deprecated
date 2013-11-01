@@ -10,7 +10,6 @@ dependencies:
   meta: '>=0.8.7'
 dev_dependencies:
   ghpages_generator: '>=0.0.1'
-  path: '>=0.8.7'
   unittest: '>=0.8.7'
 environment:
   sdk: '>=0.8.7'
