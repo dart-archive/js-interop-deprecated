@@ -72,9 +72,6 @@ library js;
 import 'dart:js' as js;
 import 'dart:mirrors';
 
-import 'package:meta/meta.dart' show proxy;
-
-
 /**
  * A proxy on the global JavaScript context for this page.
  */
