@@ -70,7 +70,7 @@ and then open **test/browser_tests.html** in any browser.
 [d]: http://www.dartlang.org
 [mb]: http://www.dartlang.org/support/faq.html#what-browsers-supported
 [pub]: http://www.dartlang.org/docs/pub-package-manager/
-[Dartium]: http://www.dartlang.org/dartium/index.html
+[Dartium]: http://www.dartlang.org/tools/dartium/
 [docs]: http://dart-lang.github.com/js-interop
 [samples]: http://dart-lang.github.com/js-interop/example
 [editor]: http://www.dartlang.org/docs/editor/getting-started/
