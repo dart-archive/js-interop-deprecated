@@ -5,6 +5,13 @@ The js.dart library allows Dart code running in the browser to
 manipulate JavaScript running in the same page.  It is intended to
 allow Dart code to easily interact with third-party JavaScript libraries.
 
+Warning
+-------
+
+The use of this library may result in a sizable increase in code size
+when compiled to JavaScript. If the size of the generated JavaScript
+is a concern, use the [dart:js][dartjs] library.
+
 Documentation
 -------------
 
@@ -75,3 +82,4 @@ and then open **test/browser_tests.html** in any browser.
 [samples]: http://dart-lang.github.com/js-interop/example
 [editor]: http://www.dartlang.org/docs/editor/getting-started/
 [video]: http://www.youtube.com/watch?v=QFuCFUd2Zsw
+[dartjs]: http://api.dartlang.org/docs/channels/stable/latest/dart_js.html
