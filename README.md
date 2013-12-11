@@ -9,8 +9,9 @@ Warning
 -------
 
 The use of this library may result in a sizable increase in code size
-when compiled to JavaScript. If the size of the generated JavaScript
-is a concern, use the [dart:js][dartjs] library.
+when compiled to JavaScript, because names cannot be minified. If the
+size of the generated JavaScript is a concern, use the [dart:js][dartjs]
+library.
 
 Documentation
 -------------
