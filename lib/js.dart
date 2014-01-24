@@ -70,7 +70,6 @@
 library js;
 
 import 'dart:js' as js;
-@MirrorsUsed(symbols: '*')
 import 'dart:mirrors';
 
 /**
