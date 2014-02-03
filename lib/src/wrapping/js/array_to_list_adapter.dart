@@ -134,12 +134,8 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
   }
 
   bool contains(E element) {
-    int length = this.length;
     for (int i = 0; i < length; i++) {
       if (this[i] == element) return true;
-      if (length != this.length) {
-        throw new ConcurrentModificationError(this);
-      }
     }
     return false;
   }
@@ -214,29 +210,19 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
   }
 
   String join([String separator = ""]) {
-    int length = this.length;
     if (!separator.isEmpty) {
       if (length == 0) return "";
       String first = "${this[0]}";
-      if (length != this.length) {
-        throw new ConcurrentModificationError(this);
-      }
       StringBuffer buffer = new StringBuffer(first);
       for (int i = 1; i < length; i++) {
         buffer.write(separator);
         buffer.write(this[i]);
-        if (length != this.length) {
-          throw new ConcurrentModificationError(this);
-        }
       }
       return buffer.toString();
     } else {
       StringBuffer buffer = new StringBuffer();
       for (int i = 0; i < length; i++) {
         buffer.write(this[i]);
-        if (length != this.length) {
-          throw new ConcurrentModificationError(this);
-        }
       }
       return buffer.toString();
     }
