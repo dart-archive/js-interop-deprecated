@@ -27,7 +27,7 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
 
   /// Create a new adapter from a proxy of a Js list.
   JsArrayToListAdapter.fromProxy(Proxy proxy, [Translator<E> translator])
-      : this._translator = translator,
+      : _translator = translator,
         super.fromProxy(proxy);
 
   // Iterable
@@ -36,16 +36,16 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
 
   // Collection
   @override void add(E value) { $unsafe.push(_toJs(value)); }
-  @override void clear() { this.length = 0; }
+  @override void clear() { length = 0; }
   @override bool remove(Object element) => removeAt(indexOf(element)) != null;
 
   // List
   @override E operator [](int index) {
-    if (index < 0 || index >= this.length) throw new RangeError.value(index);
+    if (index < 0 || index >= length) throw new RangeError.value(index);
     return _fromJs($unsafe[index]);
   }
   @override void operator []=(int index, E value) {
-    if (index < 0 || index >= this.length) throw new RangeError.value(index);
+    if (index < 0 || index >= length) throw new RangeError.value(index);
     $unsafe[index] = _toJs(value);
   }
   @override void set length(int length) { $unsafe.length = length; }
@@ -57,7 +57,7 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
     $unsafe.splice(index, 0, _toJs(element));
   }
   @override E removeAt(int index) {
-    if (index < 0 || index >= this.length) throw new RangeError.value(index);
+    if (index < 0 || index >= length) throw new RangeError.value(index);
     return _fromJs($unsafe.splice(index, 1)[0]);
   }
   @override E removeLast() => _fromJs($unsafe.pop());
@@ -305,7 +305,7 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
 
   void addAll(Iterable<E> iterable) {
     for (E element in iterable) {
-      this[this.length++] = element;
+      this[length++] = element;
     }
   }
 
@@ -367,11 +367,11 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
   Map<int, E> asMap() => _asList().asMap();
 
   void _rangeCheck(int start, int end) {
-    if (start < 0 || start > this.length) {
-      throw new RangeError.range(start, 0, this.length);
+    if (start < 0 || start > length) {
+      throw new RangeError.range(start, 0, length);
     }
-    if (end < start || end > this.length) {
-      throw new RangeError.range(end, start, this.length);
+    if (end < start || end > length) {
+      throw new RangeError.range(end, start, length);
     }
   }
 
@@ -444,13 +444,13 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
   }
 
   int indexOf(E element, [int startIndex = 0]) {
-    if (startIndex >= this.length) {
+    if (startIndex >= length) {
       return -1;
     }
     if (startIndex < 0) {
       startIndex = 0;
     }
-    for (int i = startIndex; i < this.length; i++) {
+    for (int i = startIndex; i < length; i++) {
       if (this[i] == element) {
         return i;
       }
@@ -465,13 +465,13 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
    */
   int lastIndexOf(E element, [int startIndex]) {
     if (startIndex == null) {
-      startIndex = this.length - 1;
+      startIndex = length - 1;
     } else {
       if (startIndex < 0) {
         return -1;
       }
-      if (startIndex >= this.length) {
-        startIndex = this.length - 1;
+      if (startIndex >= length) {
+        startIndex = length - 1;
       }
     }
     for (int i = startIndex; i >= 0; i--) {
@@ -518,8 +518,8 @@ class JsArrayToListAdapter<E> extends TypedProxy /*with ListMixin<E>*/
     // There might be errors after the length change, in which case the list
     // will end up being modified but the operation not complete. Unless we
     // always go through a "toList" we can't really avoid that.
-    this.length += insertionLength;
-    setRange(index + insertionLength, this.length, this, index);
+    length += insertionLength;
+    setRange(index + insertionLength, length, this, index);
     setAll(index, iterable);
   }
 
@@ -543,8 +543,9 @@ class _JsIterator<E> implements Iterator<E> {
   final int length;
   int _currentIndex = -1;
 
-  _JsIterator(JsArrayToListAdapter<E> jsArray) : this._jsArray = jsArray,
-      length = jsArray.length;
+  _JsIterator(JsArrayToListAdapter<E> jsArray) 
+      : _jsArray = jsArray,
+        length = jsArray.length;
 
   // Iterator
   @override bool moveNext() {
