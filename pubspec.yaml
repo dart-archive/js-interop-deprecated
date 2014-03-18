@@ -6,9 +6,19 @@ authors:
 description: Access JavaScript from Dart.
 homepage: https://github.com/dart-lang/js-interop
 dependencies:
+  code_transformers:
+    path: /Users/justinfagnani/Documents/Projects/dart2-repo/dart/pkg/code_transformers
+  analyzer:
+    path: /Users/justinfagnani/Documents/Projects/dart2-repo/dart/pkg/analyzer
   browser: '>=0.9.0 <0.11.0'
+  barback: any
 dev_dependencies:
   ghpages_generator: '>=0.0.1 <0.1.0'
   unittest: '>=0.9.0 < 0.11.0'
 environment:
   sdk: '>=1.0.0 < 2.0.0'
+dependency_overrides:
+  code_transformers:
+    path: /Users/justinfagnani/Documents/Projects/dart2-repo/dart/pkg/code_transformers
+  analyzer:
+    path: /Users/justinfagnani/Documents/Projects/dart2-repo/dart/pkg/analyzer
