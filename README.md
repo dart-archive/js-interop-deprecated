@@ -1,12 +1,21 @@
-This package is deprecated in favor of [dart:js][dartjs].
+Dart-JavaScript Interop
+=======================
 
-If you are using `package:js` (the old version of this package),
-we recommend that you port your code over to `dart:js`.
+package:js provides high-level, typed interopability between Dart and
+JavaScript. It allows developers to export Dart APIs to JavaScript and define
+well-typed interfaces for JavaScript objects.
 
-Usage of `package:js` version <= 0.2.2 can greatly increase the size of
-your generated JavaScript.
+Status
+------
 
-We are working on a next-generation `package:js`, but if you
-need to interop with JavaScript now, please use `dart:js`.
+Version 0.3.0 is a complete rewrite of package:js as described in the
+package:js 1.0 [design document][design].
 
-[dartjs]: https://api.dartlang.org/apidocs/channels/stable/dartdoc-viewer/dart-js
+The development plan is to build out the first release of this new version of
+package:js and publish as 0.3.0, then rapidly release new versions as
+development progresses using semantic versioning, but shifting the meaning of
+the version number one to the right. This means that 0.4.0 will be a breaking
+change in some way from 0.3.0. Version 1.0 will signify that the features and
+API have stabilized.
+
+[design]: https://docs.google.com/a/google.com/document/d/1X0M7iQ1PraH50353OnjKidgrd0EK6NpLNXVI27jitFY/edit#]
