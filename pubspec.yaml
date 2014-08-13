@@ -11,6 +11,7 @@ dependencies:
   browser: '>=0.9.0 <0.11.0'
   code_transformers: '>=0.1.5 <0.3.0'
 dev_dependencies:
+  path: '>=1.0.0 <2.0.0'
   unittest: '>=0.9.0 <0.12.0'
 environment:
   sdk: '>=1.0.0 <2.0.0'

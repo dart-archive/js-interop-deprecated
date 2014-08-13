@@ -9,9 +9,9 @@ import 'dart:io';
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/source.dart';
-import 'package:analyzer/src/string_source.dart';
 import 'package:code_transformers/resolver.dart' show MockDartSdk;
 import 'package:js/src/transformer/scanning_visitor.dart';
+import 'package:path/path.dart' as path;
 import 'package:unittest/unittest.dart';
 
 import 'utils.dart';
@@ -24,6 +24,22 @@ main() {
     LibraryElement jsLib;
 
     setUp(() {
+      // fix up cwd to be able to load test files when run from different
+      // directories in the command line or Editor
+      var testSourcesPath = Directory.current.path.endsWith('transformer')
+          ? 'test_sources'
+          : 'transformer/test_sources';
+      var jsSourcesPath = Directory.current.path.endsWith('transformer')
+          ? '../../lib/'
+          : '../lib/';
+
+      final Map testSources = {
+        'package:js/js.dart':
+            new File(path.join(jsSourcesPath,'js.dart')).readAsStringSync(),
+        'package:test/test.dart':
+          new File(path.join(testSourcesPath,'test.dart')).readAsStringSync(),
+      };
+
       _context = AnalysisEngine.instance.createAnalysisContext();
       var sdk = new MockDartSdk(mockSdkSources, reportMissing: false);
       var options = new AnalysisOptionsImpl();
@@ -66,10 +82,3 @@ main() {
     });
   });
 }
-
-final Map testSources = {
-  'package:js/js.dart':
-      new File('../../lib/js.dart').readAsStringSync(),
-  'package:test/test.dart':
-    new File('./test_sources/test.dart').readAsStringSync(),
-};
