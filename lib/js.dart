@@ -8,3 +8,47 @@
  */
 
 library js;
+
+import 'dart:js' as js;
+
+js.JsObject get jsContext => js.context;
+
+/**
+ * A metadata annotation to mark a library, variable, class, function or method
+ * declaration for export to JavaScript. All children of the declaration are
+ * also exported, unless they are marked with [NoExport].
+ */
+class Export {
+  final String as;
+  const Export({this.as});
+}
+
+/**
+ * A metadata annotation to override an [Export] annotation on a higher-level
+ * declaration to not export the target declaration or its children.
+ */
+class NoExport {
+  const NoExport();
+}
+
+/**
+ * The base class of Dart interfaces for JavaScript objects.
+ */
+class JsInterface {}
+
+/**
+ * A metadata annotation to specify the JavaScript constructor associated with
+ * a [JsInterface].
+ */
+class JsConstructor {
+  final String constructor;
+  const JsConstructor(this.constructor);
+}
+
+/**
+ * A metadata annotation to mark a [JsInterface] subclass as proxying the global
+ * JavaScript context.
+ */
+class JsGlobal {
+  const JsGlobal();
+}
