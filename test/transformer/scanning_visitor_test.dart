@@ -15,30 +15,35 @@ main() {
   group('ScanningVisitor', () {
     LibraryElement testLib;
     LibraryElement jsLib;
+    LibraryElement jsMetadataLib;
 
     setUp(() {
       var analyserInfo = initAnalyzer();
       testLib = analyserInfo.testLib;
       jsLib = analyserInfo.jsLib;
+      jsMetadataLib = jsLib
+          .exportedLibraries
+          .singleWhere((l) => l.name == 'js.metadata');
+
     });
 
-    test('should find JsInterfaces', () {
-      var visitor = new ScanningVisitor(jsLib, testLib)
+    test('should find JsProxy annotated classes', () {
+      var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
-      expect(visitor.jsInterfaces, new Set.from([
-          testLib.getType('Context'),
-          testLib.getType('JsFoo'),
-          testLib.getType('JsBar')]));
+      expect(visitor.jsProxies, new Set.from([
+          testLib.getType('ContextImpl'),
+          testLib.getType('JsFooImpl'),
+          testLib.getType('JsBarImpl')]));
     });
 
     test('should find @Exported classes', () {
-      var visitor = new ScanningVisitor(jsLib, testLib)
+      var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       expect(visitor.exportedElements, contains(testLib.getType('ExportMe')));
     });
 
     test('should not export non-exported classes', () {
-      var visitor = new ScanningVisitor(jsLib, testLib)
+      var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       expect(visitor.exportedElements,
           isNot(contains(testLib.getType('Context'))));

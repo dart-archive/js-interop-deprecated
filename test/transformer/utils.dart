@@ -1,3 +1,7 @@
+// Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 library js.test.transformer.utils;
 
 import 'dart:io';
@@ -39,6 +43,12 @@ AnalyzerInfo initAnalyzer() {
   var testSources = {
     'package:js/js.dart':
         new File(path.join(jsSourcesPath,'js.dart')).readAsStringSync(),
+    'package:js/src/js_impl.dart':
+        new File(path.join(jsSourcesPath,'src/js_impl.dart'))
+        .readAsStringSync(),
+    'package:js/src/metadata.dart':
+        new File(path.join(jsSourcesPath,'src/metadata.dart'))
+        .readAsStringSync(),
     'package:test/test.dart': testLibSource,
   };
   var testResolver = new TestUriResolver(testSources);
@@ -50,9 +60,17 @@ AnalyzerInfo initAnalyzer() {
 
   var jsSource = testResolver
       .resolveAbsolute(Uri.parse('package:js/js.dart'));
+  Source jsInterfaceSource = testResolver
+      .resolveAbsolute(Uri.parse('package:js/src/js_impl.dart'));
+  Source jsMetadataSource = testResolver
+      .resolveAbsolute(Uri.parse('package:js/src/metadata.dart'));
 
   var testLib = _context.computeLibraryElement(testSource);
-  var jsLib = _context.getLibraryElement(jsSource);
+  var jsLib = _context.computeLibraryElement(jsSource);
+  var jsInterfaceLib = _context.computeLibraryElement(jsInterfaceSource);
+
+//  print(jsInterfaceSource.contents.data);
+//  print(jsInterfaceLib);
   return new AnalyzerInfo(_context, testLib, jsLib);
 }
 
@@ -73,3 +91,4 @@ class TestUriResolver extends UriResolver {
   Uri restoreAbsolute(Source source) =>
       throw new UnsupportedError('restoreAbsolute is not supported');
 }
+
