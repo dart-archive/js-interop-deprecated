@@ -4,7 +4,7 @@
 
 library js.transformer.scanning_visitor;
 
-import 'dart:collection';
+//import 'dart:collection';
 
 import 'package:analyzer/src/generated/element.dart';
 import 'package:logging/logging.dart';
@@ -28,7 +28,10 @@ class ScanningVisitor extends RecursiveElementVisitor {
   final ClassElement exportClass;
   final ClassElement noExportClass;
   final ClassElement jsInterfaceClass;
-  final Set<ClassElement> jsInterfaces = new Set<ClassElement>();
+  final ClassElement jsProxyClass;
+
+  final Set<ClassElement> jsProxies = new Set<ClassElement>();
+  final Set<ClassElement> jsInterfaceImpls = new Set<ClassElement>();
   final Set<Element> exportedElements = new Set<Element>();
   final Set<Element> noExportedElements = new Set<Element>();
 
@@ -38,12 +41,22 @@ class ScanningVisitor extends RecursiveElementVisitor {
 
   ScanningVisitor(
       jsLibrary,
+      LibraryElement jsMetadataLibrary,
       this.entryLibrary)
       : this.jsLibrary = jsLibrary,
-        jsInterfaceClass = jsLibrary.getType('JsInterface'),
-        exportClass = jsLibrary.getType('Export'),
-        noExportClass = jsLibrary.getType('NoExport') {
+        jsInterfaceClass = jsLibrary
+            .exportedLibraries
+            .singleWhere((l) => l.name == 'js.impl')
+            .getType('JsInterface'),
+        jsProxyClass = jsMetadataLibrary.getType('JsProxy'),
+        exportClass = jsMetadataLibrary.getType('Export'),
+        noExportClass = jsMetadataLibrary.getType('NoExport') {
+    assert(jsLibrary != null);
     assert(entryLibrary != null);
+    assert(jsInterfaceClass != null);
+    assert(jsProxyClass != null);
+    assert(exportClass != null);
+    assert(noExportClass != null);
   }
 
   @override
@@ -67,8 +80,8 @@ class ScanningVisitor extends RecursiveElementVisitor {
 
   @override
   visitClassElement(ClassElement element) {
-    if (isJsInterface(element)) {
-      jsInterfaces.add(element);
+    if (isJsProxy(element)) {
+      jsProxies.add(element);
     }
 
     final previousState = _exportState;
@@ -143,15 +156,18 @@ class ScanningVisitor extends RecursiveElementVisitor {
   /*
    * Determines whether a class directly extends JsInterface.
    */
-  bool isJsInterface(ClassElement e) {
+  bool isJsProxy(ClassElement e) {
     if (e.isPrivate) return false;
     bool isJsInterface = false;
 
-    if (e.allSupertypes.contains(jsInterfaceClass.type)) {
+    if (hasProxyAnnotation(e)) {
       isJsInterface = true;
     }
 
     if (isJsInterface) {
+      if (!e.allSupertypes.contains(jsInterfaceClass.type)) {
+        _logger.severe('@JsProxy() annotated classes must extend JsInterface');
+      }
       for (var m in e.metadata) {
         if (m.element.kind == ElementKind.CONSTRUCTOR) {
           if (m.element.enclosingElement == exportClass) {
@@ -177,6 +193,10 @@ class ScanningVisitor extends RecursiveElementVisitor {
    *  - support for constants defined in terms of the type (e.g. if we define
    *    `const export = const Export();`)
    */
+  bool hasProxyAnnotation(Element e) => e.metadata.any((m) =>
+      m.element.kind == ElementKind.CONSTRUCTOR &&
+      m.element.enclosingElement == jsProxyClass);
+
   bool hasExportAnnotation(Element e) => e.metadata.any((m) =>
       m.element.kind == ElementKind.CONSTRUCTOR &&
       m.element.enclosingElement == exportClass);

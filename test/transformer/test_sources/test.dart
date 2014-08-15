@@ -1,51 +1,99 @@
+// Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 library js.transformer_test;
 
+import 'dart:js' show JsObject;
 import 'package:js/js.dart';
 
-@JsGlobal()
 abstract class Context extends JsInterface {
 
-  factory Context() {}
+  factory Context() => new ContextImpl();
 
-  Context._create();
+  Context.created(JsObject o) : super.created(o);
 
-  JsFoo foo; // read a typed JS object from JS
+  JsFoo get foo;
+  void set foo(JsFoo v);
 
-  ExportMe exportMe; // write a exported Dart object to JS
+  String getName(HasName o);
 
+  bool isExportMe(ExportMe e);
+
+  ExportMe roundTrip(ExportMe e);
+
+  ExportMe createExportMe();
+
+  int x();
 }
 
-@JsConstructor('JsThing')
+@JsProxy(global: true)
+class ContextImpl extends Context {
+
+  factory ContextImpl() => new JsInterface(ContextImpl, []);
+
+  ContextImpl.created(JsObject o) : super.created(o);
+
+  noSuchMethod(i) => super.noSuchMethod(i);
+}
+
+abstract class HasName {
+  String name;
+}
+
 abstract class JsFoo extends JsInterface {
 
-  factory JsFoo(String name) {}
+  JsFoo.created(JsObject o) : super.created(o);
 
-  JsFoo._create();
+  factory JsFoo(String name) => new JsInterface(JsFooImpl, [name]);
 
-  String name;
+  String get name;
 
   int y() => 1;
 
-  JsBar bar;
+//  JsBar bar;
+//
+//  JsBar getBar(JsBar b);
+}
 
-  JsBar getBar(JsBar b);
+@JsProxy(constructor: 'JsThing')
+class JsFooImpl extends JsFoo {
+
+  JsFooImpl.created(JsObject o) : super.created(o);
+
+  noSuchMethod(i) => super.noSuchMethod(i);
+}
+
+abstract class JsBar extends JsFoo {
+
+  factory JsBar(String name) => new JsInterface(JsBarImpl, [name]);
+
+  JsBar.created(JsObject o) : super.created(o);
+
+  int z();
 
 }
 
-@JsConstructor('JsThing2')
-abstract class JsBar extends JsInterface {
+@JsProxy(constructor: 'JsThing2')
+class JsBarImpl extends JsBar {
 
-  int y;
+  JsBarImpl.created(JsObject o) : super.created(o);
 
+  noSuchMethod(i) => super.noSuchMethod(i);
 }
+
 
 @Export()
-class ExportMe {
+class ExportMe implements HasName {
 
   static String staticField = 'a';
   static bool staticMethod() => false;
 
-  String field;
+  String name;
+
+  ExportMe();
+
+  ExportMe.named(this.name);
 
   int method() => 42;
 
@@ -82,4 +130,5 @@ DoNotExport getDoNotExport() => new DoNotExport();
 
 @NoExport()
 void main() {
+  var context = new Context();
 }

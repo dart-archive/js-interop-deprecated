@@ -29,25 +29,27 @@ main() {
       testLibSource = analyserInfo.context.getContents(testLib.source).data;
     });
 
+    // TODO: This test doesn't really do anything. We probably want to compare
+    // the output against checked-in known good transformed source and leave the
+    // rest of the testing to generated_code_test
     test('should generate implementations for JsInterface subclasses', () {
       var jsInterfaces = new Set.from([
-          testLib.getType('Context'),
-          testLib.getType('JsFoo'),
-          testLib.getType('JsBar')]);
+          testLib.getType('ContextImpl'),
+          testLib.getType('JsFooImpl'),
+          testLib.getType('JsBarImpl')]);
+      var jsMetadataLib = jsLib
+          .exportedLibraries
+          .singleWhere((l) => l.name == 'js.metadata');
       var testSourceFile = new SourceFile(testLibSource);
       var transaction = new TextEditTransaction(testLibSource, testSourceFile);
-      var generator =
-          new InterfaceGenerator(jsInterfaces, testLib, jsLib, transaction);
-      var result = generator.generate();
+      var generator = new InterfaceGenerator(jsInterfaces, testLib, jsLib,
+          jsMetadataLib, transaction);
 
-      // TODO: better generated code tests!
-      // We can check each generated member for existence, but for behavior
-      // it'll be better to instantiate the result and run tests against mock
-      // JsObjects
+      var newSource = generator.generate();
 
-      expect(result, contains('ContextImpl'));
-      expect(result, contains('JsFooImpl'));
-      expect(result, contains('JsBarImpl'));
+      expect(newSource, contains('ContextImpl'));
+      expect(newSource, contains('JsFooImpl'));
+      expect(newSource, contains('JsBarImpl'));
     });
 
   });

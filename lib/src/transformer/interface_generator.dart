@@ -5,224 +5,260 @@
 library js.transformer.interface_generator;
 
 import 'package:analyzer/src/generated/element.dart';
-import 'package:source_maps/refactor.dart';
-import 'package:logging/logging.dart';
 import 'package:analyzer/analyzer.dart';
+import 'package:logging/logging.dart';
+import 'package:quiver/iterables.dart' show max, concat;
+import 'package:source_maps/refactor.dart';
+import 'package:js/src/metadata.dart';
+import 'package:analyzer/src/generated/resolver.dart';
 
 final _logger = new Logger('js.transformer.interface_generator');
+
+const JS_PREFIX = '__package_js_impl__';
 
 class InterfaceGenerator {
 
   final ClassElement jsInterfaceClass;
-  final ClassElement jsGlobalClass;
-  final ClassElement jsConstructorClass;
+  final ClassElement jsProxyClass;
   final ClassElement exportClass;
   final ClassElement noExportClass;
+
   final LibraryElement library;
   final LibraryElement jsLibrary;
   final TextEditTransaction transaction;
-  final StringBuffer implBuffer;
 
-  /// The list of abstract classes to generate proxy implementations for
-  final Iterable<ClassElement> jsInterfaces;
+  /// The list of classes to generate proxy implementations for
+  final Iterable<ClassElement> jsProxies;
+  final InheritanceManager inheritanceManager;
+
+  var generatedMembers = new Set<Element>();
 
   InterfaceGenerator(
-    this.jsInterfaces,
-    this.library,
+    this.jsProxies,
+    LibraryElement library,
     LibraryElement jsLibrary,
+    LibraryElement jsMetadataLibrary,
     this.transaction)
-      : jsLibrary = jsLibrary,
-        jsInterfaceClass = jsLibrary.getType('JsInterface'),
-        jsGlobalClass = jsLibrary.getType('JsGlobal'),
-        jsConstructorClass = jsLibrary.getType('JsConstructor'),
-        exportClass = jsLibrary.getType('Export'),
-        noExportClass = jsLibrary.getType('NoExport'),
-        implBuffer =  new StringBuffer();
-
-  /**
-   * Returns the generated concrete implemantions. This also triggers edits
-   * on the supplied TextEditTransaction to replace factory constructors.
-   */
-  String generate() {
-    jsInterfaces.forEach(generateClass);
-    return implBuffer.toString();
+      : library = library,
+        jsLibrary = jsLibrary,
+        jsInterfaceClass = jsLibrary
+            .exportedLibraries
+            .singleWhere((l) => l.name == 'js.impl')
+            .getType('JsInterface'),
+        jsProxyClass = jsMetadataLibrary.getType('JsProxy'),
+        exportClass = jsMetadataLibrary.getType('Export'),
+        noExportClass = jsMetadataLibrary.getType('NoExport'),
+        inheritanceManager = new InheritanceManager(library) {
+    assert(jsLibrary != null);
+    assert(library != null);
+    assert(jsInterfaceClass != null);
+    assert(jsProxyClass != null);
+    assert(exportClass != null);
+    assert(noExportClass != null);
   }
 
-  void generateClass(ClassElement interface) {
-    final interfaceName = interface.name;
-    final implName = '${interfaceName}Impl';
-    final bool isGlobal = _isGlobalInterface(interface);
-    final factoryConstructor = _getFactoryConstructor(interface);
-    final bool hasFactory = factoryConstructor != null;
-    final String jsConstructor = _getJsConstructor(interface);
+  /**
+   * Returns the transformed source.
+   */
+  String generate() {
+    _addImports();
+    jsProxies.forEach(_generateProxyImplementation);
+    var printer = transaction.commit();
+    printer.build('test.dart');
+    return printer.text;
+  }
 
-    if (hasFactory) {
-      // if there's a factory there must be a generative ctor named _create
-      final createConstructor = _getCreateConstructor(interface);
-      if (createConstructor == null) {
-        _logger.severe("When a factory constructor is defined, a "
-            "generative constructor named _create must be defined as well");
+  void _addImports() {
+    var insertImportOffset = 0;
+    if (library.imports.isEmpty) {
+      LibraryDirective libraryDirective =
+          library.definingCompilationUnit.node.directives
+              .firstWhere((d) => d is LibraryDirective, orElse: () => null);
+      if (libraryDirective != null) {
+        insertImportOffset = libraryDirective.end;
       }
-
-      // replace the factory constructor
-      var body = factoryConstructor.node.body;
-      var begin = body.offset;
-      var end = body.end;
-
-      if (isGlobal) {
-        transaction.edit(begin, end, '=> new $implName._wrap(jsContext);');
-      } else {
-        // factory parameters
-        var parameterList = factoryConstructor.parameters
-            .map((p) => p.displayName)
-            .join(', ');
-        transaction.edit(begin, end, '=> new $implName._($parameterList);');
-      }
+    } else {
+      insertImportOffset = max(library.definingCompilationUnit.node.directives
+          .where((d) => d is ImportDirective)
+          .map((ImportDirective e) => e.end));
+      if (insertImportOffset == null) insertImportOffset = 0;
     }
+    transaction.edit(insertImportOffset, insertImportOffset,
+        "\nimport 'package:js/src/js_impl.dart' as $JS_PREFIX;");
+  }
+
+  void _generateProxyImplementation(ClassElement proxy) {
+    final proxyAnnotation = _getProxyAnnotation(proxy);
+
+    if (proxyAnnotation == null) return;
+
+    final bool isGlobal = proxyAnnotation.global == true;
+    final String jsConstructor = proxyAnnotation.constructor;
+
+    if (!isGlobal && jsConstructor == null) {
+      _logger.severe("JsProxy annotation must have either a global or a"
+          " constructor parameter");
+    }
+
+    // TODO: check other constructors?
+    _checkCreatedConstructor(proxy);
+    var hasFactory = _replaceFactoryConstructor(proxy, proxyAnnotation);
 
     if (isGlobal && !hasFactory) {
       _logger.severe("global objects must have factory constructors");
     }
 
-
-    // add impl class
-    implBuffer.write(
-'''
-
-class $implName extends $interfaceName {
-  final JsObject _obj;
-
-  static $implName wrap(JsObject o) => new $implName._wrap(o);
-
-  $implName._wrap(this._obj) : super${ hasFactory ? '._create' : ''}();
-    
-''');
-
-    if (hasFactory && !isGlobal) {
-      implBuffer.writeln('  static final _ctor = jsContext["$jsConstructor"];');
-      // parameters
-      var parameterList = factoryConstructor.parameters
-          .map((p) => '${p.type.displayName} ${p.displayName}')
-          .join(', ');
-
-      var jsParameterList = factoryConstructor.parameters
-          .map((p) {
-            var type = p.type;
-            if (type.isSubtypeOf(jsInterfaceClass.type)) {
-              return '${p.displayName}._obj';
-            } else {
-              return p.displayName;
-            }
-          })
-          .join(', ');
-
-      String newCall = 'new JsObject(_ctor, [$jsParameterList])';
-      implBuffer.writeln('  $implName._($parameterList) '
-          ': _obj = $newCall, super._create();');
-    }
-
-    for (PropertyAccessorElement a in interface.accessors) {
-      if ((a.isAbstract || a.variable != null) && !a.isStatic) {
-        if (a.isGetter) {
-          _generateGetter(a);
-        } else if (a.isSetter) {
-          _generateSetter(a);
-        }
-      }
-    }
-
-    for (MethodElement a in interface.methods) {
-      _generateMethod(a, interfaceName);
-    }
-
-    implBuffer.writeln('}');
+    _generateAbstractMembers(proxy);
   }
 
-  void _generateMethod(MethodElement a, String interfaceName) {
+  bool _replaceFactoryConstructor(ClassElement proxy, JsProxy proxyAnnotation) {
+    final name = proxy.name;
+    final factoryConstructor = _getFactoryConstructor(proxy);
+    final bool isGlobal = proxyAnnotation.global;
+    final String jsConstructor = proxyAnnotation.constructor;
+
+    if (factoryConstructor == null) return false;
+
+    var body = factoryConstructor.node.body;
+    var begin = body.offset;
+    var end = body.end;
+
+    if (body is! ExpressionFunctionBody ||
+        body.expression is! InstanceCreationExpression) {
+      _logger.severe('JsInterface factory constructors must be expressions'
+          ' that call new JsInterface()');
+    }
+    InstanceCreationExpression expr = body.expression;
+    var args = expr.argumentList.arguments;
+    var implType = args[0];
+    var ctorArgs = args[1];
+
+    if (isGlobal) {
+      if (factoryConstructor.parameters.isNotEmpty) {
+        _logger.severe('global proxy constructors must not have parameters');
+      }
+      var offset = factoryConstructor.node.offset;
+      transaction.edit(offset, offset, 'static $name _instance;\n  ');
+      transaction.edit(begin, end, '=> (_instance != null) ? _instance '
+          ': _instance = new $implType.created($JS_PREFIX.context);');
+    } else {
+      var parameterList = factoryConstructor.parameters
+          .map((p) => p.displayName)
+          .join(', ');
+      transaction.edit(begin, end, '=> new $implType.created('
+          'new JsObject($JS_PREFIX.context["$jsConstructor"], '
+              '[$parameterList]));');
+    }
+    return true;
+  }
+
+  void _generateAbstractMembers(ClassElement proxy) {
+    var memberMap =
+        inheritanceManager.getMapOfMembersInheritedFromInterfaces(proxy);
+
+    for (var i = 0; i < memberMap.size; i++) {
+      var memberKey = memberMap.getKey(i);
+      var member = memberMap.getValue(i);
+
+      if (generatedMembers.contains(member) || !member.isAbstract) continue;
+      generatedMembers.add(member);
+
+      if (member is PropertyAccessorElement) {
+        if (member.isGetter) {
+          _generateGetter(member);
+        } else if (member.isSetter) {
+          _generateSetter(member);
+        }
+      } else if (member is MethodElement) {
+        _generateMethod(member);
+      }
+    }
+
+  }
+
+  void _generateMethod(MethodElement a) {
     var name = a.displayName;
-    if (!a.isStatic && name != interfaceName) {
+    if (!a.isStatic) {
       var returnType = a.returnType;
 
-      var parameterList = new StringBuffer();
       var jsParameterList = new StringBuffer();
 
-      // parameters
-      for (var p in a.parameters) {
-        var type = p.type;
-        parameterList.write('${type.displayName} ${p.displayName}');
-        if (type.isSubtypeOf(jsInterfaceClass.type)) {
-          // unwrap
-          jsParameterList.write('${p.displayName}._obj');
-        } else {
-          jsParameterList.write('${p.displayName}');
-        }
-      }
+      var parameterList = a.parameters
+          .map((p) => '$JS_PREFIX.toJs(${p.name})')
+          .join(', ');
 
-      if (returnType.isSubtypeOf(jsInterfaceClass.type)) {
-        var returnTypeImplName = '${returnType}Impl';
-        implBuffer.writeln(
-            '  ${a.returnType} $name($parameterList) => '
-            'getWrapper(_obj.callMethod("$name", [$jsParameterList]) '
-            'as JsObject, $returnTypeImplName._wrap) as $returnTypeImplName;');
-      } else {
-        implBuffer.writeln(
-            '  ${a.returnType} $name($parameterList) => '
-            '_obj.callMethod("$name", [$jsParameterList]);');
-      }
+      MethodDeclaration m = a.node;
+      var offset = m.body.offset;
+      var end = m.body.end;
+      transaction.edit(offset, end, " => $JS_PREFIX.toDart("
+          "$JS_PREFIX.toJs(this).callMethod('$name', [$parameterList]))"
+          " as ${a.returnType};");
     }
   }
 
   void _generateSetter(PropertyAccessorElement a) {
     var name = a.displayName;
-    var type = a.parameters[0].type;
-    if (type.isSubtypeOf(jsInterfaceClass.type)) {
-      implBuffer.writeln(
-          '  void set $name(${a.parameters[0].type} v) => '
-          '_obj["$name"] = v._obj;');
-    } else {
-      implBuffer.writeln(
-          '  void set $name(${a.parameters[0].type} v) { _obj["$name"] = v; }');
+    var parameter = a.parameters.single;
+    var type = parameter.type;
+    if (type == null) {
+      _logger.severe("abstract JsInterface setters must have type annotations");
+      return;
     }
+    var parameterName = parameter.name;
+    MethodDeclaration m = a.node;
+    var offset = m.body.offset;
+    var end = m.body.end;
+    transaction.edit(offset, end, " { $JS_PREFIX.toJs(this)['$name']"
+        " = $JS_PREFIX.toJs($parameterName); }");
   }
 
   void _generateGetter(PropertyAccessorElement a) {
     var name = a.displayName;
     var type = a.type.returnType;
-    var typeImplName = '${type}Impl';
-    if (type.isSubtypeOf(jsInterfaceClass.type)) {
-      implBuffer.writeln(
-          '  $type get $name => getWrapper(_obj["$name"], $typeImplName.wrap) '
-          'as $type;');
-    } else {
-      // TODO: verify that $type is a primitive, List, JsObject or native object
-      implBuffer.writeln('  $type get $name => _obj["$name"] as $type;');
+    if (type == null) {
+      _logger.severe("abstract JsInterface getters must have type annotations");
+      return;
     }
+    MethodDeclaration m = a.node;
+    var offset = m.body.offset;
+    var end = m.body.end;
+    transaction.edit(offset, end, " => $JS_PREFIX.toDart("
+        "$JS_PREFIX.toJs(this)['$name']) as $type;");
   }
 
-  bool _isGlobalInterface(ClassElement interface) {
-    for (var m in interface.metadata) {
-      var e = m.element;
-      if (e is ConstructorElement && e.type.returnType == jsGlobalClass.type) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  _getFactoryConstructor(ClassElement interface) => interface.constructors
+  ConstructorElement _getFactoryConstructor(ClassElement interface) =>
+      interface.constructors
       .firstWhere((c) => c.name == '' && c.isFactory, orElse: () => null);
 
-  _getCreateConstructor(ClassElement interface) => interface.constructors
-      .firstWhere((c) => c.name == '_create' && !c.isFactory,
-      orElse: () => null);
+  ConstructorElement _checkCreatedConstructor(ClassElement interface) =>
+      interface.constructors.firstWhere(
+          (c) => c.name == 'created' && !c.isFactory,
+          orElse: () {
+            _logger.severe("JsInterface subclasses must have a"
+                "generative constructor named 'created'");
+            return null;
+          });
 
-  _getJsConstructor(ClassElement interface) {
+  JsProxy _getProxyAnnotation(ClassElement interface) {
     var node = interface.node;
     for (Annotation a in node.metadata) {
       var e = a.element;
-      if (e is ConstructorElement &&
-          e.type.returnType == jsConstructorClass.type) {
-        return (a.arguments.arguments[0] as StringLiteral).stringValue;
+      if (e is ConstructorElement && e.type.returnType == jsProxyClass.type) {
+        bool global;
+        String constructor;
+        for (Expression e in a.arguments.arguments) {
+          if (e is NamedExpression) {
+            if (e.name.label.name == 'global' && e.expression is BooleanLiteral) {
+              BooleanLiteral b = e.expression;
+              global = b.value;
+            } else if (e.name.label.name == 'constructor' &&
+                e.expression is StringLiteral) {
+              StringLiteral s = e.expression;
+              constructor = s.stringValue;
+            }
+          }
+        }
+        return new JsProxy(global: global, constructor: constructor);
       }
     }
     return null;

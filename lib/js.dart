@@ -6,49 +6,10 @@
  * The js library allows Dart library authors to export their APIs to JavaScript
  * and to define Dart interfaces for JavaScript objects.
  */
-
 library js;
 
-import 'dart:js' as js;
+export 'dart:js' show JsObject;
 
-js.JsObject get jsContext => js.context;
-
-/**
- * A metadata annotation to mark a library, variable, class, function or method
- * declaration for export to JavaScript. All children of the declaration are
- * also exported, unless they are marked with [NoExport].
- */
-class Export {
-  final String as;
-  const Export({this.as});
-}
-
-/**
- * A metadata annotation to override an [Export] annotation on a higher-level
- * declaration to not export the target declaration or its children.
- */
-class NoExport {
-  const NoExport();
-}
-
-/**
- * The base class of Dart interfaces for JavaScript objects.
- */
-class JsInterface {}
-
-/**
- * A metadata annotation to specify the JavaScript constructor associated with
- * a [JsInterface].
- */
-class JsConstructor {
-  final String constructor;
-  const JsConstructor(this.constructor);
-}
-
-/**
- * A metadata annotation to mark a [JsInterface] subclass as proxying the global
- * JavaScript context.
- */
-class JsGlobal {
-  const JsGlobal();
-}
+// this must be a package import due to dartbug.com/20666
+export 'package:js/src/js_impl.dart' show JsInterface;
+export 'package:js/src/metadata.dart';

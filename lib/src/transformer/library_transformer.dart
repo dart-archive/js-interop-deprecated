@@ -26,8 +26,9 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
   LibraryTransformer(this.resolvers);
 
   @override
-  Future<bool> isPrimary(AssetId id) =>
-      new Future.value(id.extension == '.dart');
+  Future<bool> isPrimary(AssetId id) => new Future.value(
+      id.extension == '.dart' &&
+      !(id.package == 'js' && id.path.startsWith('lib')));
 
   Future<bool> shouldApplyResolver(Asset asset) {
     return asset.readAsString().then((contents) {
@@ -42,6 +43,7 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
     var input = transform.primaryInput;
     var library = resolver.getLibrary(transform.primaryInput.id);
     var jsLibrary = resolver.getLibraryByName('js');
+    var jsMetadataLibrary = resolver.getLibraryByName('js.metadata');
 
     if (jsLibrary == null || !library.visibleLibraries.contains(jsLibrary)) {
       return;
@@ -49,21 +51,18 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
 
     var transaction = resolver.createTextEditTransaction(library);
 
-    var scanningVisitor = new ScanningVisitor(jsLibrary, library);
+    var scanningVisitor =
+        new ScanningVisitor(jsLibrary, jsMetadataLibrary, library);
     library.accept(scanningVisitor);
 
     var generator = new InterfaceGenerator(
-        scanningVisitor.jsInterfaces,
+        scanningVisitor.jsProxies,
         library,
         jsLibrary,
+        jsMetadataLibrary,
         transaction);
     var newSource = generator.generate();
-
-    int endOfFile = transaction.original.length - 1;
-    transaction.edit(endOfFile, endOfFile, newSource);
-    var printer = transaction.commit();
-    printer.build(input.id.path);
-    var newLibrary = new Asset.fromString(input.id, printer.text);
+    var newLibrary = new Asset.fromString(input.id, newSource);
     transform.addOutput(newLibrary);
   }
 }
