@@ -56,7 +56,6 @@ library in the editor:
 6.  Add the script to your HTML page:
 
         <script src="packages/browser/dart.js"></script>
-        <script src="packages/browser/interop.js"></script> 
 
 Running Tests
 -------------
@@ -79,8 +78,8 @@ and then open **test/browser_tests.html** in any browser.
 [mb]: http://www.dartlang.org/support/faq.html#what-browsers-supported
 [pub]: http://www.dartlang.org/docs/pub-package-manager/
 [Dartium]: http://www.dartlang.org/tools/dartium/
-[docs]: http://dart-lang.github.com/js-interop
-[samples]: http://dart-lang.github.com/js-interop/example
+[docs]: http://www.dartdocs.org/documentation/js/0.2.2/index.html#js
+[samples]: example
 [editor]: http://www.dartlang.org/docs/editor/getting-started/
 [video]: http://www.youtube.com/watch?v=QFuCFUd2Zsw
 [dartjs]: http://api.dartlang.org/docs/channels/stable/latest/dart_js.html
