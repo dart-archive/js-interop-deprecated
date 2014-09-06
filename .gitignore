@@ -3,3 +3,4 @@ packages
 pubspec.lock
 .project
 .buildlog
+.pub
