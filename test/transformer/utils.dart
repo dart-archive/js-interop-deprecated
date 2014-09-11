@@ -13,6 +13,8 @@ import 'package:code_transformers/resolver.dart';
 import 'package:js/src/transformer/mock_sdk.dart' as mock_sdk show sources;
 import 'package:path/path.dart' as path;
 import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/src/generated/source_io.dart';
+import 'package:analyzer/src/generated/java_io.dart';
 
 class AnalyzerInfo {
   final AnalysisContext context;
@@ -41,36 +43,32 @@ AnalyzerInfo initAnalyzer() {
   var testLibSource = new File(path.join(testSourcesPath,'test.dart'))
       .readAsStringSync();
   var testSources = {
-    'package:js/js.dart':
-        new File(path.join(jsSourcesPath,'js.dart')).readAsStringSync(),
-    'package:js/src/js_impl.dart':
-        new File(path.join(jsSourcesPath,'src/js_impl.dart'))
-        .readAsStringSync(),
-    'package:js/src/metadata.dart':
-        new File(path.join(jsSourcesPath,'src/metadata.dart'))
-        .readAsStringSync(),
     'package:test/test.dart': testLibSource,
   };
+
   var testResolver = new TestUriResolver(testSources);
-  _context.sourceFactory = new SourceFactory([sdk.resolver, testResolver]);
+
+  var packagesDirectory = new JavaFile.fromUri(Uri.parse('packages'));
+  var packageResolver = new PackageUriResolver([packagesDirectory]);
+
+  _context.sourceFactory = new SourceFactory(
+      [sdk.resolver, testResolver, packageResolver]);
 
   var testSource = testResolver
       .resolveAbsolute(Uri.parse('package:test/test.dart'));
   _context.parseCompilationUnit(testSource);
 
-  var jsSource = testResolver
+  Source jsSource = packageResolver
       .resolveAbsolute(Uri.parse('package:js/js.dart'));
-  Source jsInterfaceSource = testResolver
+  Source jsInterfaceSource = packageResolver
       .resolveAbsolute(Uri.parse('package:js/src/js_impl.dart'));
-  Source jsMetadataSource = testResolver
+  Source jsMetadataSource = packageResolver
       .resolveAbsolute(Uri.parse('package:js/src/metadata.dart'));
 
-  var testLib = _context.computeLibraryElement(testSource);
   var jsLib = _context.computeLibraryElement(jsSource);
   var jsInterfaceLib = _context.computeLibraryElement(jsInterfaceSource);
+  var testLib = _context.computeLibraryElement(testSource);
 
-//  print(jsInterfaceSource.contents.data);
-//  print(jsInterfaceLib);
   return new AnalyzerInfo(_context, testLib, jsLib);
 }
 
@@ -81,6 +79,7 @@ class TestUriResolver extends UriResolver {
 
   Source resolveAbsolute(Uri uri) {
     var name = uri.toString();
+    if (!sources.containsKey(name)) return null;
     var contents = sources[name];
     return new StringSource(contents, name);
   }

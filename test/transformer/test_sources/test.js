@@ -3,6 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 var foo = new JsThing('made in JS');
+var aString = 'hello';
+var aNum = 123;
+var aBool = true;
+var a = null;
 
 function JsThing(name) {
   this.name = name;
@@ -34,6 +38,10 @@ function getName(hasName) {
 
 function roundTrip(e) {
   return e;
+}
+
+function isNull(value) {
+  return value === null;
 }
 
 // hand-generated export code derived from test.dart

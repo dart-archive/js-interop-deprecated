@@ -11,13 +11,14 @@ import 'package:quiver/iterables.dart' show max, concat;
 import 'package:source_maps/refactor.dart';
 import 'package:js/src/metadata.dart';
 import 'package:analyzer/src/generated/resolver.dart';
+import 'package:barback/barback.dart';
 
 final _logger = new Logger('js.transformer.interface_generator');
 
 const JS_PREFIX = '__package_js_impl__';
 
 class InterfaceGenerator {
-
+  final AssetId inputId;
   final ClassElement jsInterfaceClass;
   final ClassElement jsProxyClass;
   final ClassElement exportClass;
@@ -34,6 +35,7 @@ class InterfaceGenerator {
   var generatedMembers = new Set<Element>();
 
   InterfaceGenerator(
+    this.inputId,
     this.jsProxies,
     LibraryElement library,
     LibraryElement jsLibrary,
@@ -60,12 +62,17 @@ class InterfaceGenerator {
   /**
    * Returns the transformed source.
    */
-  String generate() {
+  Map<AssetId, String> generate() {
     _addImports();
     jsProxies.forEach(_generateProxyImplementation);
     var printer = transaction.commit();
     printer.build('test.dart');
-    return printer.text;
+    var transformedLib = printer.text;
+    var initializerId = inputId.addExtension('__initializers.dart');
+
+    return <AssetId, String>{
+      inputId: transformedLib,
+    };
   }
 
   void _addImports() {

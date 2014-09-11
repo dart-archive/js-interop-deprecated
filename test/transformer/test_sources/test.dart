@@ -13,6 +13,18 @@ abstract class Context extends JsInterface {
 
   Context.created(JsObject o) : super.created(o);
 
+  String get aString;
+  void set aString(String v);
+
+  num get aNum;
+  void set aNum(num v);
+
+  bool get aBool;
+  void set aBool(bool v);
+
+  String get a;
+  void set a(String v);
+
   JsFoo get foo;
   void set foo(JsFoo v);
 
@@ -130,5 +142,5 @@ DoNotExport getDoNotExport() => new DoNotExport();
 
 @NoExport()
 void main() {
-  var context = new Context();
+  initializeJavaScript();
 }

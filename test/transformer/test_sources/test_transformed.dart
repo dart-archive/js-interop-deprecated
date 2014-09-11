@@ -16,6 +16,18 @@ abstract class Context extends JsInterface {
 
   Context.created(JsObject o) : super.created(o);
 
+  String get aString;
+  void set aString(String v);
+
+  num get aNum;
+  void set aNum(num v);
+
+  bool get aBool;
+  void set aBool(bool v);
+
+  String get a;
+  void set a(String v);
+
   JsFoo get foo;
   void set foo(JsFoo v);
 
@@ -39,24 +51,27 @@ class ContextImpl extends Context {
 
   ContextImpl.created(JsObject o) : super.created(o);
 
-//  JsFoo foo; // read a typed JS object from JS
+  String get aString => jsi.toDart(jsi.toJs(this)['aString']) as String;
+  void set aString(String v) { jsi.toJs(this)['aString'] = jsi.toJs(v); }
+
+  num get aNum => jsi.toDart(jsi.toJs(this)['aNum']) as num;
+  void set aNum(num v) { jsi.toJs(this)['aNum'] = jsi.toJs(v); }
+
+  bool get aBool => jsi.toDart(jsi.toJs(this)['aBool']) as bool;
+  void set aBool(bool v) { jsi.toJs(this)['aBool'] = jsi.toJs(v); }
+
+  String get a => jsi.toDart(jsi.toJs(this)['a']) as String;
+  void set a(String v) { jsi.toJs(this)['a'] = jsi.toJs(v); }
+
   JsFoo get foo => jsi.toDart(jsi.toJs(this)['foo']) as JsFoo;
   void set foo(JsFoo v) { jsi.toJs(this)['foo'] = jsi.toJs(v); }
 
-//  ExportMe exportMe; // write a exported Dart object to JS
-//  ExportMe get exportMe => jsi.getJsObject(this)['exportMe'];
-//  void set exportMe(ExportMe v) { jsi.getJsObject(this)['exportMe'] = v; }
-
-//  String getName(HasName o);
   String getName(HasName o) => jsi.toJs(this).callMethod('getName', [jsi.toJs(o)]) as String;
 
-//  bool isExportMe(ExportMe o);
   bool isExportMe(ExportMe o) => jsi.toJs(this).callMethod('isExportMe', [jsi.toJs(o)]) as bool;
 
-//  ExportMe roundTrip(ExportMe e);
   ExportMe roundTrip(ExportMe e) => jsi.toDart(jsi.toJs(this).callMethod('roundTrip', [jsi.toJs(e)])) as ExportMe;
 
-//  ExportMe createExportMe();
   ExportMe createExportMe() => jsi.toDart(jsi.toJs(this).callMethod('createExportMe', [])) as ExportMe;
 
   int x() => jsi.toJs(this).callMethod('x', []) as int;
@@ -169,7 +184,7 @@ class ExportMe implements HasName {
 
 @NoExport()
 void main() {
-  initializeJavaScriptInterop();
+  initializeJavaScript();
 }
 
 // hand-generated export code derived from this library
@@ -180,13 +195,14 @@ final _dartNs = djs.context['dart'];
 Object _getOptionalArg(Map<String, Object> args, String name) =>
   args == null ? null : args[name];
 
-void initializeJavaScriptInterop() {
+void initializeJavaScript() {
   // register Dart factories for JavaScript constructors
   jsi.registerFactoryForJsConstructor(jsi.context['JsThing'], (djs.JsObject o) => new JsFooImpl.created(o));
   jsi.registerFactoryForJsConstructor(jsi.context['JsThing2'], (djs.JsObject o) => new JsBarImpl.created(o));
 
   // export Dart APIs to JavaScript
   var lib = _dartNs;
+  assert(_dartNs != null);
   _export_js(lib);
 }
 

@@ -12,6 +12,7 @@ import 'package:source_span/source_span.dart';
 import 'package:unittest/unittest.dart';
 
 import 'utils.dart';
+import 'package:barback/barback.dart';
 
 main() {
 
@@ -42,10 +43,13 @@ main() {
           .singleWhere((l) => l.name == 'js.metadata');
       var testSourceFile = new SourceFile(testLibSource);
       var transaction = new TextEditTransaction(testLibSource, testSourceFile);
-      var generator = new InterfaceGenerator(jsInterfaces, testLib, jsLib,
+      var id = new AssetId('test', 'lib/test.dart');
+      var generator = new InterfaceGenerator(
+          id,
+          jsInterfaces, testLib, jsLib,
           jsMetadataLib, transaction);
 
-      var newSource = generator.generate();
+      var newSource = generator.generate()[id];
 
       expect(newSource, contains('ContextImpl'));
       expect(newSource, contains('JsFooImpl'));
