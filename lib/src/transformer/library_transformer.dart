@@ -56,6 +56,7 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
     library.accept(scanningVisitor);
 
     var generator = new InterfaceGenerator(
+        input.id,
         scanningVisitor.jsProxies,
         library,
         jsLibrary,

@@ -11,23 +11,23 @@ library js.impl;
 import 'dart:js';
 export 'dart:js' show context;
 
-//import 'dart:mirrors' as mirrors;
-
-//import 'package:js/js.dart';
+// TODO(justinfagnani): replace this import with a static impl
+// during transformation
+import 'package:js/src/mirrors.dart';
 
 const DART_OBJECT_PROPERTY = '__dart_object__';
 
 /**
  * The base class of Dart interfaces for JavaScript objects.
  */
-abstract class JsInterface {
+abstract class JsInterface extends JsInterfaceImpl {
 
   final JsObject _jsObject;
 
-  factory JsInterface(Type type, [Iterable args]) {
-  }
+  factory JsInterface(Type type, [Iterable args]) =>
+      new JsInterfaceImpl(type, args);
 
-  JsInterface.created(JsObject o) : _jsObject = o {
+  JsInterface.created(JsObject o) : _jsObject = o, super.created() {
     if (o[DART_OBJECT_PROPERTY] != null) {
       throw new ArgumentError('JsObject is already wrapped');
     }
@@ -41,6 +41,9 @@ abstract class JsInterface {
  * to JavaScript. [o] must be either a [JsInterface] or an exported Dart object.
  */
 dynamic toJs(dynamic o) {
+  if (o == null) return o;
+  if (o is num || o is String || o is bool) return o;
+
   if (o is JsInterface) return  o._jsObject;
   var type = o.runtimeType;
   var ctor = _exportedConstructors[type];
@@ -59,7 +62,10 @@ dynamic toJs(dynamic o) {
 // Exported Dart Object -> JsObject
 final Expando<JsObject> _exportedProxies = new Expando<JsObject>();
 
-dynamic toDart(JsObject o) {
+dynamic toDart(dynamic o) {
+  if (o == null) return o;
+  if (o is num || o is String || o is bool) return o;
+
   var wrapper = o[DART_OBJECT_PROPERTY];
   if (wrapper == null) {
     // look up JsInterface factory
@@ -87,6 +93,7 @@ final Map<JsFunction, InterfaceFactory> _interfaceConstructors =
 
 typedef JsInterface InterfaceFactory(JsObject o);
 
-registerFactoryForJsConstructor(JsObject constructor, InterfaceFactory factory) {
+registerFactoryForJsConstructor(JsObject constructor,
+    InterfaceFactory factory) {
   _interfaceConstructors[constructor] = factory;
 }

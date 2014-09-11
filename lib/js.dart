@@ -13,3 +13,6 @@ export 'dart:js' show JsObject;
 // this must be a package import due to dartbug.com/20666
 export 'package:js/src/js_impl.dart' show JsInterface;
 export 'package:js/src/metadata.dart';
+import 'package:js/src/mirrors.dart' as impl show initializeJavaScript;
+
+void initializeJavaScript() => impl.initializeJavaScript();
