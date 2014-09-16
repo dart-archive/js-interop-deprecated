@@ -4,10 +4,13 @@
 
 library js.transformer.scanning_visitor;
 
-//import 'dart:collection';
-
-import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/src/generated/element.dart' hide DartType;
+import 'package:analyzer/src/generated/element.dart' as analyzer show DartType;
+import 'package:analyzer/src/generated/utilities_dart.dart' as analyzer
+    show ParameterKind;
 import 'package:logging/logging.dart';
+import 'package:js/src/js_elements.dart';
+import 'package:js/src/transformer/utils.dart';
 
 final _logger = new Logger('js.transformer.visitor');
 
@@ -18,6 +21,7 @@ class ExportState {
 
   final int _state;
   const ExportState(this._state);
+  String toString() => '$_state';
 }
 
 /**
@@ -30,10 +34,10 @@ class ScanningVisitor extends RecursiveElementVisitor {
   final ClassElement jsInterfaceClass;
   final ClassElement jsProxyClass;
 
+  // This is neccessary for code-generating proxy implementations
   final Set<ClassElement> jsProxies = new Set<ClassElement>();
-  final Set<ClassElement> jsInterfaceImpls = new Set<ClassElement>();
-  final Set<Element> exportedElements = new Set<Element>();
-  final Set<Element> noExportedElements = new Set<Element>();
+
+  final JsElements jsElements = new JsElements();
 
   final LibraryElement jsLibrary;
   final LibraryElement entryLibrary;
@@ -69,7 +73,8 @@ class ScanningVisitor extends RecursiveElementVisitor {
           : ExportState.NONE;
 
       if (_exportState == ExportState.EXPORTED) {
-        exportedElements.add(element);
+        var name = element.name;
+        jsElements.getLibrary(name);
       }
       if (hasNoExportAnnotation(element)) {
         _logger.warning("@NoExport() not allowed on libraries");
@@ -80,41 +85,122 @@ class ScanningVisitor extends RecursiveElementVisitor {
 
   @override
   visitClassElement(ClassElement element) {
-    if (isJsProxy(element)) {
+    var proxyAnnotation = getProxyAnnotation(element, jsProxyClass);
+    if (proxyAnnotation != null) {
       jsProxies.add(element);
+      jsElements.proxies.add(new Proxy(element.name, proxyAnnotation.global,
+          proxyAnnotation.constructor));
     }
 
-    final previousState = _exportState;
-    _exportState = _maybeExportLibraryMember(element);
+    final previousState = _updateExportState(element);
+    if (_exportState == ExportState.EXPORTED) {
+      var library = jsElements.getLibrary(element.library.name);
+      var name = element.name;
+      var c = new ExportedClass(name, library);
+      library.declarations[name] = c;
+    }
     super.visitClassElement(element);
-    _exportState = previousState;
+    _restoreExportState(previousState);
   }
 
   @override
   visitTopLevelVariableElement(TopLevelVariableElement element) {
-    _maybeExportLibraryMember(element);
+    final previousState = _updateExportState(element);
+    if (_exportState == ExportState.EXPORTED) {
+      var library = jsElements.getLibrary(element.library.name);
+      var name = element.name;
+      var v = new ExportedTopLevelVariable(name, library);
+      library.declarations[name] = v;
+    }
+    _restoreExportState(previousState);
   }
 
   @override
   visitFunctionElement(FunctionElement element) {
-    _maybeExportLibraryMember(element);
+    final previousState = _updateExportState(element);
+    if (_exportState == ExportState.EXPORTED) {
+      var library = jsElements.getLibrary(element.library.name);
+      var name = element.name;
+      var v = new ExportedFunction(name, library);
+      library.declarations[name] = v;
+    }
+    _restoreExportState(previousState);
   }
 
   @override
   visitConstructorElement(ConstructorElement element) {
-    _maybeExportClassMember(element);
+    final previousState = _updateExportState(element);
+    if (_exportState == ExportState.EXPORTED) {
+      var library = jsElements.getLibrary(element.library.name);
+      var clazz = library.declarations[element.enclosingElement.name];
+      assert(clazz is ExportedClass);
+      var name = element.name;
+      var parameters = element.parameters
+          .map((p) =>
+              new ExportedParameter(
+                  p.name,
+                  _getParameterKind(p.parameterKind),
+                  new DartType(p.type.name)))
+          .toList();
+      var c = new ExportedConstructor(name, clazz, parameters);
+      clazz.children[name] = c;
+    }
+    _restoreExportState(previousState);
+  }
+
+  ParameterKind _getParameterKind(analyzer.ParameterKind kind) {
+    if (kind == analyzer.ParameterKind.REQUIRED) {
+      return ParameterKind.REQUIRED;
+    }
+    if (kind == analyzer.ParameterKind.POSITIONAL) {
+      return ParameterKind.POSITIONAL;
+    }
+    if (kind == analyzer.ParameterKind.NAMED) {
+      return ParameterKind.NAMED;
+    }
+    assert(false);
+    return null;
   }
 
   @override
   visitMethodElement(MethodElement element) {
-    _maybeExportClassMember(element);
+    final previousState = _updateExportState(element);
+    if (_exportState == ExportState.EXPORTED && element.isPublic) {
+      var library = jsElements.getLibrary(element.library.name);
+      var clazz = library.declarations[element.enclosingElement.name];
+      assert(clazz is ExportedClass);
+      var name = element.name;
+      var parameters = element.parameters
+          .map((p) =>
+              new ExportedParameter(
+                  p.name,
+                  _getParameterKind(p.parameterKind),
+                  new DartType(p.type.name)))
+          .toList();
+      var c = new ExportedMethod(name, clazz, parameters);
+      clazz.children[name] = c;
+    }
+    _restoreExportState(previousState);
   }
 
   visitFieldElement(FieldElement element) {
-    _maybeExportClassMember(element);
+    final previousState = _updateExportState(element);
+    if (_exportState == ExportState.EXPORTED && element.isPublic) {
+      var library = jsElements.getLibrary(element.library.name);
+      var clazz = library.declarations[element.enclosingElement.name];
+      assert(clazz is ExportedClass);
+      var name = element.name;
+      var c = new ExportedField(name, clazz);
+      clazz.children[name] = c;
+    }
+    _restoreExportState(previousState);
   }
 
-  ExportState _maybeExportLibraryMember(Element element) {
+  /**
+   * Sets the current ExportState based on [element] and returns the previous
+   * ExportState for saving.
+   */
+  ExportState _updateExportState(Element element) {
     final noExport = hasNoExportAnnotation(element);
     if (noExport && _exportState != ExportState.EXPORTED) {
       // TODO(justinfagnani): figure out how to print source info.
@@ -124,62 +210,17 @@ class ScanningVisitor extends RecursiveElementVisitor {
       _logger.warning("Unnecessary @NoExport annotation");
     }
 
-    final exportState = hasExportAnnotation(element) ? ExportState.EXPORTED
+    var previousState = _exportState;
+    _exportState = hasExportAnnotation(element) ? ExportState.EXPORTED
         : noExport ? ExportState.EXCLUDED
         : this._exportState;
-
-    if (exportState == ExportState.EXPORTED) {
-      exportedElements.add(element);
-      exportedElements.add(element.library);
-    }
-    return exportState;
+    return previousState;
   }
 
-  ExportState _maybeExportClassMember(ClassMemberElement element) {
-    final noExport = hasNoExportAnnotation(element);
-    if (noExport && _exportState != ExportState.EXPORTED) {
-      _logger.warning("Unnecessary @NoExport annotation ${element.location}");
-    }
-
-    final export = hasExportAnnotation(element);
-    if (export && _exportState == ExportState.EXPORTED) {
-      _logger.warning("Unnecessary @Export annotation ${element.location}");
-    }
-
-    final exportState = noExport ? ExportState.EXCLUDED : this._exportState;
-    if (exportState == ExportState.EXPORTED) {
-      exportedElements.add(element);
-    }
-    return exportState;
+  void _restoreExportState(ExportState previousState) {
+    _exportState = previousState;
   }
 
-  /*
-   * Determines whether a class directly extends JsInterface.
-   */
-  bool isJsProxy(ClassElement e) {
-    if (e.isPrivate) return false;
-    bool isJsInterface = false;
-
-    if (hasProxyAnnotation(e)) {
-      isJsInterface = true;
-    }
-
-    if (isJsInterface) {
-      if (!e.allSupertypes.contains(jsInterfaceClass.type)) {
-        _logger.severe('@JsProxy() annotated classes must extend JsInterface');
-      }
-      for (var m in e.metadata) {
-        if (m.element.kind == ElementKind.CONSTRUCTOR) {
-          if (m.element.enclosingElement == exportClass) {
-            _logger.warning('@Export() on a JsInterface');
-          } else if (m.element.enclosingElement == noExportClass) {
-            _logger.warning('@NoExport() on a JsInterface');
-          }
-        }
-      }
-    }
-    return isJsInterface;
-  }
 
   /*
    * TODO(justinfagnani);
@@ -193,10 +234,6 @@ class ScanningVisitor extends RecursiveElementVisitor {
    *  - support for constants defined in terms of the type (e.g. if we define
    *    `const export = const Export();`)
    */
-  bool hasProxyAnnotation(Element e) => e.metadata.any((m) =>
-      m.element.kind == ElementKind.CONSTRUCTOR &&
-      m.element.enclosingElement == jsProxyClass);
-
   bool hasExportAnnotation(Element e) => e.metadata.any((m) =>
       m.element.kind == ElementKind.CONSTRUCTOR &&
       m.element.enclosingElement == exportClass);

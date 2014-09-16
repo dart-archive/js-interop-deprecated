@@ -197,8 +197,8 @@ Object _getOptionalArg(Map<String, Object> args, String name) =>
 
 void initializeJavaScript() {
   // register Dart factories for JavaScript constructors
-  jsi.registerFactoryForJsConstructor(jsi.context['JsThing'], (djs.JsObject o) => new JsFooImpl.created(o));
-  jsi.registerFactoryForJsConstructor(jsi.context['JsThing2'], (djs.JsObject o) => new JsBarImpl.created(o));
+  jsi.registerFactoryForJsConstructor(jsi.context['JsThing'], (jsi.JsObject o) => new JsFooImpl.created(o));
+  jsi.registerFactoryForJsConstructor(jsi.context['JsThing2'], (jsi.JsObject o) => new JsBarImpl.created(o));
 
   // export Dart APIs to JavaScript
   var lib = _dartNs;

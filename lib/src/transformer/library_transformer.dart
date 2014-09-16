@@ -15,7 +15,8 @@ import 'package:code_transformers/resolver.dart' show Resolver, Resolvers,
 import 'package:logging/logging.dart' show Logger;
 
 import 'scanning_visitor.dart';
-import 'interface_generator.dart';
+import 'js_proxy_generator.dart';
+import 'package:js/src/transformer/js_initializer_generator.dart';
 
 final _logger = new Logger('js.transformer.interface_transformer');
 
@@ -55,15 +56,30 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
         new ScanningVisitor(jsLibrary, jsMetadataLibrary, library);
     library.accept(scanningVisitor);
 
-    var generator = new InterfaceGenerator(
+    var proxyGenerator = new JsProxyGenerator(
         input.id,
         scanningVisitor.jsProxies,
         library,
         jsLibrary,
         jsMetadataLibrary,
         transaction);
-    var newSource = generator.generate();
-    var newLibrary = new Asset.fromString(input.id, newSource);
-    transform.addOutput(newLibrary);
+    var newSource = proxyGenerator.generate();
+    for (var assetId in newSource.keys) {
+      var source = newSource[assetId];
+      var asset = new Asset.fromString(assetId, source);
+      transform.addOutput(asset);
+    }
+
+    var initializerGenerator = new JsInitializerGenerator(
+        library.name,
+        input.id.path,
+        scanningVisitor.jsElements);
+
+    var initializerId = input.id.addExtension('__init_js__.dart');
+
+    String initializerSource = initializerGenerator.generate();
+    var initializerAsset =
+        new Asset.fromString(initializerId, initializerSource);
+    transform.addOutput(initializerAsset);
   }
 }
