@@ -9,7 +9,7 @@
 library js.impl;
 
 import 'dart:js';
-export 'dart:js' show context;
+export 'dart:js' show context, JsObject;
 
 // TODO(justinfagnani): replace this import with a static impl
 // during transformation

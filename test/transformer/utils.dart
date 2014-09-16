@@ -24,15 +24,24 @@ class AnalyzerInfo {
   AnalyzerInfo(this.context, this.testLib, this.jsLib);
 }
 
+final testSourcesPath = Directory.current.path.endsWith('transformer')
+    ? 'test_sources'
+    : 'transformer/test_sources';
+
+final jsSourcesPath = Directory.current.path.endsWith('transformer')
+    ? '../../lib/'
+    : '../lib/';
+
+String readJsPackageFile(String f) => new File(path.join(jsSourcesPath, f))
+    .readAsStringSync();
+
+String readTestFile(String f) => new File(path.join(testSourcesPath, f))
+    .readAsStringSync();
+
+
 AnalyzerInfo initAnalyzer() {
   // fix up cwd to be able to load test files when run from different
   // directories in the command line or Editor
-  var testSourcesPath = Directory.current.path.endsWith('transformer')
-      ? 'test_sources'
-      : 'transformer/test_sources';
-  var jsSourcesPath = Directory.current.path.endsWith('transformer')
-      ? '../../lib/'
-      : '../lib/';
 
   var _context = AnalysisEngine.instance.createAnalysisContext();
   var sdk = new MockDartSdk(mock_sdk.sources, reportMissing: false);
@@ -90,4 +99,6 @@ class TestUriResolver extends UriResolver {
   Uri restoreAbsolute(Source source) =>
       throw new UnsupportedError('restoreAbsolute is not supported');
 }
+
+Resolvers mockResolvers() => new Resolvers.fromMock(mock_sdk.sources);
 

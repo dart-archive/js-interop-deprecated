@@ -2,22 +2,23 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library js.transformer.interface_generator;
+library js.transformer.js_proxy_generator;
 
-import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/src/generated/resolver.dart';
+import 'package:barback/barback.dart';
+import 'package:js/src/metadata.dart';
+import 'package:js/src/transformer/utils.dart';
 import 'package:logging/logging.dart';
 import 'package:quiver/iterables.dart' show max, concat;
 import 'package:source_maps/refactor.dart';
-import 'package:js/src/metadata.dart';
-import 'package:analyzer/src/generated/resolver.dart';
-import 'package:barback/barback.dart';
 
-final _logger = new Logger('js.transformer.interface_generator');
+final _logger = new Logger('js.transformer.js_proxy_generator');
 
 const JS_PREFIX = '__package_js_impl__';
 
-class InterfaceGenerator {
+class JsProxyGenerator {
   final AssetId inputId;
   final ClassElement jsInterfaceClass;
   final ClassElement jsProxyClass;
@@ -34,7 +35,7 @@ class InterfaceGenerator {
 
   var generatedMembers = new Set<Element>();
 
-  InterfaceGenerator(
+  JsProxyGenerator(
     this.inputId,
     this.jsProxies,
     LibraryElement library,
@@ -68,8 +69,6 @@ class InterfaceGenerator {
     var printer = transaction.commit();
     printer.build('test.dart');
     var transformedLib = printer.text;
-    var initializerId = inputId.addExtension('__initializers.dart');
-
     return <AssetId, String>{
       inputId: transformedLib,
     };
@@ -95,7 +94,7 @@ class InterfaceGenerator {
   }
 
   void _generateProxyImplementation(ClassElement proxy) {
-    final proxyAnnotation = _getProxyAnnotation(proxy);
+    final proxyAnnotation = getProxyAnnotation(proxy, jsProxyClass);
 
     if (proxyAnnotation == null) return;
 
@@ -245,30 +244,5 @@ class InterfaceGenerator {
                 "generative constructor named 'created'");
             return null;
           });
-
-  JsProxy _getProxyAnnotation(ClassElement interface) {
-    var node = interface.node;
-    for (Annotation a in node.metadata) {
-      var e = a.element;
-      if (e is ConstructorElement && e.type.returnType == jsProxyClass.type) {
-        bool global;
-        String constructor;
-        for (Expression e in a.arguments.arguments) {
-          if (e is NamedExpression) {
-            if (e.name.label.name == 'global' && e.expression is BooleanLiteral) {
-              BooleanLiteral b = e.expression;
-              global = b.value;
-            } else if (e.name.label.name == 'constructor' &&
-                e.expression is StringLiteral) {
-              StringLiteral s = e.expression;
-              constructor = s.stringValue;
-            }
-          }
-        }
-        return new JsProxy(global: global, constructor: constructor);
-      }
-    }
-    return null;
-  }
 
 }

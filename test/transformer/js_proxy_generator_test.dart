@@ -2,11 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library js.test.transformer.interface_generator_test;
+library js.test.transformer.proxy_generator_test;
 
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
-import 'package:js/src/transformer/interface_generator.dart';
+import 'package:js/src/transformer/js_proxy_generator.dart';
 import 'package:source_maps/refactor.dart';
 import 'package:source_span/source_span.dart';
 import 'package:unittest/unittest.dart';
@@ -16,7 +16,7 @@ import 'package:barback/barback.dart';
 
 main() {
 
-  group('InterfaceGenerator', () {
+  group('JsProxyGenerator', () {
 
     InternalAnalysisContext _context;
     String testLibSource;
@@ -44,7 +44,7 @@ main() {
       var testSourceFile = new SourceFile(testLibSource);
       var transaction = new TextEditTransaction(testLibSource, testSourceFile);
       var id = new AssetId('test', 'lib/test.dart');
-      var generator = new InterfaceGenerator(
+      var generator = new JsProxyGenerator(
           id,
           jsInterfaces, testLib, jsLib,
           jsMetadataLib, transaction);
