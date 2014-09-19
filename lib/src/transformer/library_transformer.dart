@@ -12,12 +12,12 @@ import 'package:barback/barback.dart' show Asset, AssetId, Transform,
     Transformer;
 import 'package:code_transformers/resolver.dart' show Resolver, Resolvers,
     ResolverTransformer;
-import 'package:logging/logging.dart' show Logger;
-
-import 'scanning_visitor.dart';
-import 'js_proxy_generator.dart';
 import 'package:js/src/transformer/js_initializer_generator.dart';
+import 'package:logging/logging.dart' show Logger;
+import 'package:path/path.dart' as path;
 
+import 'js_proxy_generator.dart';
+import 'scanning_visitor.dart';
 import 'utils.dart';
 
 final _logger = new Logger('js.transformer.library_transformer');
@@ -72,11 +72,13 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
       transform.addOutput(asset);
     }
 
+    var importPath = path.joinAll(path.split(input.id.path).sublist(1));
+    transform.logger.info("import path: $importPath");
+
     var initializerGenerator = new JsInitializerGenerator(
         library.name,
-        input.id.path,
+        importPath,
         scanningVisitor.jsElements);
-
     var initializerId = input.id.addExtension(INITIALIZER_SUFFIX);
 
     String initializerSource = initializerGenerator.generate();

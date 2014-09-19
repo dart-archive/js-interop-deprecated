@@ -1,0 +1,6 @@
+This is a set of test packages with their own pubspec.yaml to configure the
+transformers so that we can run library and entry point files through the real
+transformers.
+
+The tests themselves are transformed. To run, first run `pub get` in one of the
+test packages, then run the test via `pub serve` or `pub build`.
