@@ -1,0 +1,9 @@
+name: test
+description: test package for js
+dependencies:
+  unittest: any
+  js:
+    path: ../../
+transformers:
+- js
+- js/initializer

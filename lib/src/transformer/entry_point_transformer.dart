@@ -54,9 +54,9 @@ class EntryPointTransformer extends Transformer with ResolverTransformer {
         })
         .where((f) => f != null);
     return Future.wait(initializerFutures).then((initializerAssets) {
-      var imports = new StringBuffer();
+      var imports = new StringBuffer('\n');
       var calls = new StringBuffer();
-      for (Asset asset in initializerAssets) {
+      for (Asset asset in initializerAssets.where((a) => a != null)) {
         var id = asset.id;
         var importUri = getImportUri(id, input.id);
         if (importUri == null) continue;
