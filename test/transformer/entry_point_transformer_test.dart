@@ -2,9 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library js.test.transformer.library_transformer_test;
+library js.test.transformer.entry_point_transformer_test;
 
 import 'package:code_transformers/src/test_harness.dart';
+import 'package:js/src/transformer/entry_point_transformer.dart';
 import 'package:js/src/transformer/library_transformer.dart';
 import 'package:unittest/unittest.dart';
 
@@ -12,22 +13,30 @@ import 'utils.dart';
 
 main() {
 
-  group('LibraryTransformer', () {
+  group('EntryPointTransformer', () {
 
     test('runs', () {
       var resolvers = mockResolvers();
-      var transformer = new LibraryTransformer(resolvers);
-      var testHelper = new TestHelper([[transformer]], {
+      var libraryTransformer = new LibraryTransformer(resolvers);
+      var entryPointTransformer = new EntryPointTransformer(resolvers);
+      var testHelper = new TestHelper([
+          [libraryTransformer],
+          [entryPointTransformer]], {
         'test|lib/library.dart': readTestFile('library.dart'),
+        'test|web/entry_point.dart': readTestFile('entry_point.dart.test'),
         'js|lib/js.dart': readJsPackageFile('js.dart'),
         'js|lib/src/js_impl.dart': readJsPackageFile('src/js_impl.dart'),
         'js|lib/src/metadata.dart': readJsPackageFile('src/metadata.dart'),
       }, null);
       testHelper.run();
-      return testHelper['test|lib/library.dart'].then((testSource) {
+      return testHelper['test|web/entry_point.dart'].then((testSource) {
          expect(testSource, contains(
-             "String get aString => __package_js_impl__.""toDart("
-             "__package_js_impl__.toJs(this)['aString']) as String;"));
+'''
+initializeJavaScript() {
+  _js__test__web_entry_point_dart__init_js___dart.initializeJavaScriptLibrary();
+  _js__test__lib_library_dart__init_js___dart.initializeJavaScriptLibrary();
+}
+'''));
       });
     });
   });

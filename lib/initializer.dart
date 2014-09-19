@@ -2,31 +2,26 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library js.transformer;
+library js.initializer;
 
 import 'package:barback/barback.dart' show Asset, AssetId, BarbackSettings,
     Transform, Transformer, TransformerGroup;
 import 'package:code_transformers/resolver.dart';
 
-import 'src/transformer/library_transformer.dart';
 import 'src/transformer/mock_sdk.dart' as mock_sdk show sources;
+import 'package:js/src/transformer/entry_point_transformer.dart';
 
-/**
- * The JS transformer, which internally runs several phases that will:
- *   * Generate typed JavaScript proxies for classes extending JsInterface
- *   * TODO: Export Dart code annotated with @Export
- */
-class LibraryTransformerGroup implements TransformerGroup {
+class InitializerTransformerGroup implements TransformerGroup {
   final Resolvers _resolvers;
 
   final Iterable<Iterable> phases;
 
-  LibraryTransformerGroup(Resolvers resolvers)
+  InitializerTransformerGroup(Resolvers resolvers)
       : _resolvers = resolvers,
         phases = [
-          [new LibraryTransformer(resolvers)],
+          [new EntryPointTransformer(resolvers)],
         ];
 
-  LibraryTransformerGroup.asPlugin(BarbackSettings settings)
+  InitializerTransformerGroup.asPlugin(BarbackSettings settings)
       : this(new Resolvers.fromMock(mock_sdk.sources));
 }

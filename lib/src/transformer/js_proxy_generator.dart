@@ -75,20 +75,7 @@ class JsProxyGenerator {
   }
 
   void _addImports() {
-    var insertImportOffset = 0;
-    if (library.imports.isEmpty) {
-      LibraryDirective libraryDirective =
-          library.definingCompilationUnit.node.directives
-              .firstWhere((d) => d is LibraryDirective, orElse: () => null);
-      if (libraryDirective != null) {
-        insertImportOffset = libraryDirective.end;
-      }
-    } else {
-      insertImportOffset = max(library.definingCompilationUnit.node.directives
-          .where((d) => d is ImportDirective)
-          .map((ImportDirective e) => e.end));
-      if (insertImportOffset == null) insertImportOffset = 0;
-    }
+    var insertImportOffset = getInsertImportOffset(library);
     transaction.edit(insertImportOffset, insertImportOffset,
         "\nimport 'package:js/src/js_impl.dart' as $JS_PREFIX;");
   }

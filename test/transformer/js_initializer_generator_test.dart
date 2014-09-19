@@ -58,7 +58,7 @@ main() {
       var source = generator.generate();
 
       expect(source, contains('initializeJavaScriptLibrary()'));
-      expect(source, contains('_export_js_transformer_test_ExportMe'));
+      expect(source, contains('_export_test_library_ExportMe'));
     });
 
   });

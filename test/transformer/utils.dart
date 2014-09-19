@@ -49,10 +49,9 @@ AnalyzerInfo initAnalyzer() {
   _context.analysisOptions = options;
   sdk.context.analysisOptions = options;
 
-  var testLibSource = new File(path.join(testSourcesPath,'test.dart'))
-      .readAsStringSync();
+  var testLibSource = readTestFile('library.dart');
   var testSources = {
-    'package:test/test.dart': testLibSource,
+    'package:test/library.dart': testLibSource,
   };
 
   var testResolver = new TestUriResolver(testSources);
@@ -64,7 +63,7 @@ AnalyzerInfo initAnalyzer() {
       [sdk.resolver, testResolver, packageResolver]);
 
   var testSource = testResolver
-      .resolveAbsolute(Uri.parse('package:test/test.dart'));
+      .resolveAbsolute(Uri.parse('package:test/library.dart'));
   _context.parseCompilationUnit(testSource);
 
   Source jsSource = packageResolver

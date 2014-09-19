@@ -18,7 +18,9 @@ import 'scanning_visitor.dart';
 import 'js_proxy_generator.dart';
 import 'package:js/src/transformer/js_initializer_generator.dart';
 
-final _logger = new Logger('js.transformer.interface_transformer');
+import 'utils.dart';
+
+final _logger = new Logger('js.transformer.library_transformer');
 
 class LibraryTransformer extends Transformer with ResolverTransformer {
   @override
@@ -75,7 +77,7 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
         input.id.path,
         scanningVisitor.jsElements);
 
-    var initializerId = input.id.addExtension('__init_js__.dart');
+    var initializerId = input.id.addExtension(INITIALIZER_SUFFIX);
 
     String initializerSource = initializerGenerator.generate();
     var initializerAsset =
