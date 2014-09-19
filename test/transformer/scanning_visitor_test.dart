@@ -41,13 +41,13 @@ main() {
       var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       var exports = visitor.jsElements;
-      expect(exports.exportedLibraries.keys, ['js']);
-      expect(exports.exportedLibraries['js'].children.keys,
-          ['transformer_test']);
-      expect(exports.exportedLibraries['js'].children['transformer_test'],
+      expect(exports.exportedLibraries.keys, ['test']);
+      expect(exports.exportedLibraries['test'].children.keys,
+          ['library']);
+      expect(exports.exportedLibraries['test'].children['library'],
           new isInstanceOf<ExportedLibrary>());
-      expect(exports.exportedLibraries['js']
-          .children['transformer_test']
+      expect(exports.exportedLibraries['test']
+          .children['library']
           .declarations['ExportMe'],
           new isInstanceOf<ExportedClass>());
     });
@@ -56,8 +56,8 @@ main() {
       var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       var exports = visitor.jsElements;
-      ExportedClass exportMe = exports.exportedLibraries['js']
-          .children['transformer_test']
+      ExportedClass exportMe = exports.exportedLibraries['test']
+          .children['library']
           .declarations['ExportMe'];
       expect(exportMe.children.keys, unorderedEquals(
           ['staticField', 'staticMethod', '', 'named', 'name', 'method',
@@ -68,9 +68,9 @@ main() {
       var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       var exports = visitor.jsElements;
-      expect(exports.exportedLibraries['js'].children['transformer_test'],
+      expect(exports.exportedLibraries['test'].children['library'],
           isNot(contains('Context')));
-      expect(exports.exportedLibraries['js'].children['transformer_test'],
+      expect(exports.exportedLibraries['test'].children['library'],
           isNot(contains('DoNotExport')));
     });
   });
