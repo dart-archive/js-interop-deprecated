@@ -177,7 +177,8 @@ class ScanningVisitor extends RecursiveElementVisitor {
                   _getParameterKind(p.parameterKind),
                   new DartType(p.type.name)))
           .toList();
-      var c = new ExportedMethod(name, clazz, parameters);
+      var c = new ExportedMethod(name, clazz, parameters,
+          isStatic: element.isStatic);
       clazz.children[name] = c;
     }
     _restoreExportState(previousState);
@@ -190,7 +191,10 @@ class ScanningVisitor extends RecursiveElementVisitor {
       var clazz = library.declarations[element.enclosingElement.name];
       assert(clazz is ExportedClass);
       var name = element.name;
-      var c = new ExportedField(name, clazz);
+      var c = new ExportedProperty(name, clazz,
+          hasGetter: element.getter != null,
+          hasSetter: element.setter != null,
+          isStatic: element.isStatic);
       clazz.children[name] = c;
     }
     _restoreExportState(previousState);

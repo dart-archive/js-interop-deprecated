@@ -58,6 +58,7 @@ function _export_${library.getPath('_')}(parent) {
     if (element is ExportedClass) {
       buffer.writeln("  _export_${element.getPath('_')}(lib);");
     }
+    // TODO: add functions and variables
   }
 
   void _generateDeclarationExport(ExportedElement element) {
@@ -84,15 +85,11 @@ function _export_${c.getPath('_')}(parent) {
 
 ''');
 
-    c.children.values.forEach(_generateClassMember);
+    c.children.values
+        .where((e) => e is ExportedConstructor)
+        .forEach(_generateConstructor);
 
     buffer.writeln("}");
-  }
-
-  void _generateClassMember(ExportedElement e) {
-    if (e is ExportedConstructor) {
-      _generateConstructor(e);
-    }
   }
 
   void _generateConstructor(ExportedConstructor c) {
@@ -110,34 +107,6 @@ function _export_${c.getPath('_')}(parent) {
   constructor.${c.name}.prototype = constructor.prototype;
 ''');
     }
-
-  void _generateMethod(ExportedMethod c) {
-    var dartParameters = _getDartParameters(c.parameters);
-    var jsParameters = _getJsParameters(c.parameters, withThis: true);
-    buffer.write(
-'''
-
-  // method ${c.name}
-  prototype['${c.name}'] = new js.JsFunction.withThis(($jsParameters) {
-    return  $JS_THIS_REF.${c.name}($dartParameters);
-  });
-''');
-  }
-
-  void _generateField(ExportedField f) {
-    var name = f.name;
-    var className = f.parent.name;
-    buffer.write(
-'''
-  // field $name
-  _obj.callMethod('defineProperty', [prototype, '$name',
-      new js.JsObject.jsify({
-        'get': new js.JsFunction.withThis((o) => (o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name),
-        'set': new js.JsFunction.withThis((o, v) => (o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name = v),
-      })]);
-''');
-  }
-
 
   String _getJsParameters(List<ExportedParameter> parameters,
       {bool withThis: false}) {

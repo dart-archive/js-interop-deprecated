@@ -28,12 +28,32 @@ function createExportMe() {
   return e;
 }
 
+function createExportMeNamed(name) {
+  return new dart.test.library.ExportMe.named(name);
+}
+
 function isExportMe(e) {
   return e instanceof dart.test.library.ExportMe;
 }
 
 function getName(hasName) {
   return hasName.name;
+}
+
+function setName(hasName, name) {
+  hasName.name = name;
+}
+
+function callMethod(e) {
+  return e.method();
+}
+
+function getGetter(e) {
+  return e.getter;
+}
+
+function setSetter(e, v) {
+  e.setter = v;
 }
 
 function roundTrip(e) {

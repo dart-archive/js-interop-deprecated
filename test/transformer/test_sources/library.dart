@@ -30,11 +30,21 @@ abstract class Context extends JsInterface {
 
   String getName(HasName o);
 
+  void setName(HasName o);
+
+  int callMethod(ExportMe e);
+
+  bool getGetter(ExportMe e);
+
+  bool setSetter(ExportMe e, String s);
+
   bool isExportMe(ExportMe e);
 
   ExportMe roundTrip(ExportMe e);
 
   ExportMe createExportMe();
+
+  ExportMe createExportMeNamed(String name);
 
   int x();
 }
@@ -111,6 +121,8 @@ class ExportMe implements HasName {
 
   bool get getter => true;
 
+  void set setter(String v) { name = v; }
+
   String _privateMethod() => "privateMethod";
 
   String _privateField = "privateField";
@@ -126,6 +138,8 @@ class ExportMe implements HasName {
     print("b: $b");
     print("c: $c");
   }
+
+  String toString() => 'ExportMe($name)';
 
 }
 

@@ -102,27 +102,54 @@ main() {
 
   group('Exports', () {
 
+    var context = new t.Context();
+
     test('should be able to construct a Dart object from JS', () {
-      var context = new t.Context();
       var e = context.createExportMe();
       expect(e, new isInstanceOf<t.ExportMe>());
     });
 
     test('should be able to pass a Dart object to JS', () {
-      var context = new t.Context();
       var e = new t.ExportMe();
       expect(context.isExportMe(e), isTrue);
     });
 
-    test('should have methods callable from JsInterfaces', () {
-      var context = new t.Context();
+    test('should have working named constructors', () {
+      var e = context.createExportMeNamed('purple');
+      expect(e, new isInstanceOf<t.ExportMe>());
+    });
+
+    test('should be able to get a field', () {
       var e = new t.ExportMe.named('purple');
       String name = context.getName(e);
       expect(name, 'purple');
     });
 
+    test('should be able to set a field', () {
+      var e = new t.ExportMe();
+      String name = context.setName(e, 'red');
+      expect(e.name, 'red');
+    });
+
+    test('should be able to call a method', () {
+      var e = context.createExportMe();
+      int v = context.callMethod(e);
+      expect(v, 42);
+    });
+
+    test('should be able to get a getter', () {
+      var e = new t.ExportMe();
+      String v = context.getGetter(e);
+      expect(v, true);
+    });
+
+    test('should be able to set a setter', () {
+      var e = new t.ExportMe();
+      context.setSetter(e, 'red');
+      expect(e.name, 'red');
+    });
+
     test('should survive a round trip', () {
-      var context = new t.Context();
       var e = new t.ExportMe.named('purple');
       var e2 = context.roundTrip(e);
       expect(e, same(e2));

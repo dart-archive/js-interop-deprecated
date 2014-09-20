@@ -111,8 +111,8 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
       _generateConstructor(e);
     } else if (e is ExportedMethod) {
       _generateMethod(e);
-    } else if (e is ExportedField) {
-      _generateField(e);
+    } else if (e is ExportedProperty) {
+      _generateProperty(e);
     }
   }
 
@@ -126,32 +126,35 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
   }
 
   void _generateMethod(ExportedMethod c) {
+    if (c.isStatic) return; // TODO: static method support
     var dartParameters = _getDartParameters(c.parameters);
     var jsParameters = _getJsParameters(c.parameters, withThis: true);
-    buffer.write(
+    buffer.writeln(
 '''
-
   // method ${c.name}
   prototype['${c.name}'] = new js.JsFunction.withThis(($jsParameters) {
-    return  $JS_THIS_REF.${c.name}($dartParameters);
+    return  ($JS_PREFIX.toDart($JS_THIS_REF) as ${c.parent.name}).${c.name}($dartParameters);
   });
 ''');
   }
 
-  void _generateField(ExportedField f) {
+  void _generateProperty(ExportedProperty f) {
+    if (f.isStatic) return; // TODO: static field support
     var name = f.name;
     var className = f.parent.name;
-    buffer.write(
-'''
-  // field $name
-  _obj.callMethod('defineProperty', [prototype, '$name',
-      new js.JsObject.jsify({
-        'get': new js.JsFunction.withThis((o) => (o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name),
-        'set': new js.JsFunction.withThis((o, v) => (o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name = v),
-      })]);
-''');
+    buffer.writeln("  _obj.callMethod('defineProperty', [prototype, '$name', "
+        "new js.JsObject.jsify({");
+    if (f.hasGetter) {
+      buffer.writeln("    'get': new js.JsFunction.withThis("
+          "(o) => (o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name),");
+    }
+    if (f.hasSetter) {
+      buffer.writeln("    'set': new js.JsFunction.withThis("
+          "(o, v) => (o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name "
+          "= v),");
+    }
+    buffer.writeln("  })]);");
   }
-
 
   String _getJsParameters(List<ExportedParameter> parameters,
       {bool withThis: false}) {
