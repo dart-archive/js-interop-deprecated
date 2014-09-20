@@ -183,9 +183,14 @@ class JsProxyGenerator {
       MethodDeclaration m = a.node;
       var offset = m.body.offset;
       var end = m.body.end;
-      transaction.edit(offset, end, " => $JS_PREFIX.toDart("
-          "$JS_PREFIX.toJs(this).callMethod('$name', [$parameterList]))"
-          " as ${a.returnType};");
+      if (a.returnType.name == 'void') {
+        transaction.edit(offset, end, " { $JS_PREFIX.toDart("
+            "$JS_PREFIX.toJs(this).callMethod('$name', [$parameterList])); }");
+      } else {
+        transaction.edit(offset, end, " => $JS_PREFIX.toDart("
+            "$JS_PREFIX.toJs(this).callMethod('$name', [$parameterList]))"
+            " as ${a.returnType};");
+      }
     }
   }
 

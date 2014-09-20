@@ -95,6 +95,7 @@ class ExportedLibrary extends ExportedElement<ExportedLibrary> {
 
 class ExportedClass extends ExportedElement<ExportedLibrary> {
   final Map<String, ExportedElement> children = <String, ExportedElement>{};
+
   ExportedClass(String name, ExportedLibrary parent) : super(name, parent);
 }
 
@@ -104,6 +105,8 @@ class ExportedClass extends ExportedElement<ExportedLibrary> {
 class DartType {
   final String name;
   DartType(this.name);
+
+  String toString() => name;
 }
 
 /**
@@ -111,13 +114,16 @@ class DartType {
  * [NAMED].
  */
 class ParameterKind {
-  static const REQUIRED = const ParameterKind(0);
-  static const POSITIONAL = const ParameterKind(1);
-  static const NAMED = const ParameterKind(2);
+  static const REQUIRED = const ParameterKind(0, 'REQUIRED');
+  static const POSITIONAL = const ParameterKind(1, 'POSITIONAL');
+  static const NAMED = const ParameterKind(2, 'NAMED');
 
   final int _value;
+  final String _name;
 
-  const ParameterKind(this._value);
+  const ParameterKind(this._value, this._name);
+
+  String toString() => _name;
 }
 
 /**
@@ -129,6 +135,8 @@ class ExportedParameter {
   final DartType type;
 
   ExportedParameter(this.name, this.kind, this.type);
+
+  String toString() => '{$type $name}';
 }
 
 class ExportedConstructor extends ExportedElement<ExportedClass> {
@@ -139,14 +147,29 @@ class ExportedConstructor extends ExportedElement<ExportedClass> {
 }
 
 class ExportedMethod extends ExportedElement<ExportedClass> {
+  final bool isStatic;
   final List<ExportedParameter> parameters;
 
-  ExportedMethod(String name, ExportedClass parent, this.parameters)
+  ExportedMethod(String name, ExportedClass parent, this.parameters,
+      {this.isStatic : false})
       : super(name, parent);
+
+  String toString() => 'ExportedMethod($name $parameters)';
 }
 
-class ExportedField extends ExportedElement<ExportedClass> {
-  ExportedField(String name, ExportedClass parent) : super(name, parent);
+/**
+ * Represents a field or getter/setter.
+ */
+class ExportedProperty extends ExportedElement<ExportedClass> {
+  final bool isStatic;
+  bool hasGetter;
+  bool hasSetter;
+
+  ExportedProperty(String name, ExportedClass parent,
+      {this.hasGetter : false, this.hasSetter : false, this.isStatic: false})
+      : super(name, parent);
+
+  String toString() => 'ExportedProperty($name)';
 }
 
 class ExportedTopLevelVariable extends ExportedElement<ExportedLibrary> {

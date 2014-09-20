@@ -5,7 +5,11 @@
   	<meta charset="utf-8">
     <title>generated_code_test</title>
     <script src="test.js"></script>
-    <script src="generated_code_test.dart_initialize.js"></script>
+    <!-- This script tag must be present for the transformed code --> 
+    <!-- TODO(justinfagnani): inject this line in a transformer -->
+    <!-- <script src="generated_code_test.dart_initialize.js"></script> -->
+    <!-- This script tag must be present for non-transformed code -->
+    <script src="packages/js/interop.js"></script>
   </head>
  
   <body>   
