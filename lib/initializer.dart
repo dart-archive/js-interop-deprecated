@@ -7,9 +7,10 @@ library js.initializer;
 import 'package:barback/barback.dart' show Asset, AssetId, BarbackSettings,
     Transform, Transformer, TransformerGroup;
 import 'package:code_transformers/resolver.dart';
+import 'package:js/src/transformer/entry_point_transformer.dart';
+import 'package:js/src/transformer/html_transformer.dart';
 
 import 'src/transformer/mock_sdk.dart' as mock_sdk show sources;
-import 'package:js/src/transformer/entry_point_transformer.dart';
 
 class InitializerTransformerGroup implements TransformerGroup {
   final Resolvers _resolvers;
@@ -19,7 +20,7 @@ class InitializerTransformerGroup implements TransformerGroup {
   InitializerTransformerGroup(Resolvers resolvers)
       : _resolvers = resolvers,
         phases = [
-          [new EntryPointTransformer(resolvers)],
+          [new EntryPointTransformer(resolvers), new HtmlTransformer()],
         ];
 
   InitializerTransformerGroup.asPlugin(BarbackSettings settings)

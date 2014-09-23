@@ -5,14 +5,15 @@ authors:
 - Alexandre Ardhuin <alexandre.ardhuin@gmail.com>
 description: Access JavaScript from Dart.
 homepage: https://github.com/dart-lang/js-interop
+environment:
+  sdk: '>=1.0.0 <2.0.0'
 dependencies:
   analyzer: '>=0.21.1 <0.23.0'
   barback: '>=0.11.1 <0.16.0'
   browser: '>=0.9.0 <0.11.0'
   code_transformers: '>=0.1.5 <0.3.0'
+  html5lib: '>=0.12.0 <0.13.0'
   quiver: '>=0.19.0-dev.3 <0.20.0'
 dev_dependencies:
   path: '>=1.0.0 <2.0.0'
   unittest: '>=0.9.0 <0.12.0'
-environment:
-  sdk: '>=1.0.0 <2.0.0'
