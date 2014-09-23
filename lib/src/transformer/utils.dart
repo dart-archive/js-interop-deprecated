@@ -4,12 +4,15 @@
 
 library js.transformer.utils;
 
-import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/src/generated/element.dart';
+import 'package:barback/barback.dart';
 import 'package:js/src/metadata.dart';
+import 'package:path/path.dart' as path;
 import 'package:quiver/iterables.dart' show max;
 
-const String INITIALIZER_SUFFIX = "__init_js__.dart";
+const String DART_INITIALIZER_SUFFIX = "__init_js__.dart";
+const String JS_INITIALIZER_SUFFIX = "__init_js__.js";
 
 JsProxy getProxyAnnotation(ClassElement interface, ClassElement jsProxyClass) {
   var node = interface.node;
@@ -52,4 +55,26 @@ int getInsertImportOffset(LibraryElement library) {
     if (insertImportOffset == null) insertImportOffset = 0;
   }
   return insertImportOffset;
+}
+
+
+final illegalIdRegex = new RegExp(r'[^a-zA-Z0-9_]');
+
+String assetIdToPrefix(AssetId id) =>
+    '_js__${id.package}__${id.path.replaceAll(illegalIdRegex, '_')}';
+
+String assetIdToJsExportCall(AssetId id) =>
+    '_export_${id.path.replaceAll(illegalIdRegex, '_')}(dart);';
+
+// TODO(justinfagnani): put this in code_transformers ?
+String getImportUri(AssetId importId, AssetId from) {
+  if (importId.path.startsWith('lib/')) {
+    // we support package imports
+    return "package:${importId.package}/${importId.path.substring(4)}";
+  } else if (importId.package == from.package) {
+    // we can support relative imports
+    return path.relative(importId.path, from: path.dirname(from.path));
+  }
+  // cannot import
+  return null;
 }

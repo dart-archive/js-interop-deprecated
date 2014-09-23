@@ -7,7 +7,7 @@ library js.test.transformer.initializer_generator_test;
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:barback/barback.dart';
-import 'package:js/src/transformer/js_initializer_generator.dart';
+import 'package:js/src/transformer/dart_initializer_generator.dart';
 import 'package:js/src/transformer/scanning_visitor.dart';
 import 'package:source_maps/refactor.dart';
 import 'package:source_span/source_span.dart';
@@ -50,12 +50,14 @@ main() {
       var testSourceFile = new SourceFile(testLibSource);
       var transaction = new TextEditTransaction(testLibSource, testSourceFile);
       var id = new AssetId('test', 'lib/test.dart');
-      var generator = new JsInitializerGenerator(
+      var generator = new DartInitializerGenerator(
           'js.transformer_test',
           'lib/test.dart',
           visitor.jsElements);
 
       var source = generator.generate();
+
+      expect(source, contains('initializeJavaScriptLibrary()'));
       expect(source, contains('_export_test_library_ExportMe'));
     });
 

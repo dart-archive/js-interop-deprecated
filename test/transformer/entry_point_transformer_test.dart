@@ -10,6 +10,7 @@ import 'package:js/src/transformer/library_transformer.dart';
 import 'package:unittest/unittest.dart';
 
 import 'utils.dart';
+import 'dart:async';
 
 main() {
 
@@ -29,8 +30,15 @@ main() {
         'js|lib/src/metadata.dart': readJsPackageFile('src/metadata.dart'),
       }, null);
       testHelper.run();
-      return testHelper['test|web/entry_point.dart'].then((testSource) {
-         expect(testSource, contains(
+
+      return Future.wait([
+          testHelper['test|web/entry_point.dart'],
+          testHelper['test|web/entry_point.dart_initialize.js'],
+      ])
+      .then((sources) {
+        var dartSource = sources[0];
+        var jsSource = sources[1];
+        expect(dartSource, contains(
 '''
 initializeJavaScript() {
   _js__test__web_entry_point_dart__init_js___dart.initializeJavaScriptLibrary();
