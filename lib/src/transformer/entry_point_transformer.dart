@@ -11,7 +11,6 @@ import 'package:barback/barback.dart' show Asset, AssetId, Transform,
 import 'package:code_transformers/resolver.dart' show Resolver,
     ResolverTransformer, Resolvers, isPossibleDartEntryId;
 import 'package:logging/logging.dart' show Logger;
-import 'package:path/path.dart' as path;
 
 import 'utils.dart';
 
@@ -46,51 +45,83 @@ class EntryPointTransformer extends Transformer with ResolverTransformer {
         .map((lib) {
           // look for initializer library
           var libAssetId = resolver.getSourceAssetId(lib);
-          var initializerAssetId = libAssetId.addExtension(INITIALIZER_SUFFIX);
-          return transform
-              .getInput(initializerAssetId)
-              .catchError((e) => null,
-                  test: (e) => e is AssetNotFoundException);
+          var dartInitializerAssetId =
+              libAssetId.addExtension(DART_INITIALIZER_SUFFIX);
+          var jsInitializerAssetId =
+              libAssetId.addExtension(JS_INITIALIZER_SUFFIX);
+          return [
+              transform
+                  .getInput(dartInitializerAssetId)
+                  .catchError((e) => null,
+                      test: (e) => e is AssetNotFoundException),
+              transform
+                  .getInput(jsInitializerAssetId)
+                  .catchError((e) => null,
+                      test: (e) => e is AssetNotFoundException),
+          ];
+        });
+
+    var dartInitializerFutures = initializerFutures.map((l) => l[0]);
+    var jsInitializerFutures = initializerFutures.map((l) => l[1]);
+
+    var dartImports = new StringBuffer('\n');
+    var dartInitializerCalls = new StringBuffer();
+
+    var dartFuture = Future.wait(dartInitializerFutures)
+        .then((initializerAssets) {
+          for (Asset asset in initializerAssets.where((a) => a != null)) {
+            var id = asset.id;
+            var importUri = getImportUri(id, input.id);
+            if (importUri == null) continue;
+            var prefix = assetIdToPrefix(id);
+            dartImports.writeln("import '$importUri' as $prefix;");
+            dartInitializerCalls
+                .writeln("  $prefix.initializeJavaScriptLibrary();");
+          }
         })
-        .where((f) => f != null);
-    return Future.wait(initializerFutures).then((initializerAssets) {
-      var imports = new StringBuffer('\n');
-      var calls = new StringBuffer();
-      for (Asset asset in initializerAssets.where((a) => a != null)) {
-        var id = asset.id;
-        var importUri = getImportUri(id, input.id);
-        if (importUri == null) continue;
-        var prefix = assetIdToPrefix(id);
-        imports.writeln("import '$importUri' as $prefix;");
-        calls.writeln("  $prefix.initializeJavaScriptLibrary();");
-      }
+        .then((_) {
+          var initMethod = 'initializeJavaScript() {\n$dartInitializerCalls}\n';
+          var insertImportOffset = getInsertImportOffset(library);
+          var initMethodOffset = library.source.contents.data.length;
+          transaction.edit(insertImportOffset, insertImportOffset,
+              '$dartImports');
+          transaction.edit(initMethodOffset, initMethodOffset, initMethod);
+          var printer = transaction.commit();
+          printer.build(input.id.path);
+          transform.addOutput(new Asset.fromString(input.id, printer.text));
+        });
 
-      var initMethod = 'initializeJavaScript() {\n$calls}\n';
-      var insertImportOffset = getInsertImportOffset(library);
-      var initMethodOffset = library.source.contents.data.length;
-      transaction.edit(insertImportOffset, insertImportOffset, '$imports');
-      transaction.edit(initMethodOffset, initMethodOffset, initMethod);
-      var printer = transaction.commit();
-      printer.build(input.id.path);
-      transform.addOutput(new Asset.fromString(input.id, printer.text));
-    });
+    var jsInitializerScript = new StringBuffer('''
+
+window.dart = window.dart || {};
+
+window.dart.Object = function DartObject() {
+  throw "not allowed";
+};
+
+window.dart.Object._wrapDartObject = function(dartObject) {
+  var o = Object.create(window.dart.Object.prototype);
+  o.__dart_object__ = dartObject;
+  return o;
+};
+
+''');
+
+    var jsFuture =
+        Future.wait(jsInitializerFutures)
+        .then((assets) => Future.wait(assets
+            .where((a) => a != null)
+            .map((Asset a) => a.readAsString())))
+        .then((initializerSources) {
+          for (String source in initializerSources) {
+            jsInitializerScript.writeln(source);
+          }
+        }).then((_) {
+          var jsInitializerId = input.id.addExtension('_initialize.js');
+          var asset = new Asset.fromString(jsInitializerId,
+              jsInitializerScript.toString());
+          transform.addOutput(asset);
+        });
+    return Future.wait([dartFuture, jsFuture]);
   }
-}
-
-final illegalIdRegex = new RegExp(r'[^a-zA-Z0-9_]');
-
-String assetIdToPrefix(AssetId id) =>
-    '_js__${id.package}__${id.path.replaceAll(illegalIdRegex, '_')}';
-
-// TODO(justinfagnani): put this in code_transformers ?
-String getImportUri(AssetId importId, AssetId from) {
-  if (importId.path.startsWith('lib/')) {
-    // we support package imports
-    return "package:${importId.package}/${importId.path.substring(4)}";
-  } else if (importId.package == from.package) {
-    // we can support relative imports
-    return path.relative(importId.path, from: path.dirname(from.path));
-  }
-  // cannot import
-  return null;
 }

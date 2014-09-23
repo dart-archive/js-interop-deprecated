@@ -12,6 +12,7 @@ import 'package:barback/barback.dart' show Asset, AssetId, Transform,
     Transformer;
 import 'package:code_transformers/resolver.dart' show Resolver, Resolvers,
     ResolverTransformer;
+import 'package:js/src/transformer/dart_initializer_generator.dart';
 import 'package:js/src/transformer/js_initializer_generator.dart';
 import 'package:logging/logging.dart' show Logger;
 import 'package:path/path.dart' as path;
@@ -75,15 +76,27 @@ class LibraryTransformer extends Transformer with ResolverTransformer {
     var importPath = path.joinAll(path.split(input.id.path).sublist(1));
     transform.logger.info("import path: $importPath");
 
-    var initializerGenerator = new JsInitializerGenerator(
+    var dartInitializerGenerator = new DartInitializerGenerator(
         library.name,
         importPath,
         scanningVisitor.jsElements);
-    var initializerId = input.id.addExtension(INITIALIZER_SUFFIX);
+    var dartInitializerId = input.id.addExtension(DART_INITIALIZER_SUFFIX);
 
-    String initializerSource = initializerGenerator.generate();
-    var initializerAsset =
-        new Asset.fromString(initializerId, initializerSource);
-    transform.addOutput(initializerAsset);
+    String dartInitializerSource = dartInitializerGenerator.generate();
+    var dartInitializerAsset =
+        new Asset.fromString(dartInitializerId, dartInitializerSource);
+    transform.addOutput(dartInitializerAsset);
+
+    var jsInitializerGenerator = new JsInitializerGenerator(
+        library.name,
+        importPath,
+        scanningVisitor.jsElements);
+    var jsInitializerId = input.id.addExtension(JS_INITIALIZER_SUFFIX);
+
+    String jsInitializerSource = jsInitializerGenerator.generate();
+    var jsInitializerAsset =
+        new Asset.fromString(jsInitializerId, jsInitializerSource);
+    transform.addOutput(jsInitializerAsset);
+
   }
 }
