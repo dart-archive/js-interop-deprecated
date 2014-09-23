@@ -14,7 +14,7 @@ import 'package:logging/logging.dart' show Logger;
 
 import 'utils.dart';
 
-final _logger = new Logger('js.transformer.interface_transformer');
+final _logger = new Logger('js.transformer.entry_point_transformer');
 
 class EntryPointTransformer extends Transformer with ResolverTransformer {
   @override

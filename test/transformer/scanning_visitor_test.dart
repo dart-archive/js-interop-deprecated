@@ -61,7 +61,7 @@ main() {
           .declarations['ExportMe'];
       expect(exportMe.children.keys, unorderedEquals(
           ['staticField', 'staticMethod', '', 'named', 'name', 'method',
-           'getter', 'optionalArgs', 'namedArgs']));
+           'getter', 'setter', 'optionalArgs', 'namedArgs', 'toString']));
     });
 
     test('should not export non-exported classes', () {
