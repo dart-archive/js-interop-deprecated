@@ -90,6 +90,8 @@ class ScanningVisitor extends RecursiveElementVisitor {
       jsProxies.add(element);
       jsElements.proxies.add(new Proxy(element.name, proxyAnnotation.global,
           proxyAnnotation.constructor));
+      // proxies aren't exported
+      return;
     }
 
     final previousState = _updateExportState(element);
@@ -205,6 +207,7 @@ class ScanningVisitor extends RecursiveElementVisitor {
    * ExportState for saving.
    */
   ExportState _updateExportState(Element element) {
+
     final noExport = hasNoExportAnnotation(element);
     if (noExport && _exportState != ExportState.EXPORTED) {
       // TODO(justinfagnani): figure out how to print source info.
@@ -215,8 +218,17 @@ class ScanningVisitor extends RecursiveElementVisitor {
     }
 
     var previousState = _exportState;
-    _exportState = hasExportAnnotation(element) ? ExportState.EXPORTED
-        : noExport ? ExportState.EXCLUDED
+    bool include = hasExportAnnotation(element);
+    bool exclude = noExport;
+    if (element is ClassElement) {
+      exclude = exclude || element.isAbstract
+          || element.allSupertypes.contains(jsInterfaceClass);
+    } else if (element is MethodElement) {
+      exclude = exclude || element.isAbstract;
+    }
+    _exportState =
+        include && !exclude ? ExportState.EXPORTED
+        : exclude ? ExportState.EXCLUDED
         : this._exportState;
     return previousState;
   }

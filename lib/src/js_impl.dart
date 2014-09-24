@@ -14,6 +14,7 @@ export 'dart:js' show context, JsObject;
 // TODO(justinfagnani): replace this import with a static impl
 // during transformation
 import 'package:js/src/mirrors.dart';
+import 'package:js/src/mirrors.dart' as mirrors show isGlobal;
 
 const DART_OBJECT_PROPERTY = '__dart_object__';
 
@@ -28,13 +29,22 @@ abstract class JsInterface extends JsInterfaceImpl {
       new JsInterfaceImpl(type, args);
 
   JsInterface.created(JsObject o) : _jsObject = o, super.created() {
-    if (o[DART_OBJECT_PROPERTY] != null) {
-      throw new ArgumentError('JsObject is already wrapped');
+    // since multiple Dart objects of different classes may represent
+    // the global name space, we don't store a reference
+    if (!isGlobal(this)) {
+      if (o[DART_OBJECT_PROPERTY] != null) {
+        throw new ArgumentError('JsObject is already wrapped');
+      }
+      o[DART_OBJECT_PROPERTY] = this;
     }
-    o[DART_OBJECT_PROPERTY] = this;
   }
 
 }
+
+// This only works in JS because we're still pulling mirrors. We need to
+// generate metadata about which classes are global when we transform out
+// mirrors.
+bool isGlobal(JsInterface o) => mirrors.isGlobal(o);
 
 /**
  * Converts a Dart object to a [JsObject] (or supported primitive) for sending

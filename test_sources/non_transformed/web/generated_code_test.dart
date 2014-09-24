@@ -19,6 +19,7 @@ import 'package:unittest/html_enhanced_config.dart';
 //     The 'JsInterface' group currently passes, but not the 'Exports' group.
 //import 'test_sources/test.dart' as t;
 import 'package:test/library.dart' as t;
+import 'package:test/library2.dart' as l2;
 
 main() {
   useHtmlEnhancedConfiguration();
@@ -153,6 +154,18 @@ main() {
       var e = new t.ExportMe.named('purple');
       var e2 = context.roundTrip(e);
       expect(e, same(e2));
+    });
+
+    test('should be able create more than one global proxy type', () {
+      var library2 = new l2.Library2();
+      expect(library2, isNot(context));
+    });
+
+    test('should not export non-exported classes', () {
+      expect(js.context['dart']['test']['library2'], isNotNull);
+      expect(js.context['dart']['test']['library2']['DartOnly'], isNull);
+      expect(js.context['dart']['test']['library2']['Library2'], isNull);
+      expect(js.context['dart']['test']['library2']['Library2Impl'], isNull);
     });
 
   });

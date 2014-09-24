@@ -5,7 +5,6 @@
 library js.exports;
 
 import 'package:quiver/core.dart';
-import 'package:quiver/iterables.dart' show generate;
 
 /**
  * The set of libraries and classes exported from Dart to JS, and proxy
@@ -24,22 +23,10 @@ class JsElements {
    * Returns an [ExportedLibrary] representing the library [name]. The existing
    * library object is returned if it exists, otherwise one is created on
    * demand.
-   *
-   * Libraries are handled as if they are hierarchical, by treating the library
-   * [name] as a dot-separated 'path'. If the parent of a library doesn't exist
-   * it is created on demand.
    */
   ExportedLibrary getLibrary(String libraryName) {
-    var parts = libraryName.split('.');
-    var library = exportedLibraries.putIfAbsent(parts.first,
-        () => new ExportedLibrary(parts.first, null));
-    if (parts.length > 1) {
-      for (var name in parts.sublist(1)) {
-        library = library.children.putIfAbsent(name,
-            () => new ExportedLibrary(name, library));;
-      }
-    }
-    return library;
+    return exportedLibraries.putIfAbsent(libraryName,
+        () => new ExportedLibrary(libraryName));
   }
 }
 
@@ -74,20 +61,14 @@ abstract class ExportedElement<P extends ExportedElement> {
 
   ExportedElement(this.name, this.parent);
 
-  String get path => getPath();
-
-  String getPath([String separator]) => generate(() => this, (e) => e.parent)
-      .map((e) => e.name)
-      .toList()
-      .reversed
-      .join(separator == null ? '.' : separator);
+  String getPath(String separator) =>
+      name.replaceAll('.', separator);
 }
 
 class ExportedLibrary extends ExportedElement<ExportedLibrary> {
-  final Map<String, ExportedLibrary> children = <String, ExportedLibrary>{};
   final Map<String, ExportedElement> declarations = <String, ExportedElement>{};
 
-  ExportedLibrary(String name, ExportedLibrary parent) : super(name, parent);
+  ExportedLibrary(String name) : super(name, null);
 
   String toString() => 'ExportedLibrary(name: $name, '
       'declarations: $declarations)';
@@ -97,6 +78,10 @@ class ExportedClass extends ExportedElement<ExportedLibrary> {
   final Map<String, ExportedElement> children = <String, ExportedElement>{};
 
   ExportedClass(String name, ExportedLibrary parent) : super(name, parent);
+
+  String getPath(String separator) =>
+      [parent.getPath(separator), name.replaceAll('.', separator)]
+          .join(separator);
 }
 
 /**

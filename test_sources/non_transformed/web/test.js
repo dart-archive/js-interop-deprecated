@@ -24,8 +24,7 @@ function JsThing2() {
 }
 
 function createExportMe() {
-  var e = new dart.test.library.ExportMe();
-  return e;
+  return new dart.test.library.ExportMe();
 }
 
 function createExportMeNamed(name) {
@@ -62,4 +61,8 @@ function roundTrip(e) {
 
 function isNull(value) {
   return value === null;
+}
+
+function createDartOnly() {
+  return new dart.test.library2.DartOnly();
 }
