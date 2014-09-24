@@ -26,9 +26,6 @@ class JsInitializerGenerator {
    * Returns the transformed source.
    */
   String generate() {
-    jsElements.exportedLibraries.values.forEach((l) {
-      buffer.writeln("_export_${l.getPath('_')}(dart);");
-    });
     jsElements.exportedLibraries.values.forEach(_generateLibraryExportFunction);
     return buffer.toString();
   }
@@ -40,18 +37,17 @@ class JsInitializerGenerator {
   _generateLibraryExportFunction(ExportedLibrary library) {
     buffer.writeln(
 '''
-
-function _export_${library.getPath('_')}(parent) {
-  var lib = parent.${library.name} = {};
+// library ${library.name}
+(function (ns) {
+  var lib = ns;
+  ${library.name.split('.').map((p) => '"$p"').toList()}.forEach(function (s) {
+    lib = lib[s] = lib[s] || {};
+  });
 ''');
 
-    library.declarations.values.forEach(_generateDeclarationExportCall);
-    library.children.values.forEach(_generateLibraryExportCall);
-
-    buffer.writeln('}');
-
-    library.children.values.forEach(_generateLibraryExportFunction);
     library.declarations.values.forEach(_generateDeclarationExport);
+    buffer.writeln('})(window.dart);');
+
   }
 
   void _generateDeclarationExportCall(ExportedElement element) {
@@ -70,26 +66,25 @@ function _export_${library.getPath('_')}(parent) {
   void _generateClass(ExportedClass c) {
     buffer.writeln(
 '''
-
-function _export_${c.getPath('_')}(parent) {
-  var constructor = parent.${c.name} = function _${c.name}() {
-    this.__dart_object__ = constructor._new();
-  };
-  constructor.prototype = Object.create(dart.Object.prototype);
-  constructor.prototype.constructor = constructor;
-  constructor._wrapDartObject = function(dartObject) {
-    var o = Object.create(constructor.prototype);
-    o.__dart_object__ = dartObject;
-    return o;
-  };
-
+  // class ${c.name}
+  (function(parent) {
+    var constructor = parent.${c.name} = function _${c.name}() {
+      this.__dart_object__ = constructor._new();
+    };
+    constructor.prototype = Object.create(dart.Object.prototype);
+    constructor.prototype.constructor = constructor;
+    constructor._wrapDartObject = function(dartObject) {
+      var o = Object.create(constructor.prototype);
+      o.__dart_object__ = dartObject;
+      return o;
+    };
 ''');
 
     c.children.values
         .where((e) => e is ExportedConstructor)
         .forEach(_generateConstructor);
 
-    buffer.writeln("}");
+    buffer.writeln("  })(lib);");
   }
 
   void _generateConstructor(ExportedConstructor c) {
@@ -101,10 +96,10 @@ function _export_${c.getPath('_')}(parent) {
     var namedPart = c.name == '' ? '' : '.${c.name}';
     buffer.writeln(
 '''
-  constructor.${c.name} = function _${c.name}($jsParameters) {
-    this.__dart_object__ = constructor.$constructorName($jsParameters);
-  }
-  constructor.${c.name}.prototype = constructor.prototype;
+    constructor.${c.name} = function _${c.name}($jsParameters) {
+      this.__dart_object__ = constructor.$constructorName($jsParameters);
+    }
+    constructor.${c.name}.prototype = constructor.prototype;
 ''');
     }
 

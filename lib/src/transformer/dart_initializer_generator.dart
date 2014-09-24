@@ -67,15 +67,11 @@ initializeJavaScriptLibrary() {
 '''
 
 void _export_${library.getPath('_')}($JS_PREFIX.JsObject parent) {
-  js.JsObject lib = parent['${library.name}'];
+  js.JsObject lib = parent['${library.getPath("']['")}'];
 ''');
 
     library.declarations.values.forEach(_generateDeclarationExportCall);
-    library.children.values.forEach(_generateLibraryExportCall);
-
     buffer.writeln('}');
-
-    library.children.values.forEach(_generateLibraryExportMethod);
     library.declarations.values.forEach(_generateDeclarationExport);
   }
 

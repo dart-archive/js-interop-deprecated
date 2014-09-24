@@ -21,25 +21,7 @@ main() {
       var elements = new JsElements();
       var a = elements.getLibrary('a');
       var b = elements.getLibrary('a.b');
-      expect(b.parent, same(a));
-      expect(elements.exportedLibraries.length, 1);
-    });
-
-    test('should add a new nested library without an existing parent', () {
-      var elements = new JsElements();
-      var b = elements.getLibrary('a.b');
-      expect(b.parent, isNot(isNull));
-      var a = elements.getLibrary('a');
-      expect(b.parent, same(a));
-      expect(elements.exportedLibraries.length, 1);
-    });
-
-    test('should add a new nested library with an existing name', () {
-      var elements = new JsElements();
-      var b1 = elements.getLibrary('a.b');
-      var b2 = elements.getLibrary('c.d.b');
-      expect(b1, isNot(same(b2)));
-      expect(b1.parent, isNot(same(b2.parent)));
+      expect(b.parent, isNull);
       expect(elements.exportedLibraries.length, 2);
     });
 

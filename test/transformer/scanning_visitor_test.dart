@@ -41,13 +41,10 @@ main() {
       var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       var exports = visitor.jsElements;
-      expect(exports.exportedLibraries.keys, ['test']);
-      expect(exports.exportedLibraries['test'].children.keys,
-          ['library']);
-      expect(exports.exportedLibraries['test'].children['library'],
+      expect(exports.exportedLibraries.keys, ['test.library']);
+      expect(exports.exportedLibraries['test.library'],
           new isInstanceOf<ExportedLibrary>());
-      expect(exports.exportedLibraries['test']
-          .children['library']
+      expect(exports.exportedLibraries['test.library']
           .declarations['ExportMe'],
           new isInstanceOf<ExportedClass>());
     });
@@ -56,8 +53,7 @@ main() {
       var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       var exports = visitor.jsElements;
-      ExportedClass exportMe = exports.exportedLibraries['test']
-          .children['library']
+      ExportedClass exportMe = exports.exportedLibraries['test.library']
           .declarations['ExportMe'];
       expect(exportMe.children.keys, unorderedEquals(
           ['staticField', 'staticMethod', '', 'named', 'name', 'method',
@@ -68,9 +64,9 @@ main() {
       var visitor = new ScanningVisitor(jsLib, jsMetadataLib, testLib)
           ..visitLibraryElement(testLib);
       var exports = visitor.jsElements;
-      expect(exports.exportedLibraries['test'].children['library'],
+      expect(exports.exportedLibraries['test.library'],
           isNot(contains('Context')));
-      expect(exports.exportedLibraries['test'].children['library'],
+      expect(exports.exportedLibraries['test.library'],
           isNot(contains('DoNotExport')));
     });
   });

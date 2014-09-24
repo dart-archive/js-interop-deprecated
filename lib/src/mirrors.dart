@@ -31,6 +31,7 @@ initializeJavaScript() {
   var libraries = currentMirrorSystem().libraries;
 
   var jsElements = new JsElements();
+  var jsInterface = reflectType(JsInterface);
 
   for (var library in libraries.values) {
     var exportedLibrary;
@@ -48,7 +49,13 @@ initializeJavaScript() {
       }
 
       var classExportAnnotation = _getExportAnnotation(clazz);
-      if (libraryExportAnnotation != null || classExportAnnotation != null) {
+      var classNoExportAnnotation = _getNoExportAnnotation(clazz);
+
+      if (classNoExportAnnotation == null
+          && !clazz.isAbstract
+          && !classImplements(clazz, jsInterface)
+          && (libraryExportAnnotation != null
+              || classExportAnnotation != null)) {
         exportedLibrary = jsElements.getLibrary(libraryName);
         var name = _getName(clazz);
         var c = new ExportedClass(name, exportedLibrary);
@@ -97,7 +104,7 @@ void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
         }
       } else if (m is VariableMirror) {
         c.children[name] = new ExportedProperty(name, c,
-            hasSetter: m.isFinal,
+            hasSetter: !m.isFinal,
             hasGetter: true,
             isStatic: m.isStatic);
       }
@@ -129,9 +136,16 @@ void _registerProxy(ClassMirror clazz, JsProxy jsProxyAnnotation) {
 }
 
 _exportLibrary(ExportedLibrary library, JsObject parent) {
-  var libraryJsObj = new JsObject.jsify({});
-  parent[library.name] = libraryJsObj;
-  library.children.forEach((n, l) => _exportLibrary(l, libraryJsObj));
+  print("exporting library ${library.name}");
+  JsObject libraryJsObj = parent;
+  var parts = library.name.split('.');
+  parts.forEach((p) {
+    if (!libraryJsObj.hasProperty(p)) {
+      libraryJsObj = libraryJsObj[p] = new JsObject.jsify({});
+    } else {
+      libraryJsObj = libraryJsObj[p];
+    }
+  });
   library.declarations.forEach((n, d) => _exportDeclaration(d, libraryJsObj));
 }
 
@@ -212,28 +226,34 @@ _exportField(ExportedProperty e, JsObject prototype) {
   ]);
 }
 
-
-/*
- * JsCallback, _convertCallback and _functionConverter all us to create a
- * JavaScript function that captures its 'this' reference and argument list and
- * pass them to a Dart closure. We need this to be able to invoke arbitrary Dart
- * methods via InstanceMirror.invoke(), Function.apply(), etc. Otherwise,
- * dart:js only supports converting a Dart closure with a fixed set of
- * parameters.
- */
 typedef JsCallback(receiver, List args);
 
-js.JsFunction _convertCallback(JsCallback c) => _functionConverter.apply([c]);
+js.JsFunction _convertCallback(JsCallback c) =>
+    new js.JsFunction.withThis(new _CallbackFunction(c));
 
-final js.JsFunction _functionConverter =
-    new js.JsObject(js.context['Function'], ['f', '''
-return function() {
-  return f(this, Array.prototype.slice.apply(arguments));
-};
-''']);
+class _CallbackFunction implements Function {
+  final JsCallback f;
+
+  _CallbackFunction(this.f);
+
+  call() => throw new StateError('There should always been at least 1 parameter'
+      '(js this).');
+
+  noSuchMethod(Invocation invocation) {
+    var self = invocation.positionalArguments.first;
+    var args = invocation.positionalArguments.skip(1).toList();
+    return f(self, args);
+  }
+}
 
 Export _getExportAnnotation(DeclarationMirror d) {
   var m = d.metadata.firstWhere((m) => m.type.reflectedType == Export,
+      orElse: () => null);
+  return m == null ? null : m.reflectee;
+}
+
+NoExport _getNoExportAnnotation(DeclarationMirror d) {
+  var m = d.metadata.firstWhere((m) => m.type.reflectedType == NoExport,
       orElse: () => null);
   return m == null ? null : m.reflectee;
 }
@@ -249,6 +269,12 @@ ParameterKind _getKind(ParameterMirror p) {
 DartType _getType(ParameterMirror p) => new DartType(_getName(p.type));
 
 final Expando _globals = new Expando();
+
+bool isGlobal(JsInterface o) {
+  var classMirror = reflect(o).type;
+  var jsProxyAnnotation = _getJsProxyAnnotation(classMirror);
+  return jsProxyAnnotation.global;
+}
 
 class JsInterfaceImpl {
 
