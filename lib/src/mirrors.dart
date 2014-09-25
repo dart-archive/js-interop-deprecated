@@ -85,7 +85,8 @@ void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
     if (!m.isPrivate) {
       var name = _getName(m);
 
-      if (m is MethodMirror) {
+      if (m is MethodMirror && !m.isOperator && name != 'noSuchMethod'
+          && !m.isStatic) {
         if (m.isRegularMethod) {
           var parameters = m.parameters.map((p) =>
               new ExportedParameter(_getName(p), _getKind(p), _getType(p)))
@@ -143,7 +144,6 @@ void _registerProxy(ClassMirror clazz, JsProxy jsProxyAnnotation) {
 }
 
 _exportLibrary(ExportedLibrary library, JsObject parent) {
-  print("exporting library ${library.name}");
   JsObject libraryJsObj = parent;
   var parts = library.name.split('.');
   parts.forEach((p) {
@@ -199,7 +199,6 @@ _exportConstructor(ExportedConstructor c, JsObject ctor) {
     ctor['_new'] =
         () => classMirror.newInstance(new Symbol(c.name), []).reflectee;
   } else {
-    var jsParams = c.parameters.map((p) => p.name).toList();
     ctor[c.name] = _convertCallback((self, args) {
       self['__dart_object__'] =
           classMirror.newInstance(new Symbol(c.name), args).reflectee;
@@ -210,9 +209,25 @@ _exportConstructor(ExportedConstructor c, JsObject ctor) {
 _exportMethod(ExportedMethod c, JsObject prototype) {
   var name = c.name;
   var classMirror = _classMirrors[c.parent];
-  prototype[name] = new js.JsFunction.withThis((self) {
+  var namedParameters = c.parameters
+      .where((p) => p.kind == ParameterKind.NAMED).toList();
+  var positionalParameterCount = c.parameters.length - namedParameters.length;
+  prototype[name] = _convertCallback((self, args) {
     var o = self['__dart_object__'];
-    return reflect(o).invoke(new Symbol(c.name), []).reflectee;
+    if (namedParameters.isNotEmpty &&
+        args.length == positionalParameterCount + 1) {
+      var positionalArgs = args.sublist(0, positionalParameterCount);
+      JsObject namedJsArgs = args[positionalParameterCount];
+      var namedArgs = <Symbol, dynamic>{};
+      for (var p in namedParameters) {
+        if (namedJsArgs.hasProperty(p.name)) {
+          namedArgs[new Symbol(p.name)] = namedJsArgs[p.name];
+        }
+      }
+      return reflect(o).invoke(new Symbol(c.name), positionalArgs, namedArgs)
+          .reflectee;
+    }
+    return reflect(o).invoke(new Symbol(c.name), args).reflectee;
   });
 }
 

@@ -82,6 +82,8 @@ class ExportedClass extends ExportedElement<ExportedLibrary> {
   String getPath(String separator) =>
       [parent.getPath(separator), name.replaceAll('.', separator)]
           .join(separator);
+
+  String toString() => 'ExportedClass($name)';
 }
 
 /**
