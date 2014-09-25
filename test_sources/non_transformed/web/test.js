@@ -6,6 +6,7 @@ var foo = new JsThing('made in JS');
 var aString = 'hello';
 var aNum = 123;
 var aBool = true;
+var aDate = new Date(2014, 9, 4);
 var a = null;
 
 function JsThing(name) {
