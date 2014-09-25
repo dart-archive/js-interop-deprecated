@@ -50,7 +50,7 @@ bool isGlobal(JsInterface o) => o is JsGlobal;
  */
 dynamic toJs(dynamic o) {
   if (o == null) return o;
-  if (o is num || o is String || o is bool) return o;
+  if (o is num || o is String || o is bool || o is DateTime) return o;
 
   if (o is JsInterface) return  o._jsObject;
   var type = o.runtimeType;
@@ -72,7 +72,7 @@ final Expando<JsObject> _exportedProxies = new Expando<JsObject>();
 
 dynamic toDart(dynamic o) {
   if (o == null) return o;
-  if (o is num || o is String || o is bool) return o;
+  if (o is num || o is String || o is bool || o is DateTime) return o;
 
   var wrapper = o[DART_OBJECT_PROPERTY];
   if (wrapper == null) {

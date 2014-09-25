@@ -21,6 +21,9 @@ abstract class Context extends JsInterface {
   bool get aBool;
   void set aBool(bool v);
 
+  DateTime get aDate;
+  void set aDate(DateTime d);
+
   String get a;
   void set a(String v);
 

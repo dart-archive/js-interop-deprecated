@@ -62,6 +62,11 @@ main() {
       expect(context.aBool, true);
     });
 
+    test('should return a DateTime value from JS', () {
+      var context = new t.Context();
+      expect(context.aDate, new DateTime(2014, 10, 4));
+    });
+
     test('should allowing setting a String', () {
       var context = new t.Context();
       context.aString = 'hello';
