@@ -8,11 +8,6 @@
  */
 library js;
 
-export 'dart:js' show JsObject;
-
-// this must be a package import due to dartbug.com/20666
-export 'package:js/src/js_impl.dart' show JsInterface;
-export 'package:js/src/metadata.dart';
-import 'package:js/src/mirrors.dart' as impl show initializeJavaScript;
-
-void initializeJavaScript() => impl.initializeJavaScript();
+// js.dart is just an alias for mirrors.dart at runtime. The transformer
+// replaces this import of js.dart with src/static.dart.
+export 'package:js/src/mirrors.dart';

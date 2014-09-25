@@ -12,7 +12,7 @@ abstract class Library2 extends JsInterface {
 }
 
 @JsProxy(global: true)
-class Library2Impl extends Library2 {
+class Library2Impl extends Library2 implements JsGlobal {
   factory Library2Impl() => new JsInterface(Library2Impl, []);
   Library2Impl.created(JsObject o) : super.created(o);
   noSuchMethod(i) => super.noSuchMethod(i);
@@ -23,4 +23,3 @@ class DartOnly {}
 
 @Export()
 class JsAndDart {}
-

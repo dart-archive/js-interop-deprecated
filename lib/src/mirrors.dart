@@ -12,11 +12,17 @@ import 'dart:js' as js;
 import 'dart:mirrors';
 import 'dart:mirrors' as mirrors;
 
-import 'package:js/js.dart';
 import 'package:js/src/metadata.dart';
 import 'package:js/src/js_elements.dart';
 import 'package:js/src/js_impl.dart' as jsi;
 import 'package:js/src/js_impl.dart';
+
+// This is the public interface of js.dart
+// The exports must match those in static.dart
+export 'package:js/src/js_impl.dart' hide JsInterface;
+export 'dart:js' show JsObject;
+export 'package:js/src/metadata.dart';
+
 import 'package:quiver/mirrors.dart';
 
 final _dart = js.context['dart'];
@@ -270,17 +276,11 @@ DartType _getType(ParameterMirror p) => new DartType(_getName(p.type));
 
 final Expando _globals = new Expando();
 
-bool isGlobal(JsInterface o) {
-  var classMirror = reflect(o).type;
-  var jsProxyAnnotation = _getJsProxyAnnotation(classMirror);
-  return jsProxyAnnotation.global;
-}
+class JsInterface extends jsi.JsInterface {
 
-class JsInterfaceImpl {
+  JsInterface.created(JsObject o) : super.created(o);
 
-  JsInterfaceImpl.created();
-
-  factory JsInterfaceImpl(Type type, Iterable args) {
+  factory JsInterface(Type type, Iterable args) {
     if (_globals[type] != null) {
       return _globals[type];
     }

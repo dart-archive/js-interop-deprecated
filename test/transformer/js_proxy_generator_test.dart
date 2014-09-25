@@ -6,13 +6,14 @@ library js.test.transformer.proxy_generator_test;
 
 import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
+import 'package:barback/barback.dart';
 import 'package:js/src/transformer/js_proxy_generator.dart';
+import 'package:js/src/transformer/utils.dart';
 import 'package:source_maps/refactor.dart';
 import 'package:source_span/source_span.dart';
 import 'package:unittest/unittest.dart';
 
 import 'utils.dart';
-import 'package:barback/barback.dart';
 
 main() {
 
@@ -38,9 +39,7 @@ main() {
           testLib.getType('ContextImpl'),
           testLib.getType('JsFooImpl'),
           testLib.getType('JsBarImpl')]);
-      var jsMetadataLib = jsLib
-          .exportedLibraries
-          .singleWhere((l) => l.name == 'js.metadata');
+      var jsMetadataLib = getMetadataLib(jsLib);
       var testSourceFile = new SourceFile(testLibSource);
       var transaction = new TextEditTransaction(testLibSource, testSourceFile);
       var id = new AssetId('test', 'lib/test.dart');
