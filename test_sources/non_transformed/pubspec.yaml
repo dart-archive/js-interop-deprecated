@@ -8,4 +8,5 @@ transformers:
 - js
 - js/initializer
 - $dart2js:
+    checked: true
     commandLineOptions: ['--dump-info']

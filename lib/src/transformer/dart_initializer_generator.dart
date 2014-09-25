@@ -93,7 +93,8 @@ void _export_${library.getPath('_')}($JS_PREFIX.JsObject parent) {
 
 void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
   var constructor = parent['${c.name}'];
-  $JS_PREFIX.registerJsConstructorForType(${c.name}, constructor['_wrapDartObject']);
+  $JS_PREFIX.registerJsConstructorForType(${c.name},
+      constructor['_wrapDartObject']);
   var prototype = constructor['prototype'];
 ''');
 
@@ -129,7 +130,8 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
 '''
   // method ${c.name}
   prototype['${c.name}'] = new js.JsFunction.withThis(($jsParameters) {
-    return  ($JS_PREFIX.toDart($JS_THIS_REF) as ${c.parent.name}).${c.name}($dartParameters);
+    return  ($JS_PREFIX.toDart($JS_THIS_REF) as ${c.parent.name})
+        .${c.name}($dartParameters);
   });
 ''');
   }
@@ -185,7 +187,8 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
         .where((p) => p.kind == ParameterKind.NAMED)
         .map((p) => p.name);
     var dartNamedParameters = namedParameters.map((name) =>
-        "${name}: _getOptionalArg(__js_named_parameters_map__, '${name}')");
+        "${name}: "
+        "$JS_PREFIX.getOptionalArg(__js_named_parameters_map__, '${name}')");
     var dartParameters = concat([
             requiredParameters,
             positionalParameters,

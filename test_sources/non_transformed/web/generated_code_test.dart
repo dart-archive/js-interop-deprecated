@@ -32,49 +32,43 @@ main() {
   // in so that the tests are independent
   group('JsInterface', () {
 
+    var context = new t.Context();
+
     tearDown(() {
       js.context['a'] = null;
     });
 
     test('should create a global object', () {
-      var context = new t.Context();
       expect(context, new isInstanceOf<t.Context>());
     });
 
     test('should return a null value from JS', () {
-      var context = new t.Context();
       expect(context.a, null);
       expect(js.context.callMethod('isNull', [null]), true);
     });
 
     test('should return a String value from JS', () {
-      var context = new t.Context();
       expect(context.aString, 'hello');
     });
 
     test('should return a num value from JS', () {
-      var context = new t.Context();
       expect(context.aNum, 123);
     });
 
     test('should return a bool value from JS', () {
-      var context = new t.Context();
       expect(context.aBool, true);
     });
 
     test('should return a DateTime value from JS', () {
-      var context = new t.Context();
       expect(context.aDate, new DateTime(2014, 10, 4));
     });
 
     test('should allowing setting a String', () {
-      var context = new t.Context();
       context.aString = 'hello';
       expect(js.context['aString'], 'hello');
     });
 
     test('should get a JS object value from JS', () {
-      var context = new t.Context();
       var foo = context.foo;
       expect(foo, new isInstanceOf<t.JsFoo>());
       expect(foo.name, 'made in JS');
@@ -86,14 +80,12 @@ main() {
     });
 
     test('should produce identical proxies for identical JS objects', () {
-      var context = new t.Context();
       var foo1 = context.foo;
       var foo2 = context.foo;
       expect(foo1, same(foo2));
     });
 
     test('should get back the same object that was set', () {
-      var context = new t.Context();
       var foo1 = context.foo;
       var foo2 = new t.JsFoo('a');
       expect(foo1, isNot(same(foo2)));
@@ -102,6 +94,33 @@ main() {
       var foo3 = context.foo;
       expect(foo1, isNot(same(foo3)));
       expect(foo2, same(foo3));
+    });
+
+    test('should have callable methods', () {
+      var foo = new t.JsFoo('a');
+      var y = foo.double(7);
+      expect(y, 14);
+    });
+
+    test('should accept proxies as arguments', () {
+      var foo = new t.JsFoo('red');
+      var bar = new t.JsBar('blue');
+      var name = foo.getName(bar);
+      expect(name, 'blue');
+    });
+
+    test('should return proxy values', () {
+      var foo = new t.JsFoo('red');
+      var bar = new t.JsBar('blue');
+      foo.setBar(bar);
+      expect(foo.bar, bar);
+    });
+
+    test('should accept exported object as arguments', () {
+      var foo = new t.JsFoo('red');
+      var bar = new t.ExportMe.named('blue');
+      var name = foo.getName(bar);
+      expect(name, 'blue');
     });
 
   });
@@ -141,6 +160,18 @@ main() {
       var e = context.createExportMe();
       int v = context.callMethod(e);
       expect(v, 42);
+    });
+
+    test('should be able to call a method with arguments', () {
+      var e = context.createExportMe();
+      String v = context.callMethod2(e, 'interop');
+      expect(v, 'Hello interop!');
+    });
+
+    test('should be able to call a method with named parameters', () {
+      var e = context.createExportMe();
+      String v = context.callNamedArgs(e);
+      expect(v, '1 2 3');
     });
 
     test('should be able to get a getter', () {

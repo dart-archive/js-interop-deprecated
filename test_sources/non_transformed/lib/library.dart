@@ -36,6 +36,10 @@ abstract class Context extends JsInterface {
 
   int callMethod(ExportMe e);
 
+  String callMethod2(ExportMe e, String a);
+
+  String callNamedArgs(ExportMe e);
+
   bool getGetter(ExportMe e);
 
   bool setSetter(ExportMe e, String s);
@@ -65,7 +69,7 @@ abstract class HasName {
   String name;
 }
 
-abstract class JsFoo extends JsInterface {
+abstract class JsFoo extends JsInterface implements HasName {
 
   JsFoo.created(JsObject o) : super.created(o);
 
@@ -75,9 +79,14 @@ abstract class JsFoo extends JsInterface {
 
   int y() => 1;
 
-//  JsBar bar;
-//
-//  JsBar getBar(JsBar b);
+  num double(num x);
+
+  String getName(HasName b);
+
+  void setBar(JsBar);
+
+  JsBar get bar;
+  void set bar(JsBar bar);
 }
 
 @JsProxy(constructor: 'JsThing')
@@ -132,17 +141,15 @@ class ExportMe implements HasName {
 
   String _privateField = "privateField";
 
+  String method2(String s) => "Hello $s!";
+
   void optionalArgs(a, [b, c]) {
     print("a: $a");
     print("b: $b");
     print("c: $c");
   }
 
-  void namedArgs(a, {b, c}) {
-    print("a: $a");
-    print("b: $b");
-    print("c: $c");
-  }
+  String namedArgs(int a, {int b, int c}) => '$a $b $c';
 
   String toString() => 'ExportMe($name)';
 

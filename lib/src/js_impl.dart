@@ -105,3 +105,8 @@ registerFactoryForJsConstructor(JsObject constructor,
     InterfaceFactory factory) {
   _interfaceConstructors[constructor] = factory;
 }
+
+dynamic getOptionalArg(JsObject args, String name) {
+  if (args == null) return null;
+  return args[name];
+}

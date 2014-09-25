@@ -14,15 +14,25 @@ function JsThing(name) {
   this.bar = null;
 }
 
-/*
-JsThing.prototype.getBar = function(bar) {
-  return bar;
+JsThing.prototype.double = function(x) {
+  return x+x;
 }
-*/
 
-function JsThing2() {
+JsThing.prototype.getName = function(o) {
+  return o.name;
+}
+
+JsThing.prototype.setBar = function(bar) {
+  this.bar = bar;
+}
+
+function JsThing2(name) {
+  this.name = name;
   this.y = 42;
 }
+
+JsThing2.prototype = new JsThing();
+JsThing2.prototype.constructor = JsThing2;
 
 function createExportMe() {
   return new dart.test.library.ExportMe();
@@ -48,6 +58,14 @@ function callMethod(e) {
   return e.method();
 }
 
+function callMethod2(e, a) {
+  return e.method2(a);
+}
+
+function callNamedArgs(e) {
+  return e.namedArgs(1, {b: 2, c: 3});
+}
+
 function getGetter(e) {
   return e.getter;
 }
@@ -62,8 +80,4 @@ function roundTrip(e) {
 
 function isNull(value) {
   return value === null;
-}
-
-function createDartOnly() {
-  return new dart.test.library2.DartOnly();
 }
