@@ -4,7 +4,6 @@
 
 library test.library;
 
-import 'dart:js' show JsObject;
 import 'package:js/js.dart';
 
 abstract class Context extends JsInterface {
@@ -30,7 +29,7 @@ abstract class Context extends JsInterface {
 
   String getName(HasName o);
 
-  void setName(HasName o);
+  void setName(HasName o, String name);
 
   int callMethod(ExportMe e);
 
@@ -50,7 +49,7 @@ abstract class Context extends JsInterface {
 }
 
 @JsProxy(global: true)
-class ContextImpl extends Context {
+class ContextImpl extends Context implements JsGlobal {
 
   factory ContextImpl() => new JsInterface(ContextImpl, []);
 
@@ -67,7 +66,7 @@ abstract class JsFoo extends JsInterface {
 
   JsFoo.created(JsObject o) : super.created(o);
 
-  factory JsFoo(String name) => new JsInterface(JsFooImpl, [name]);
+  factory JsFoo(String name) => new JsFooImpl(name);
 
   String get name;
 
@@ -81,6 +80,8 @@ abstract class JsFoo extends JsInterface {
 @JsProxy(constructor: 'JsThing')
 class JsFooImpl extends JsFoo {
 
+  factory JsFooImpl(String name) => new JsInterface(JsFooImpl, [name]);
+
   JsFooImpl.created(JsObject o) : super.created(o);
 
   noSuchMethod(i) => super.noSuchMethod(i);
@@ -88,7 +89,7 @@ class JsFooImpl extends JsFoo {
 
 abstract class JsBar extends JsFoo {
 
-  factory JsBar(String name) => new JsInterface(JsBarImpl, [name]);
+  factory JsBar(String name) => new JsBarImpl(name);
 
   JsBar.created(JsObject o) : super.created(o);
 
@@ -98,6 +99,7 @@ abstract class JsBar extends JsFoo {
 
 @JsProxy(constructor: 'JsThing2')
 class JsBarImpl extends JsBar {
+  factory JsBarImpl(String name) => new JsInterface(JsBarImpl, [name]);
 
   JsBarImpl.created(JsObject o) : super.created(o);
 

@@ -7,3 +7,5 @@ dependencies:
 transformers:
 - js
 - js/initializer
+- $dart2js:
+    commandLineOptions: ['--dump-info']

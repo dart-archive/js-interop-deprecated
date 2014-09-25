@@ -26,6 +26,8 @@ main() {
         'test|lib/library.dart': readTestFile('library.dart'),
         'test|web/entry_point.dart': readTestFile('entry_point.dart.test'),
         'js|lib/js.dart': readJsPackageFile('js.dart'),
+        'js|lib/src/mirrors.dart': readJsPackageFile('src/mirrors.dart'),
+        'js|lib/src/static.dart': readJsPackageFile('src/static.dart'),
         'js|lib/src/js_impl.dart': readJsPackageFile('src/js_impl.dart'),
         'js|lib/src/metadata.dart': readJsPackageFile('src/metadata.dart'),
       }, null);

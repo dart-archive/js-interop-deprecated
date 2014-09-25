@@ -48,10 +48,7 @@ class ScanningVisitor extends RecursiveElementVisitor {
       LibraryElement jsMetadataLibrary,
       this.entryLibrary)
       : this.jsLibrary = jsLibrary,
-        jsInterfaceClass = jsLibrary
-            .exportedLibraries
-            .singleWhere((l) => l.name == 'js.impl')
-            .getType('JsInterface'),
+        jsInterfaceClass = getImplLib(jsLibrary).getType('JsInterface'),
         jsProxyClass = jsMetadataLibrary.getType('JsProxy'),
         exportClass = jsMetadataLibrary.getType('Export'),
         noExportClass = jsMetadataLibrary.getType('NoExport') {

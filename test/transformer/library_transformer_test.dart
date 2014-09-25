@@ -20,6 +20,8 @@ main() {
       var testHelper = new TestHelper([[transformer]], {
         'test|lib/library.dart': readTestFile('library.dart'),
         'js|lib/js.dart': readJsPackageFile('js.dart'),
+        'js|lib/src/mirrors.dart': readJsPackageFile('src/mirrors.dart'),
+        'js|lib/src/static.dart': readJsPackageFile('src/static.dart'),
         'js|lib/src/js_impl.dart': readJsPackageFile('src/js_impl.dart'),
         'js|lib/src/metadata.dart': readJsPackageFile('src/metadata.dart'),
       }, null);

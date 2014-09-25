@@ -4,7 +4,6 @@
 
 library test.library;
 
-import 'dart:js' show JsObject;
 import 'package:js/js.dart';
 
 abstract class Context extends JsInterface {

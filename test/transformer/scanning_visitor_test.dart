@@ -6,6 +6,7 @@ library js.test.transformer.scanning_visitor_test;
 
 import 'package:analyzer/src/generated/element.dart';
 import 'package:js/src/transformer/scanning_visitor.dart';
+import 'package:js/src/transformer/utils.dart';
 import 'package:js/src/js_elements.dart';
 import 'package:unittest/unittest.dart';
 
@@ -22,10 +23,7 @@ main() {
       var analyserInfo = initAnalyzer();
       testLib = analyserInfo.testLib;
       jsLib = analyserInfo.jsLib;
-      jsMetadataLib = jsLib
-          .exportedLibraries
-          .singleWhere((l) => l.name == 'js.metadata');
-
+      jsMetadataLib = getMetadataLib(jsLib);
     });
 
     test('should find JsProxy annotated classes', () {

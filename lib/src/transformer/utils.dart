@@ -14,6 +14,20 @@ import 'package:quiver/iterables.dart' show max;
 const String DART_INITIALIZER_SUFFIX = "__init_js__.dart";
 const String JS_INITIALIZER_SUFFIX = "__init_js__.js";
 
+LibraryElement getEnvironementImplLib(LibraryElement jsLib) =>
+    jsLib.exportedLibraries
+        .singleWhere((l) => l.name == 'js.mirrors' || l.name == 'js.static');
+
+LibraryElement getMetadataLib(LibraryElement jsLib) =>
+    getEnvironementImplLib(jsLib)
+        .exportedLibraries
+        .singleWhere((l) => l.name == 'js.metadata');
+
+LibraryElement getImplLib(LibraryElement jsLib) =>
+    getEnvironementImplLib(jsLib)
+        .exportedLibraries
+        .singleWhere((l) => l.name == 'js.impl');
+
 JsProxy getProxyAnnotation(ClassElement interface, ClassElement jsProxyClass) {
   var node = interface.node;
   for (Annotation a in node.metadata) {
