@@ -128,7 +128,7 @@ main() {
 
     test('should be able to set a field', () {
       var e = new t.ExportMe();
-      String name = context.setName(e, 'red');
+      context.setName(e, 'red');
       expect(e.name, 'red');
     });
 
@@ -140,7 +140,7 @@ main() {
 
     test('should be able to get a getter', () {
       var e = new t.ExportMe();
-      String v = context.getGetter(e);
+      bool v = context.getGetter(e);
       expect(v, true);
     });
 
