@@ -88,7 +88,8 @@ void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
       if (m is MethodMirror) {
         if (m.isRegularMethod) {
           var parameters = m.parameters.map((p) =>
-              new ExportedParameter(_getName(p), _getKind(p), _getType(p)));
+              new ExportedParameter(_getName(p), _getKind(p), _getType(p)))
+              .toList();
           var method = new ExportedMethod(name, c, parameters);
           c.children[name] = method;
         } else if (m.isGetter) {
@@ -127,7 +128,7 @@ void _addExportedConstructors(ClassMirror clazz, ExportedClass c) {
     var name = rawName == c.name ? '' : rawName.substring(c.name.length + 1);
 
     var parameters = ctor.parameters.map((p) =>
-        new ExportedParameter(_getName(p), _getKind(p), _getType(p)));
+        new ExportedParameter(_getName(p), _getKind(p), _getType(p))).toList();
 
     c.children[name] = new ExportedConstructor(name, c, parameters);
   }
