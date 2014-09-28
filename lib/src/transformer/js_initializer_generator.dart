@@ -5,13 +5,11 @@
 library js.transformer.js_initializer_generator;
 
 import 'package:js/src/js_elements.dart';
+import 'package:js/src/transformer/utils.dart';
 import 'package:logging/logging.dart';
 import 'package:quiver/iterables.dart';
 
 final _logger = new Logger('js.transformer.js_initializer_generator');
-
-const JS_PREFIX = '__package_js_impl__';
-const JS_THIS_REF = '__js_this_ref__';
 
 class JsInitializerGenerator {
   final String libraryName;
@@ -64,18 +62,25 @@ class JsInitializerGenerator {
   }
 
   void _generateClass(ExportedClass c) {
+    var jsParameters = '';
+    var defaultConstructor = c.children[''];
+    if (defaultConstructor != null) {
+      jsParameters = formatParameters(defaultConstructor.parameters,
+          _jsParameterFormatter);
+    }
+
     buffer.writeln(
 '''
   // class ${c.name}
   (function(parent) {
-    var constructor = parent.${c.name} = function _${c.name}() {
-      this.__dart_object__ = constructor._new();
+    var constructor = parent.${c.name} = function _${c.name}($jsParameters) {
+      this.$DART_OBJECT_PROPERTY = constructor._new($jsParameters);
     };
     constructor.prototype = Object.create(dart.Object.prototype);
     constructor.prototype.constructor = constructor;
     constructor._wrapDartObject = function(dartObject) {
       var o = Object.create(constructor.prototype);
-      o.__dart_object__ = dartObject;
+      o.$DART_OBJECT_PROPERTY = dartObject;
       return o;
     };
 ''');
@@ -91,59 +96,23 @@ class JsInitializerGenerator {
     if (c.name == '') return;
     var constructorName = '_new_${c.name}';
 
-    var dartParameters = _getDartParameters(c.parameters);
-    var jsParameters = _getJsParameters(c.parameters);
+    var jsParameters = formatParameters(c.parameters, _jsParameterFormatter);
     var namedPart = c.name == '' ? '' : '.${c.name}';
     buffer.writeln(
 '''
     constructor.${c.name} = function _${c.name}($jsParameters) {
-      this.__dart_object__ = constructor.$constructorName($jsParameters);
+      this.$DART_OBJECT_PROPERTY = constructor.$constructorName($jsParameters);
     }
     constructor.${c.name}.prototype = constructor.prototype;
 ''');
-    }
-
-  String _getJsParameters(List<ExportedParameter> parameters,
-      {bool withThis: false}) {
-    var requiredParameters = parameters
-        .where((p) => p.kind == ParameterKind.REQUIRED)
-        .map((p) => p.name);
-    var positionalParameters = parameters
-        .where((p) => p.kind == ParameterKind.POSITIONAL)
-        .map((p) => p.name);
-    var namedParameters = parameters
-        .where((p) => p.kind == ParameterKind.NAMED)
-        .map((p) => p.name);
-    var jsParameterList = withThis ? [JS_THIS_REF] : [];
-    jsParameterList.addAll(requiredParameters);
-    var jsParameters = jsParameterList.join(', ');
-    if (positionalParameters.isNotEmpty) {
-      jsParameters += ', [' + positionalParameters.join(', ') + ']';
-    } else if (namedParameters.isNotEmpty) {
-      jsParameters += ', [__js_named_parameters_map__]';
-    }
-    return jsParameters;
   }
+}
 
-  String _getDartParameters(List<ExportedParameter> parameters) {
-    var requiredParameters = parameters
-        .where((p) => p.kind == ParameterKind.REQUIRED)
-        .map((p) => p.name);
-    var positionalParameters = parameters
-        .where((p) => p.kind == ParameterKind.POSITIONAL)
-        .map((p) => p.name);
-    var namedParameters = parameters
-        .where((p) => p.kind == ParameterKind.NAMED)
-        .map((p) => p.name);
-    var dartNamedParameters = namedParameters.map((name) =>
-        "${name}: _getOptionalArg(__js_named_parameters_map__, '${name}')");
-    var dartParameters = concat([
-            requiredParameters,
-            positionalParameters,
-            dartNamedParameters])
-        .join(', ');
 
-    return dartParameters;
+_jsParameterFormatter(requiredParameters, optionalParameters, namedParameters) {
+  var parameters = concat([requiredParameters, optionalParameters]).toList();
+  if (namedParameters.isNotEmpty) {
+    parameters.add(JS_NAMED_PARAMETERS);
   }
-
+  return parameters.join(', ');
 }

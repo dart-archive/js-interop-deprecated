@@ -15,3 +15,7 @@ namespace.Gizmo = function(x) {
 createGizmo = function(x) {
   return new namespace.Gizmo(x);
 }
+
+function createJsAndDart(i) {
+  return new dart.test.library2.JsAndDart(i);
+}

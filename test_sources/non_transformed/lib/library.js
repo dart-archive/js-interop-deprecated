@@ -42,8 +42,20 @@ function createExportMeNamed(name) {
   return new dart.test.library.ExportMe.named(name);
 }
 
+function createExportMeNamed2(name) {
+  return new dart.test.library.ExportMe.named2({'name': name});
+}
+
+function createExportMeOptional(name) {
+  return new dart.test.library.ExportMe.named(name);
+}
+
 function isExportMe(e) {
   return e instanceof dart.test.library.ExportMe;
+}
+
+function isDartObject(o) {
+  return o instanceof dart.Object;
 }
 
 function getName(hasName) {
@@ -64,6 +76,14 @@ function callMethod2(e, a) {
 
 function callNamedArgs(e) {
   return e.namedArgs(1, {b: 2, c: 3});
+}
+
+function callOptionalArgs(e) {
+  return e.optionalArgs(1, 2, 3);
+}
+
+function callOptionalArgs2(e) {
+  return e.optionalArgs(1, 2);
 }
 
 function getGetter(e) {

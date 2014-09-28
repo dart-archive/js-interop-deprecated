@@ -80,7 +80,7 @@ dynamic toDart(dynamic o) {
     var jsConstructor = o['constructor'] as JsObject;
     var dartConstructor = _interfaceConstructors[jsConstructor];
     if (dartConstructor == null) {
-      throw new ArgumentError("Could not convert $o to Dart");
+      throw new ArgumentError("Could not convert ${o.runtimeType}($o) to Dart");
     }
     wrapper = dartConstructor(o);
     o[DART_OBJECT_PROPERTY] = wrapper;

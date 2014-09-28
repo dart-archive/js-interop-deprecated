@@ -143,6 +143,35 @@ main() {
     test('should be able to construct a Dart object from JS', () {
       var e = context.createExportMe();
       expect(e, new isInstanceOf<t.ExportMe>());
+      expect(context.isExportMe(e), isTrue);
+    });
+
+    test('should be instances of their JS constructors', () {
+      var e = context.createExportMe();
+      expect(context.isExportMe(e), isTrue);
+    });
+
+    test('should be instances of dart.Object', () {
+      var e = context.createExportMe();
+      expect(context.isDartObject(e), isTrue);
+    });
+
+    test('should be call a no-named constructor with arguments', () {
+      var library = new l2.Library2();
+      var o = library.createJsAndDart(13);
+      expect(o.i, 13);
+    });
+
+    test('should be able to call a constructor with optional arguments', () {
+      var e = context.createExportMeOptional('green');
+      expect(e.name, 'green');
+      expect(context.isExportMe(e), isTrue);
+    });
+
+    test('should be able to call a constructor with named arguments', () {
+      var e = context.createExportMeNamed2('pink');
+      expect(e.name, 'pink');
+      expect(context.isExportMe(e), isTrue);
     });
 
     test('should be able to pass a Dart object to JS', () {
@@ -177,6 +206,18 @@ main() {
       var e = context.createExportMe();
       String v = context.callMethod2(e, 'interop');
       expect(v, 'Hello interop!');
+    });
+
+    test('should be able to call a method with optional parameters', () {
+      var e = context.createExportMe();
+      String v = context.callOptionalArgs(e);
+      expect(v, '1 2 3');
+    });
+
+    test('should be able to call a method with optional parameters', () {
+      var e = context.createExportMe();
+      String v = context.callOptionalArgs2(e);
+      expect(v, '1 2 null');
     });
 
     test('should be able to call a method with named parameters', () {

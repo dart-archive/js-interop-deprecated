@@ -11,6 +11,8 @@ abstract class Library2 extends JsInterface {
   DartOnly createDartOnly();
 
   Gizmo createGizmo(String x);
+
+  JsAndDart createJsAndDart(int i);
 }
 
 @JsProxy(global: true)
@@ -24,7 +26,10 @@ class Library2Impl extends Library2 implements JsGlobal {
 class DartOnly {}
 
 @Export()
-class JsAndDart {}
+class JsAndDart {
+  final int i;
+  JsAndDart(this.i);
+}
 
 abstract class Gizmo extends JsInterface {
   factory Gizmo(String x) => new GizmoImpl(x);
