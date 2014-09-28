@@ -134,6 +134,16 @@ main() {
       expect(e, new isInstanceOf<t.ExportMe>());
     });
 
+    test('should be able to call a constructor with optional arguments', () {
+      var e = context.createExportMeOptional('green');
+      expect(e.name, 'green');
+    });
+
+    test('should be able to call a constructor with named arguments', () {
+      var e = context.createExportMeNamed2('pink');
+      expect(e.name, 'pink');
+    });
+
     test('should be able to pass a Dart object to JS', () {
       var e = new t.ExportMe();
       expect(context.isExportMe(e), isTrue);
@@ -166,6 +176,12 @@ main() {
       var e = context.createExportMe();
       String v = context.callMethod2(e, 'interop');
       expect(v, 'Hello interop!');
+    });
+
+    test('should be able to call a method with optional parameters', () {
+      var e = context.createExportMe();
+      String v = context.callOptionalArgs(e);
+      expect(v, '1 2 3');
     });
 
     test('should be able to call a method with named parameters', () {

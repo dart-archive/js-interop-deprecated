@@ -164,15 +164,18 @@ _exportDeclaration(ExportedElement e, JsObject parent) {
 
 _exportClass(ExportedClass c, JsObject parent) {
   var constructor;
-  constructor = new js.JsFunction.withThis((self) {
-    self['__dart_object__'] = constructor.callMethod('_new');
+  constructor = _convertCallback((self, args) {
+    // The '_new' function is the no-named constructor, if one exists. It will
+    // call the constructor and set the __dart_object__ property to the new
+    // instance.
+    constructor['_new'].apply(args, thisArg: self);
   });
-  var prototype = _obj.callMethod('create', [_dart['Object']['prototype']]);
+  var prototype = _obj.callMethod('create', [_obj['prototype']]);
   constructor['prototype'] = prototype;
   constructor['prototype']['constructor'] = constructor;
   constructor['_wrapDartObject'] = (dartObject) {
     var o = _obj.callMethod('create', [constructor['prototype']]);
-    o['__dart_object__'] = dartObject;
+    o[DART_OBJECT_PROPERTY] = dartObject;
     return o;
   };
   parent[c.name] = constructor;
@@ -195,15 +198,27 @@ _exportClassMember(ExportedElement e, JsObject prototype, JsObject ctor) {
 
 _exportConstructor(ExportedConstructor c, JsObject ctor) {
   var classMirror = _classMirrors[c.parent];
-  if (c.name == '') {
-    ctor['_new'] =
-        () => classMirror.newInstance(new Symbol(c.name), []).reflectee;
-  } else {
-    ctor[c.name] = _convertCallback((self, args) {
-      self['__dart_object__'] =
-          classMirror.newInstance(new Symbol(c.name), args).reflectee;
-    });
-  }
+  var jsName = c.name == '' ? '_new' : c.name;
+  var namedParameters = c.parameters
+      .where((p) => p.kind == ParameterKind.NAMED).toList();
+  var positionalParameterCount = c.parameters.length - namedParameters.length;
+  ctor[jsName] = _convertCallback((self, args) {
+    var positionalArgs = args;
+    var namedArgs = <Symbol, dynamic>{};
+    if (namedParameters.isNotEmpty &&
+        args.length == positionalParameterCount + 1) {
+      positionalArgs = args.sublist(0, positionalParameterCount);
+      JsObject namedJsArgs = args[positionalParameterCount];
+      for (var p in namedParameters) {
+        if (namedJsArgs.hasProperty(p.name)) {
+          namedArgs[new Symbol(p.name)] = namedJsArgs[p.name];
+        }
+      }
+    }
+    self[DART_OBJECT_PROPERTY] =
+        classMirror.newInstance(new Symbol(c.name), positionalArgs, namedArgs)
+            .reflectee;
+  });
 }
 
 _exportMethod(ExportedMethod c, JsObject prototype) {
@@ -213,7 +228,7 @@ _exportMethod(ExportedMethod c, JsObject prototype) {
       .where((p) => p.kind == ParameterKind.NAMED).toList();
   var positionalParameterCount = c.parameters.length - namedParameters.length;
   prototype[name] = _convertCallback((self, args) {
-    var o = self['__dart_object__'];
+    var o = self[DART_OBJECT_PROPERTY];
     if (namedParameters.isNotEmpty &&
         args.length == positionalParameterCount + 1) {
       var positionalArgs = args.sublist(0, positionalParameterCount);
@@ -235,12 +250,12 @@ _exportField(ExportedProperty e, JsObject prototype) {
   _obj.callMethod('defineProperty', [prototype, e.name,
     new js.JsObject.jsify({
       'get': _convertCallback((self, args) {
-        var o = self['__dart_object__'];
+        var o = self[DART_OBJECT_PROPERTY];
         var r = reflect(o).getField(new Symbol(e.name)).reflectee;
         return r;
       }),
       'set': _convertCallback((self, List args) {
-        var o = self['__dart_object__'];
+        var o = self[DART_OBJECT_PROPERTY];
         var v = args.single;
         reflect(o).setField(new Symbol(e.name), v);
       })

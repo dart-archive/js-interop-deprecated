@@ -4,15 +4,20 @@
 
 library js.transformer.utils;
 
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/analyzer.dart' hide ParameterKind;
 import 'package:analyzer/src/generated/element.dart';
 import 'package:barback/barback.dart';
 import 'package:js/src/metadata.dart';
+import 'package:js/src/js_elements.dart';
 import 'package:path/path.dart' as path;
-import 'package:quiver/iterables.dart' show max;
+import 'package:quiver/iterables.dart' show concat, max;
 
 const String DART_INITIALIZER_SUFFIX = "__init_js__.dart";
+const String DART_OBJECT_PROPERTY = "__dart_object__";
 const String JS_INITIALIZER_SUFFIX = "__init_js__.js";
+const JS_PREFIX = '__package_js_impl__';
+const JS_THIS_REF = '__js_this_ref__';
+const JS_NAMED_PARAMETERS = '__js_named_parameters_map__';
 
 LibraryElement getEnvironementImplLib(LibraryElement jsLib) =>
     jsLib.exportedLibraries
@@ -91,4 +96,25 @@ String getImportUri(AssetId importId, AssetId from) {
   }
   // cannot import
   return null;
+}
+
+typedef String ParameterFormatter(
+    Iterable<ExportedParameter> requiredParameters,
+    Iterable<ExportedParameter> optionalParameters,
+    Iterable<ExportedParameter> namedParameters);
+
+String formatParameters(
+    List<ExportedParameter> parameters,
+    ParameterFormatter formatter) {
+  var requiredParameters = parameters
+      .where((p) => p.kind == ParameterKind.REQUIRED)
+      .map((p) => p.name);
+  var optionalParameters = parameters
+      .where((p) => p.kind == ParameterKind.POSITIONAL)
+      .map((p) => p.name);
+  var namedParameters = parameters
+      .where((p) => p.kind == ParameterKind.NAMED)
+      .map((p) => p.name);
+  var r = formatter(requiredParameters, optionalParameters, namedParameters);
+  return r;
 }

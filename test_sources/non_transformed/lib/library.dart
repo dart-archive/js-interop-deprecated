@@ -38,6 +38,8 @@ abstract class Context extends JsInterface {
 
   String callMethod2(ExportMe e, String a);
 
+  String callOptionalArgs(ExportMe e);
+
   String callNamedArgs(ExportMe e);
 
   bool getGetter(ExportMe e);
@@ -51,6 +53,10 @@ abstract class Context extends JsInterface {
   ExportMe createExportMe();
 
   ExportMe createExportMeNamed(String name);
+
+  ExportMe createExportMeNamed2(String name);
+
+  ExportMe createExportMeOptional(String name);
 
   int x();
 }
@@ -131,6 +137,10 @@ class ExportMe implements HasName {
 
   ExportMe.named(this.name);
 
+  ExportMe.named2({this.name});
+
+  ExportMe.optional(this.name);
+
   int method() => 42;
 
   bool get getter => true;
@@ -143,11 +153,7 @@ class ExportMe implements HasName {
 
   String method2(String s) => "Hello $s!";
 
-  void optionalArgs(a, [b, c]) {
-    print("a: $a");
-    print("b: $b");
-    print("c: $c");
-  }
+  String optionalArgs(int a, [int b, int c]) => '$a $b $c';
 
   String namedArgs(int a, {int b, int c}) => '$a $b $c';
 

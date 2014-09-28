@@ -5,13 +5,11 @@
 library js.transformer.dart_initializer_generator;
 
 import 'package:js/src/js_elements.dart';
+import 'package:js/src/transformer/utils.dart';
 import 'package:logging/logging.dart';
 import 'package:quiver/iterables.dart';
 
 final _logger = new Logger('js.transformer.dart_initializer_generator');
-
-const JS_PREFIX = '__package_js_impl__';
-const JS_THIS_REF = '__js_this_ref__';
 
 class DartInitializerGenerator {
   final String libraryName;
@@ -115,17 +113,18 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
 
   void _generateConstructor(ExportedConstructor c) {
     var constructorName = c.name == '' ? '_new' : '_new_${c.name}';
-    var dartParameters = _getDartParameters(c.parameters);
-    var jsParameters = _getJsParameters(c.parameters);
+    var dartParameters = formatParameters(c.parameters, _dartCallFormatter);
+    var jsParameters = formatParameters(c.parameters, _jsSignatureFormatter());
     var namedPart = c.name == '' ? '' : '.${c.name}';
-    buffer.writeln("  constructor['$constructorName'] = ($jsParameters) => "
+    buffer.writeln("  constructor['${constructorName}'] = ($jsParameters) => "
         "new ${c.parent.name}$namedPart($dartParameters);");
   }
 
   void _generateMethod(ExportedMethod c) {
     if (c.isStatic) return; // TODO: static method support
-    var dartParameters = _getDartParameters(c.parameters);
-    var jsParameters = _getJsParameters(c.parameters, withThis: true);
+    var dartParameters = formatParameters(c.parameters, _dartCallFormatter);
+    var jsParameters =
+        formatParameters(c.parameters, _jsSignatureFormatter(withThis: true));
     buffer.writeln(
 '''
   // method ${c.name}
@@ -154,48 +153,46 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
     buffer.writeln("  })]);");
   }
 
-  String _getJsParameters(List<ExportedParameter> parameters,
-      {bool withThis: false}) {
-    var requiredParameters = parameters
-        .where((p) => p.kind == ParameterKind.REQUIRED)
-        .map((p) => p.name);
-    var positionalParameters = parameters
-        .where((p) => p.kind == ParameterKind.POSITIONAL)
-        .map((p) => p.name);
-    var namedParameters = parameters
-        .where((p) => p.kind == ParameterKind.NAMED)
-        .map((p) => p.name);
-    var jsParameterList = withThis ? [JS_THIS_REF] : [];
-    jsParameterList.addAll(requiredParameters);
-    var jsParameters = jsParameterList.join(', ');
-    if (positionalParameters.isNotEmpty) {
-      jsParameters += ', [' + positionalParameters.join(', ') + ']';
-    } else if (namedParameters.isNotEmpty) {
-      jsParameters += ', [__js_named_parameters_map__]';
-    }
-    return jsParameters;
-  }
+}
 
-  String _getDartParameters(List<ExportedParameter> parameters) {
-    var requiredParameters = parameters
-        .where((p) => p.kind == ParameterKind.REQUIRED)
-        .map((p) => p.name);
-    var positionalParameters = parameters
-        .where((p) => p.kind == ParameterKind.POSITIONAL)
-        .map((p) => p.name);
-    var namedParameters = parameters
-        .where((p) => p.kind == ParameterKind.NAMED)
-        .map((p) => p.name);
-    var dartNamedParameters = namedParameters.map((name) =>
-        "${name}: "
-        "$JS_PREFIX.getOptionalArg(__js_named_parameters_map__, '${name}')");
-    var dartParameters = concat([
-            requiredParameters,
-            positionalParameters,
-            dartNamedParameters])
-        .join(', ');
+/**
+ * Formats parameters for use as a Dart closure passed to JavaScript.
+ *
+ * Examples:
+ *  * (a) -> "a"
+ *  * (a, [b]) -> "a, [b]"
+ *  * (a, {b, c}) -> "a, [__js_named_parameter_map__]"
+ *
+ * If [withThis] is true:
+ *   * (a) -> "__js_this_ref__, a"
+ */
+_jsSignatureFormatter({bool withThis: false}) =>
+    (requiredParameters, optionalParameters, namedParameters) {
+      var jsParameterList = withThis ? [JS_THIS_REF] : [];
+      jsParameterList.addAll(requiredParameters);
+      if (optionalParameters.isNotEmpty) {
+        jsParameterList.add('[' + optionalParameters.join(', ') + ']');
+      } else if (namedParameters.isNotEmpty) {
+        jsParameterList.add('[$JS_NAMED_PARAMETERS]');
+      }
+      return jsParameterList.join(', ');
+    };
 
-    return dartParameters;
-  }
-
+/**
+ * Formats parameters for use as arguments to a Dart closure invocation,
+ * with parameters were formatted by [_jsSignatureFormatter].
+ *
+ * Examples:
+ *  * (a) -> "a"
+ *  * (a, [b]) -> "a, b"
+ *  * (a, {b}) -> "a, b: getOptionalArg(__js_named_parameter_map__, 'b')"
+ */
+_dartCallFormatter(requiredParameters, optionalParameters, namedParameters) {
+  var dartNamedParameters = namedParameters.map((name) =>
+      "${name}: $JS_PREFIX.getOptionalArg($JS_NAMED_PARAMETERS, '${name}')");
+  return concat([
+          requiredParameters,
+          optionalParameters,
+          dartNamedParameters])
+      .join(', ');
 }
