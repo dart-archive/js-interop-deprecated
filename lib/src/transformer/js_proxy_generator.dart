@@ -97,8 +97,8 @@ class JsProxyGenerator {
     if (isGlobal && !hasFactory) {
       _logger.severe("global objects must have factory constructors");
     }
-
     _generateAbstractMembers(proxy);
+    _removeNoSuchMethod(proxy);
   }
 
   bool _replaceFactoryConstructor(ClassElement proxy, JsProxy proxyAnnotation) {
@@ -140,6 +140,28 @@ class JsProxyGenerator {
               '[$parameterList]));');
     }
     return true;
+  }
+
+  void _removeNoSuchMethod(ClassElement proxy) {
+    var nsm = proxy.methods.firstWhere((m) => m.name == 'noSuchMethod',
+        orElse: () => null);
+    if (nsm == null) return;
+    var node = nsm.node;
+    var body = node.body;
+    if (body is ExpressionFunctionBody) {
+      MethodInvocation m = body.expression;
+      var paramName = node.parameters.parameterElements.single.name;
+      if (m.realTarget is SuperExpression &&
+          m.methodName.name == 'noSuchMethod') {
+        var arg = m.argumentList.arguments.single;
+        if (arg is SimpleIdentifier && arg.name == paramName) {
+          var offset = node.offset;
+          var end = node.end;
+          transaction.edit(offset, end, '');
+        }
+      }
+    }
+    // TODO: log that we couldn't safely remove this noSuchMethod
   }
 
   void _generateAbstractMembers(ClassElement proxy) {
