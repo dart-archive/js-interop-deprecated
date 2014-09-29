@@ -136,7 +136,7 @@ class JsProxyGenerator {
           .map((p) => p.displayName)
           .join(', ');
       transaction.edit(begin, end, '=> new $implType.created('
-          'new JsObject($JS_PREFIX.context["$jsConstructor"], '
+          'new JsObject($JS_PREFIX.getPath("$jsConstructor"), '
               '[$parameterList]));');
     }
     return true;

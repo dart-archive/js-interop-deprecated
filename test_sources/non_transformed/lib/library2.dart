@@ -9,6 +9,8 @@ abstract class Library2 extends JsInterface {
   Library2.created(JsObject o) : super.created(o);
 
   DartOnly createDartOnly();
+
+  Gizmo createGizmo(String x);
 }
 
 @JsProxy(global: true)
@@ -23,3 +25,18 @@ class DartOnly {}
 
 @Export()
 class JsAndDart {}
+
+abstract class Gizmo extends JsInterface {
+  factory Gizmo(String x) => new GizmoImpl(x);
+  Gizmo.created(JsObject o) : super.created(o);
+
+  String get x;
+  void set x(String x);
+}
+
+@JsProxy(constructor: 'namespace.Gizmo')
+class GizmoImpl extends Gizmo implements JsGlobal {
+  factory GizmoImpl(String x) => new JsInterface(GizmoImpl, [x]);
+  GizmoImpl.created(JsObject o) : super.created(o);
+  noSuchMethod(i) => super.noSuchMethod(i);
+}

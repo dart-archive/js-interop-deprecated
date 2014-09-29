@@ -123,6 +123,17 @@ main() {
       expect(name, 'blue');
     });
 
+    test('should create objects with constructor paths', () {
+      var gizmo = new l2.Gizmo('green');
+      expect(gizmo.x, 'green');
+    });
+
+    test('should return objects with construtor paths', () {
+      var library2 = new l2.Library2();
+      var gizmo = library2.createGizmo('orange');
+      expect(gizmo.x, 'orange');
+    });
+
   });
 
   group('Exports', () {
