@@ -53,6 +53,7 @@ main() {
       expect(newSource, contains('ContextImpl'));
       expect(newSource, contains('JsFooImpl'));
       expect(newSource, contains('JsBarImpl'));
+      expect(newSource, isNot(contains('noSuchMethod')));
     });
 
   });
