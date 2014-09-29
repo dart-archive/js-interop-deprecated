@@ -5,3 +5,13 @@
 function createDartOnly() {
   return new dart.test.library2.DartOnly();
 }
+
+namespace = {};
+
+namespace.Gizmo = function(x) {
+  this.x = x;
+}
+
+createGizmo = function(x) {
+  return new namespace.Gizmo(x);
+}

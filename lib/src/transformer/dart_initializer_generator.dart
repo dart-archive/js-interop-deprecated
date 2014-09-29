@@ -43,7 +43,7 @@ initializeJavaScriptLibrary() {
       if (proxy.constructor == null) return;
       var name = proxy.name;
       buffer.writeln("  $JS_PREFIX.registerFactoryForJsConstructor("
-          "$JS_PREFIX.context['${proxy.constructor}'], "
+          "$JS_PREFIX.getPath('${proxy.constructor}'), "
           "($JS_PREFIX.JsObject o) => new $name.created(o));");
     });
 

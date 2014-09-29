@@ -139,7 +139,7 @@ void _registerProxy(ClassMirror clazz, JsProxy jsProxyAnnotation) {
   var constructorExpr = jsProxyAnnotation.constructor;
   var createdConstructor = clazz.declarations[#created];
   jsi.registerFactoryForJsConstructor(
-      jsi.context[jsProxyAnnotation.constructor],
+      getPath(jsProxyAnnotation.constructor),
       (JsObject o) => clazz.newInstance(#created, [o]).reflectee);
 }
 
@@ -329,7 +329,7 @@ class JsInterface extends jsi.JsInterface {
 
     if (jsConstructor != null) {
       // TODO: support constructor expressions
-      var ctor = jsi.context[jsConstructor];
+      var ctor = getPath(jsConstructor);
       var jsObj = new JsObject(ctor, args);
       return classMirror.newInstance(#created, [jsObj]).reflectee;
     }

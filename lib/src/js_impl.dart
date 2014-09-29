@@ -110,3 +110,6 @@ dynamic getOptionalArg(JsObject args, String name) {
   if (args == null) return null;
   return args[name];
 }
+
+JsObject getPath(String path) =>
+    path.split('.').fold(context, (JsObject o, p) => o[p]);
