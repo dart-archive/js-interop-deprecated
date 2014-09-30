@@ -53,7 +53,8 @@ bool isGlobal(JsInterface o) => o is JsGlobal;
  */
 dynamic toJs(dynamic o) {
   if (o == null) return o;
-  if (o is num || o is String || o is bool || o is DateTime) return o;
+  if (o is num || o is String || o is bool || o is DateTime
+      || o is JsObject) return o;
 
   if (o is JsInterface) return  o._jsObject;
   var type = o.runtimeType;
@@ -114,6 +115,8 @@ dynamic toDart(dynamic o, [Symbol fallbackType]) {
     if (fallbackType == #Map) {
       return new JsObjectMap.fromJsObject(o);
     }
+
+    return o;
   }
   throw new ArgumentError("Could not convert ${o.runtimeType}($o) to Dart");
 }
