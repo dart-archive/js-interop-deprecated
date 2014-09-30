@@ -89,6 +89,10 @@ abstract class JsFoo extends JsInterface implements HasName {
 
   String getName(HasName b);
 
+  JsObject getAnonymous();
+
+  void setAnonymous(JsObject o);
+
   void setBar(JsBar);
 
   JsBar get bar;

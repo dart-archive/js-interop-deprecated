@@ -12,6 +12,7 @@ var a = null;
 function JsThing(name) {
   this.name = name;
   this.bar = null;
+  this.anonymous = {a:1,b:2};
 }
 
 JsThing.prototype.double = function(x) {
@@ -20,6 +21,14 @@ JsThing.prototype.double = function(x) {
 
 JsThing.prototype.getName = function(o) {
   return o.name;
+}
+
+JsThing.prototype.getAnonymous = function() {
+  return this.anonymous;
+}
+
+JsThing.prototype.setAnonymous = function(o) {
+  this.anonymous = o;
 }
 
 JsThing.prototype.setBar = function(bar) {

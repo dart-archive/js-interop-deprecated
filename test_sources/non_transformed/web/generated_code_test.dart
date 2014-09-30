@@ -109,6 +109,18 @@ main() {
       expect(name, 'blue');
     });
 
+    test('should allow to return JsObject', () {
+      var foo = new t.JsFoo('red');
+      var o = foo.getAnonymous();
+      expect(o, toJs(foo)['anonymous']);
+    });
+
+    test('should allow to use JsObject as argument', () {
+      var foo = new t.JsFoo('');
+      foo.setAnonymous(new js.JsObject.jsify({'a': 3}));
+      expect(toJs(foo)['anonymous']['a'], 3);
+    });
+
     test('should return proxy values', () {
       var foo = new t.JsFoo('red');
       var bar = new t.JsBar('blue');
