@@ -19,3 +19,32 @@ createGizmo = function(x) {
 function createJsAndDart(i) {
   return new dart.test.library2.JsAndDart(i);
 }
+
+function createList(a, b, c) {
+  return [a, b, c];
+}
+
+function joinList(list) {
+  if (!Array.isArray(list)) {
+    throw "Not an Array";
+  }
+  return list.join(', ');
+}
+
+function joinMap(map) {
+  var pairs = [];
+  var names = Object.keys(map);
+  for (var i in names) {
+    var name = names[i];
+    var value = map[name]
+    pairs.push(name + ': ' + value);
+  }
+  return pairs.join(', ');
+}
+
+function createMap(k1, v1, k2, v2) {
+  var m = {};
+  m[k1] = v1;
+  m[k2] = v2;
+  return m;
+}

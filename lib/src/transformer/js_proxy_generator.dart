@@ -24,6 +24,7 @@ class JsProxyGenerator {
   final ClassElement jsProxyClass;
   final ClassElement exportClass;
   final ClassElement noExportClass;
+  final ClassElement jsifyClass;
 
   final LibraryElement library;
   final LibraryElement jsLibrary;
@@ -48,6 +49,7 @@ class JsProxyGenerator {
         jsProxyClass = jsMetadataLibrary.getType('JsProxy'),
         exportClass = jsMetadataLibrary.getType('Export'),
         noExportClass = jsMetadataLibrary.getType('NoExport'),
+        jsifyClass = jsMetadataLibrary.getType('Jsify'),
         inheritanceManager = new InheritanceManager(library) {
     assert(jsLibrary != null);
     assert(library != null);
@@ -193,11 +195,19 @@ class JsProxyGenerator {
     if (!a.isStatic) {
       var returnType = a.returnType;
 
-      var jsParameterList = new StringBuffer();
+      var jsArgs = new List(a.parameters.length);
 
-      var parameterList = a.parameters
-          .map((p) => '$JS_PREFIX.toJs(${p.name})')
-          .join(', ');
+      for (int i = 0; i < a.parameters.length; i++) {
+        var param = a.parameters[i];
+        var hasJsify = hasAnnotation(param, jsifyClass);
+        if (hasJsify) {
+          jsArgs[i] = '$JS_PREFIX.jsify(${param.name})';
+        } else {
+          jsArgs[i] = '$JS_PREFIX.toJs(${param.name})';
+        }
+      }
+
+      var parameterList = jsArgs.join(', ');
 
       MethodDeclaration m = a.node;
       var offset = m.body.offset;
@@ -207,8 +217,8 @@ class JsProxyGenerator {
             "$JS_PREFIX.toJs(this).callMethod('$name', [$parameterList])); }");
       } else {
         transaction.edit(offset, end, " => $JS_PREFIX.toDart("
-            "$JS_PREFIX.toJs(this).callMethod('$name', [$parameterList]))"
-            " as ${a.returnType};");
+            "$JS_PREFIX.toJs(this).callMethod('$name', [$parameterList]), "
+            "#${returnType.name}) as ${a.returnType};");
       }
     }
   }

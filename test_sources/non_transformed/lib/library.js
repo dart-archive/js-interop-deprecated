@@ -26,6 +26,10 @@ JsThing.prototype.setBar = function(bar) {
   this.bar = bar;
 }
 
+JsThing.prototype.toString = function() {
+  return this.name;
+}
+
 function JsThing2(name) {
   this.name = name;
   this.y = 42;

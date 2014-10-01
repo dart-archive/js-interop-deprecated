@@ -38,3 +38,10 @@ class JsProxy {
   final bool global;
   const JsProxy({this.constructor, this.global: false});
 }
+
+
+class Jsify {
+  const Jsify();
+}
+
+const jsify = const Jsify();

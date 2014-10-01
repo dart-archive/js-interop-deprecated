@@ -9,6 +9,9 @@
 library js.impl;
 
 import 'dart:js';
+import 'package:js/src/js_object_map.dart';
+import 'package:js/src/js_list.dart';
+import 'dart:collection';
 export 'dart:js' show context, JsObject;
 
 const DART_OBJECT_PROPERTY = '__dart_object__';
@@ -70,22 +73,84 @@ dynamic toJs(dynamic o) {
 // Exported Dart Object -> JsObject
 final Expando<JsObject> _exportedProxies = new Expando<JsObject>();
 
-dynamic toDart(dynamic o) {
+/**
+ * Converts a JS value (primitive or [JsObject]) to Dart.
+ *
+ * If [o] is a JS object with a associated Dart proxy class, an instance of that
+ * proxy class is returned. If [o] is an exported Dart object, the original
+ * Dart object is returned. The Dart object is stored as a reference on the
+ * JS object so that the same Dart object is returned from subsequent calls
+ * to [toDart].
+ *
+ * If [o] is a JS object with no associated proxy class, the [fallbackType] is
+ * used to create a transient wrapper of the correct type. Currently [Map] is
+ * the only supported fallback type. [Future] and [Stream] are planned fallback
+ * types.
+ */
+dynamic toDart(dynamic o, [Symbol fallbackType]) {
   if (o == null) return o;
   if (o is num || o is String || o is bool || o is DateTime) return o;
 
-  var wrapper = o[DART_OBJECT_PROPERTY];
-  if (wrapper == null) {
-    // look up JsInterface factory
-    var jsConstructor = o['constructor'] as JsObject;
-    var dartConstructor = _interfaceConstructors[jsConstructor];
-    if (dartConstructor == null) {
-      throw new ArgumentError("Could not convert ${o.runtimeType}($o) to Dart");
+  if (o is JsObject) {
+    var wrapper = o[DART_OBJECT_PROPERTY];
+    if (wrapper == null) {
+      if (o is JsArray) {
+        wrapper = new JsList.fromJsObject(o);
+      } else {
+        // look up JsInterface factory
+        var jsConstructor = o['constructor'] as JsObject;
+        var dartConstructor = _interfaceConstructors[jsConstructor];
+        if (dartConstructor != null) {
+          wrapper = dartConstructor(o);
+        }
+      }
+      if (wrapper != null) {
+        o[DART_OBJECT_PROPERTY] = wrapper;
+      }
     }
-    wrapper = dartConstructor(o);
-    o[DART_OBJECT_PROPERTY] = wrapper;
+    if (wrapper != null) return wrapper;
+
+    // no wrapper, handle fallback cases
+    if (fallbackType == #Map) {
+      return new JsObjectMap.fromJsObject(o);
+    }
   }
-  return wrapper;
+  throw new ArgumentError("Could not convert ${o.runtimeType}($o) to Dart");
+}
+
+JsObject _obj = context['Object'];
+
+dynamic jsify(data) {
+  if ((data is! Map) && (data is! Iterable)) {
+    throw new ArgumentError("object must be a Map or Iterable");
+  }
+
+  if (data is JsObject || data is JsObjectMap || data is JsList) return data;
+
+  var _convertedObjects = new HashMap.identity();
+
+  _convert(o) {
+    if (_convertedObjects.containsKey(o)) {
+      return _convertedObjects[o];
+    }
+    if (o is Map) {
+      final convertedMap = new JsObject(_obj);
+      _convertedObjects[o] = convertedMap;
+      for (var key in o.keys) {
+        convertedMap[key] = _convert(o[key]);
+      }
+      return convertedMap;
+    } else if (o is Iterable) {
+      var convertedList = new JsArray();
+      _convertedObjects[o] = convertedList;
+      convertedList.addAll(o.map(_convert));
+      return convertedList;
+    } else {
+      return toJs(o);
+    }
+  }
+
+  return _convert(data);
 }
 
 // Dart Type -> JS constructorfor proxy

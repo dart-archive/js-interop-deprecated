@@ -116,6 +116,61 @@ main() {
       expect(foo.bar, bar);
     });
 
+    test('should return Lists', () {
+      var library2 = new l2.Library2();
+      var l = library2.createList('1', 'b', 'z');
+      expect(l, ['1', 'b', 'z']);
+    });
+
+    test('should accept Lists', () {
+      var library2 = new l2.Library2();
+      var s = library2.joinList(['1', 'b', 'z']);
+      expect(s, '1, b, z');
+    });
+
+    test('should return Lists of proxies', () {
+      var library2 = new l2.Library2();
+      var a = new t.JsFoo('a');
+      var b = new t.JsFoo('b');
+      var c = new t.JsFoo('c');
+
+      var l = library2.createList(a, b, c);
+      expect(l[0], same(a));
+      expect(l[1], same(b));
+      expect(l[2], same(c));
+    });
+
+    test('should accept Lists of Proxies', () {
+      var library2 = new l2.Library2();
+      var a = new t.JsFoo('a');
+      var b = new t.JsFoo('b');
+      var c = new t.JsFoo('c');
+
+      var s = library2.joinList([a, b, c]);
+      expect(s, 'a, b, c');
+    });
+
+    test('should return Maps', () {
+      var library2 = new l2.Library2();
+      var m = library2.createMap('a', 1, 'z', 26);
+      expect(m, {'a': 1, 'z': 26});
+    });
+
+    test('should accept Maps', () {
+      var library2 = new l2.Library2();
+      var s = library2.joinMap({'a': 1, 'z': 26});
+      expect(s, 'a: 1, z: 26');
+    });
+
+    test('should return Maps of proxies', () {
+      var library2 = new l2.Library2();
+      var a = new t.JsFoo('a');
+      var b = new t.JsFoo('b');
+      var m = library2.createMap('a', a, 'b', b);
+      expect(m['a'], same(a));
+      expect(m['b'], same(b));
+    });
+
     test('should accept exported object as arguments', () {
       var foo = new t.JsFoo('red');
       var bar = new t.ExportMe.named('blue');

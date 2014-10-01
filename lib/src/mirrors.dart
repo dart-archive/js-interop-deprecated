@@ -12,14 +12,16 @@ import 'dart:js' as js;
 import 'dart:mirrors';
 import 'dart:mirrors' as mirrors;
 
-import 'package:js/src/metadata.dart';
+import 'package:js/src/metadata.dart' as metadata;
 import 'package:js/src/js_elements.dart';
 import 'package:js/src/js_impl.dart' as jsi;
 import 'package:js/src/js_impl.dart';
 
 // This is the public interface of js.dart
 // The exports must match those in static.dart
-export 'package:js/src/js_impl.dart' hide JsInterface;
+// JsInterface is not include to show the version defined here
+export 'package:js/src/js_impl.dart' show JsGlobal, toJs, toDart,
+    registerJsConstructorForType, registerFactoryForJsConstructor;
 export 'dart:js' show JsObject;
 export 'package:js/src/metadata.dart';
 
@@ -49,7 +51,7 @@ initializeJavaScript() {
 
     var classes = library.declarations.values.where((d) => d is ClassMirror);
     for (ClassMirror clazz in classes) {
-      JsProxy jsProxyAnnotation = _getJsProxyAnnotation(clazz);
+      metadata.JsProxy jsProxyAnnotation = _getJsProxyAnnotation(clazz);
       if (jsProxyAnnotation != null && jsProxyAnnotation.constructor != null) {
         _registerProxy(clazz, jsProxyAnnotation);
       }
@@ -135,7 +137,7 @@ void _addExportedConstructors(ClassMirror clazz, ExportedClass c) {
   }
 }
 
-void _registerProxy(ClassMirror clazz, JsProxy jsProxyAnnotation) {
+void _registerProxy(ClassMirror clazz, metadata.JsProxy jsProxyAnnotation) {
   var constructorExpr = jsProxyAnnotation.constructor;
   var createdConstructor = clazz.declarations[#created];
   jsi.registerFactoryForJsConstructor(
@@ -148,7 +150,7 @@ _exportLibrary(ExportedLibrary library, JsObject parent) {
   var parts = library.name.split('.');
   parts.forEach((p) {
     if (!libraryJsObj.hasProperty(p)) {
-      libraryJsObj = libraryJsObj[p] = new JsObject.jsify({});
+      libraryJsObj = libraryJsObj[p] = new JsObject(_obj);
     } else {
       libraryJsObj = libraryJsObj[p];
     }
@@ -283,15 +285,17 @@ class _CallbackFunction implements Function {
   }
 }
 
-Export _getExportAnnotation(DeclarationMirror d) {
-  var m = d.metadata.firstWhere((m) => m.type.reflectedType == Export,
-      orElse: () => null);
+metadata.Export _getExportAnnotation(DeclarationMirror d) {
+  var m = d.metadata
+      .firstWhere((m) => m.type.reflectedType == metadata.Export,
+          orElse: () => null);
   return m == null ? null : m.reflectee;
 }
 
-NoExport _getNoExportAnnotation(DeclarationMirror d) {
-  var m = d.metadata.firstWhere((m) => m.type.reflectedType == NoExport,
-      orElse: () => null);
+metadata.NoExport _getNoExportAnnotation(DeclarationMirror d) {
+  var m = d.metadata
+      .firstWhere((m) => m.type.reflectedType == metadata.NoExport,
+          orElse: () => null);
   return m == null ? null : m.reflectee;
 }
 
@@ -350,43 +354,59 @@ class JsInterface extends jsi.JsInterface {
     }
   }
 
-  dynamic noSuchMethod(Invocation i) {
+  dynamic noSuchMethod(Invocation invocation) {
     var mirror = mirrors.reflect(this);
-    var decl = getDeclaration(mirror.type, i.memberName);
+    var decl = getDeclaration(mirror.type, invocation.memberName);
 
     if (decl != null) {
       mirrors.MethodMirror method = decl;
-      String name = mirrors.MirrorSystem.getName(i.memberName);
-      if (i.isGetter) {
+      String name = mirrors.MirrorSystem.getName(invocation.memberName);
+      if (invocation.isGetter) {
         var o = toDart(toJs(this)[name]);
         assert(o == null ||
             mirrors.reflect(o).type.isSubtypeOf(method.returnType));
         return o;
       }
-      if (i.isSetter) {
+      if (invocation.isSetter) {
         // remove the trailing '=' from the setter name
         name = name.substring(0, name.length - 1);
-        var v = toJs(i.positionalArguments[0]);
+        var v = toJs(invocation.positionalArguments[0]);
         toJs(this)[name] = v;
         return null;
       }
-      if (i.isMethod) {
-        var jsArgs = i.positionalArguments.map(toJs).toList();
-        var o = toDart(toJs(this).callMethod(name, jsArgs));
+      if (invocation.isMethod) {
+        MethodMirror m = decl;
+        var positionalParams = m.parameters.where((p) => !p.isNamed).toList();
+        var positionalArgs = invocation.positionalArguments;
+        var jsArgs = new List(positionalArgs.length);
+        for (int i = 0; i < positionalArgs.length; i++) {
+          var param = positionalParams[i];
+          var arg = positionalArgs[i];
+          var hasJsify = param.metadata
+              .any((m) => m.reflectee == metadata.jsify);
+          if (hasJsify) {
+            jsArgs[i] = jsify(arg);
+          } else {
+            jsArgs[i] = toJs(arg);
+          }
+        }
+        var returnType = m.returnType.hasReflectedType
+            ? m.returnType.originalDeclaration.simpleName
+            : null;
+        var o = toDart(toJs(this).callMethod(name, jsArgs), returnType);
         assert(o == null ||
             mirrors.reflect(o).type.isSubtypeOf(method.returnType));
         return o;
       }
       assert(false);
     }
-    return super.noSuchMethod(i);
+    return super.noSuchMethod(invocation);
   }
 }
 
-JsProxy _getJsProxyAnnotation(ClassMirror c) {
-  var jsProxyAnnotationMirror =
-      c.metadata
-      .firstWhere((i) => i.reflectee is JsProxy, orElse: () => null);
+metadata.JsProxy _getJsProxyAnnotation(ClassMirror c) {
+  var jsProxyAnnotationMirror = c.metadata
+      .firstWhere((i) => i.reflectee is metadata.JsProxy, orElse: () => null);
 
   if (jsProxyAnnotationMirror == null) return null;
 

@@ -2,7 +2,8 @@ library js.static;
 
 // This is the public interface of js.dart
 // The exports must match those in static.dart
-export 'package:js/src/js_impl.dart';
+export 'package:js/src/js_impl.dart' show JsInterface, JsGlobal, toJs, toDart,
+    registerJsConstructorForType, registerFactoryForJsConstructor;
 export 'dart:js' show JsObject;
 export 'package:js/src/metadata.dart';
 

@@ -33,6 +33,29 @@ LibraryElement getImplLib(LibraryElement jsLib) =>
         .exportedLibraries
         .singleWhere((l) => l.name == 'js.impl');
 
+bool hasAnnotation(Element element, ClassElement annotation) {
+
+  for (var metadata in element.metadata) {
+    var metaElement = metadata.element;
+    var exp;
+    var type;
+    if (metaElement is PropertyAccessorElement) {
+      exp = metaElement.variable;
+      type = exp.evaluationResult.value.type;
+    } else if (metaElement is ConstructorElement) {
+      exp = metaElement;
+      type = metaElement.enclosingElement.type;
+    } else {
+      throw new UnimplementedError('Unsupported annotation: ${metadata}');
+    }
+    if (exp == annotation) return true;
+    if (type.isSubtypeOf(annotation.type)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 JsProxy getProxyAnnotation(ClassElement interface, ClassElement jsProxyClass) {
   var node = interface.node;
   for (Annotation a in node.metadata) {

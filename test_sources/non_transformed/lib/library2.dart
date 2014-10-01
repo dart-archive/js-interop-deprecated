@@ -13,6 +13,18 @@ abstract class Library2 extends JsInterface {
   Gizmo createGizmo(String x);
 
   JsAndDart createJsAndDart(int i);
+
+  List createList(a, b, c);
+
+  String joinList(@jsify List list);
+
+  // The returned object is only a transient wrapper on the underlying JS
+  // object. We might want to make this clear by requiring metadata like
+  // @JsMap. We also might want to support @dartify which would do a deep
+  // copy+convert from JS to Dart
+  Map<String, int> createMap(k1, v1, k2, v2);
+
+  String joinMap(@jsify Map<String, int> map);
 }
 
 @JsProxy(global: true)
