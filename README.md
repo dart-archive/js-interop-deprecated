@@ -46,7 +46,7 @@ The concrete implementation class must extend the interface class, and must also
 
     @JsProxy(constructor: 'Foo')
     class FooImpl extends Foo {
-      Foo.created(JsObject o) : super.created(o);
+      FooImpl.created(JsObject o) : super.created(o);
       noSuchMethod(i) => super.noSuchMethod(i);
     }
 
