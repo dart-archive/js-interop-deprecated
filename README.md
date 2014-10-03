@@ -100,9 +100,7 @@ Add the following to your `pubspec.yaml`:
 
     dependencies:
       js:
-        git:
-          url: git://github.com/dart-lang/js-interop.git
-          ref: 0.4.0
+        git: git://github.com/dart-lang/js-interop.git
 
 ### Configuring the transformers
 
