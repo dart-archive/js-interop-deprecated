@@ -39,9 +39,15 @@ class JsProxy {
   const JsProxy({this.constructor, this.global: false});
 }
 
-
 class Jsify {
   const Jsify();
 }
 
 const jsify = const Jsify();
+
+/// A metadata annotation that allows to customize the name used for method call
+/// or attribute access on the javascript side.
+class JsName {
+  final String name;
+  const JsName(this.name);
+}

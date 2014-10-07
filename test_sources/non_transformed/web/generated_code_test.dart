@@ -97,6 +97,20 @@ main() {
       expect(foo2, same(foo3));
     });
 
+    test('should use custom name provided by @JsName with getter', () {
+      expect(context.x_aString, 'hello');
+    });
+
+    test('should use custom name provided by @JsName with setter', () {
+      context.x_aString = 'hello';
+      expect(js.context['aString'], 'hello');
+    });
+
+    test('should use custom name provided by @JsName with method', () {
+      var e = context.createExportMe();
+      expect(e, new isInstanceOf<t.ExportMe>());
+    });
+
     test('should have callable methods', () {
       var foo = new t.JsFoo('a');
       var y = foo.double(7);

@@ -63,6 +63,12 @@ abstract class Context extends JsInterface {
   ExportMe createExportMeOptional(String name);
 
   int x();
+
+  @JsName('aString') String get x_aString;
+
+  @JsName('aString') void set x_aString(String v);
+
+  @JsName('createExportMe') ExportMe x_createExportMe();
 }
 
 @JsProxy(global: true)
