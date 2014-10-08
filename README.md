@@ -46,7 +46,7 @@ The concrete implementation class must extend the interface class, and must also
 
     @JsProxy(constructor: 'Foo')
     class FooImpl extends Foo {
-      Foo.created(JsObject o) : super.created(o);
+      FooImpl.created(JsObject o) : super.created(o);
       noSuchMethod(i) => super.noSuchMethod(i);
     }
 
@@ -100,9 +100,7 @@ Add the following to your `pubspec.yaml`:
 
     dependencies:
       js:
-        git:
-          url: git://github.com/dart-lang/js-interop.git
-          ref: 0.4.0
+        git: git://github.com/dart-lang/js-interop.git
 
 ### Configuring the transformers
 
