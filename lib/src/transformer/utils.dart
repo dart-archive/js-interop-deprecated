@@ -81,6 +81,21 @@ JsProxy getProxyAnnotation(ClassElement interface, ClassElement jsProxyClass) {
   return null;
 }
 
+JsName getNameAnnotation(AnnotatedNode node, ClassElement jsNameClass) {
+  for (Annotation a in node.metadata) {
+    var e = a.element;
+    if (e is ConstructorElement && e.type.returnType == jsNameClass.type) {
+      if (a.arguments.arguments.length == 1) {
+        var param = a.arguments.arguments.first;
+        if (param is StringLiteral) {
+          return new JsName(param.stringValue);
+        }
+      }
+    }
+  }
+  return null;
+}
+
 int getInsertImportOffset(LibraryElement library) {
   var insertImportOffset = 0;
   if (library.imports.isEmpty) {

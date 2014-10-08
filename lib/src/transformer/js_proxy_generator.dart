@@ -22,6 +22,7 @@ class JsProxyGenerator {
   final AssetId inputId;
   final ClassElement jsInterfaceClass;
   final ClassElement jsProxyClass;
+  final ClassElement jsNameClass;
   final ClassElement exportClass;
   final ClassElement noExportClass;
   final ClassElement jsifyClass;
@@ -47,6 +48,7 @@ class JsProxyGenerator {
         jsLibrary = jsLibrary,
         jsInterfaceClass = getImplLib(jsLibrary).getType('JsInterface'),
         jsProxyClass = jsMetadataLibrary.getType('JsProxy'),
+        jsNameClass = jsMetadataLibrary.getType('JsName'),
         exportClass = jsMetadataLibrary.getType('Export'),
         noExportClass = jsMetadataLibrary.getType('NoExport'),
         jsifyClass = jsMetadataLibrary.getType('Jsify'),
@@ -191,7 +193,8 @@ class JsProxyGenerator {
   }
 
   void _generateMethod(MethodElement a) {
-    var name = a.displayName;
+    var nameAnnotation = getNameAnnotation(a.node, jsNameClass);
+    var name = nameAnnotation == null ? a.displayName : nameAnnotation.name;
     if (!a.isStatic) {
       var returnType = a.returnType;
 
@@ -224,7 +227,6 @@ class JsProxyGenerator {
   }
 
   void _generateSetter(PropertyAccessorElement a) {
-    var name = a.displayName;
     var parameter = a.parameters.single;
     var type = parameter.type;
     if (type == null) {
@@ -233,6 +235,8 @@ class JsProxyGenerator {
     }
     var parameterName = parameter.name;
     MethodDeclaration m = a.node;
+    var nameAnnotation = getNameAnnotation(m, jsNameClass);
+    var name = nameAnnotation == null ? a.displayName : nameAnnotation.name;
     var offset = m.body.offset;
     var end = m.body.end;
     transaction.edit(offset, end, " { $JS_PREFIX.toJs(this)['$name']"
@@ -240,13 +244,14 @@ class JsProxyGenerator {
   }
 
   void _generateGetter(PropertyAccessorElement a) {
-    var name = a.displayName;
     var type = a.type.returnType;
     if (type == null) {
       _logger.severe("abstract JsInterface getters must have type annotations");
       return;
     }
     MethodDeclaration m = a.node;
+    var nameAnnotation = getNameAnnotation(m, jsNameClass);
+    var name = nameAnnotation == null ? a.displayName : nameAnnotation.name;
     var offset = m.body.offset;
     var end = m.body.end;
     transaction.edit(offset, end, " => $JS_PREFIX.toDart("
