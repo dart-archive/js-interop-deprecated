@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library js.exports;
+library js.js_elements;
 
 import 'package:quiver/core.dart';
 
@@ -135,10 +135,11 @@ class ExportedConstructor extends ExportedElement<ExportedClass> {
 
 class ExportedMethod extends ExportedElement<ExportedClass> {
   final bool isStatic;
+  final bool jsifyReturn;
   final List<ExportedParameter> parameters;
 
   ExportedMethod(String name, ExportedClass parent, this.parameters,
-      {this.isStatic : false})
+      {this.isStatic : false, this.jsifyReturn: false})
       : super(name, parent);
 
   String toString() => 'ExportedMethod($name $parameters)';
@@ -149,11 +150,15 @@ class ExportedMethod extends ExportedElement<ExportedClass> {
  */
 class ExportedProperty extends ExportedElement<ExportedClass> {
   final bool isStatic;
+  bool jsify;
   bool hasGetter;
   bool hasSetter;
 
-  ExportedProperty(String name, ExportedClass parent,
-      {this.hasGetter : false, this.hasSetter : false, this.isStatic: false})
+  ExportedProperty(String name, ExportedClass parent, {
+      this.hasGetter : false,
+      this.hasSetter : false,
+      this.isStatic: false,
+      this.jsify: false})
       : super(name, parent);
 
   String toString() => 'ExportedProperty($name)';

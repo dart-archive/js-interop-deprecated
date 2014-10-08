@@ -25,6 +25,13 @@ abstract class Library2 extends JsInterface {
   Map<String, int> createMap(k1, v1, k2, v2);
 
   String joinMap(@jsify Map<String, int> map);
+
+  List callCreateList(JsAndDart o);
+
+  List callListGetter(JsAndDart o);
+
+  List callListField(JsAndDart o);
+
 }
 
 @JsProxy(global: true)
@@ -41,6 +48,18 @@ class DartOnly {}
 class JsAndDart {
   final int i;
   JsAndDart(this.i);
+
+  @jsify
+  List createList(a, b, c) => [a, b, c];
+
+  @jsify
+  Map createMap(k1, v1, k2, v2) => {k1: v1, k2: v2};
+
+  @jsify
+  List get listGetter => [1, 2, 3];
+
+  @jsify
+  List listField = [8, 3, 1];
 }
 
 abstract class Gizmo extends JsInterface {

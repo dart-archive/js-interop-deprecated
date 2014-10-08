@@ -83,26 +83,32 @@ initializeJavaScript() {
 void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
   var declarations = getDeclarations(clazz);
 
-  for (var m in declarations.values) {
-    if (!m.isPrivate) {
-      var name = _getName(m);
+  for (var declaration in declarations.values) {
+    if (!declaration.isPrivate) {
+      var name = _getName(declaration);
+      var hasJsify = declaration.metadata
+          .any((m) => m.reflectee == metadata.jsify);
 
-      if (m is MethodMirror && !m.isOperator && name != 'noSuchMethod'
-          && !m.isStatic) {
-        if (m.isRegularMethod) {
-          var parameters = m.parameters.map((p) =>
+      if (declaration is MethodMirror && !declaration.isOperator
+          && name != 'noSuchMethod' && !declaration.isStatic) {
+        if (declaration.isRegularMethod) {
+          var parameters = declaration.parameters.map((p) =>
               new ExportedParameter(_getName(p), _getKind(p), _getType(p)))
               .toList();
-          var method = new ExportedMethod(name, c, parameters);
+          var method = new ExportedMethod(name, c, parameters,
+              jsifyReturn: hasJsify);
           c.children[name] = method;
-        } else if (m.isGetter) {
-          var property = c.children[name];
+        } else if (declaration.isGetter) {
+          ExportedProperty property = c.children[name];
           if (property == null) {
-            c.children[name] = new ExportedProperty(name, c, hasGetter: true);
+            c.children[name] = new ExportedProperty(name, c, hasGetter: true,
+                jsify: hasJsify);
           } else {
             property.hasGetter = true;
+            property.jsify = hasJsify;
           }
-        } else if (m.isSetter) {
+        } else if (declaration.isSetter) {
+          // TODO: warn if hasJsify == true? It doesn't make sense on a setter.
           var propertyName = name.substring(0, name.length - 1);
           var property = c.children[propertyName];
           if (property == null) {
@@ -112,11 +118,12 @@ void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
             property.hasSetter = true;
           }
         }
-      } else if (m is VariableMirror) {
+      } else if (declaration is VariableMirror) {
         c.children[name] = new ExportedProperty(name, c,
-            hasSetter: !m.isFinal,
+            hasSetter: !declaration.isFinal,
             hasGetter: true,
-            isStatic: m.isStatic);
+            isStatic: declaration.isStatic,
+            jsify: hasJsify);
       }
     }
   }
@@ -225,44 +232,56 @@ _exportConstructor(ExportedConstructor c, JsObject ctor) {
 
 _exportMethod(ExportedMethod c, JsObject prototype) {
   var name = c.name;
-  var classMirror = _classMirrors[c.parent];
   var namedParameters = c.parameters
       .where((p) => p.kind == ParameterKind.NAMED).toList();
   var positionalParameterCount = c.parameters.length - namedParameters.length;
   prototype[name] = _convertCallback((self, args) {
     var o = self[DART_OBJECT_PROPERTY];
+    var positionalArgs = args;
+    var namedArgs = null;
+
     if (namedParameters.isNotEmpty &&
         args.length == positionalParameterCount + 1) {
-      var positionalArgs = args.sublist(0, positionalParameterCount);
+      positionalArgs = args.sublist(0, positionalParameterCount);
       JsObject namedJsArgs = args[positionalParameterCount];
-      var namedArgs = <Symbol, dynamic>{};
+      namedArgs = <Symbol, dynamic>{};
       for (var p in namedParameters) {
         if (namedJsArgs.hasProperty(p.name)) {
           namedArgs[new Symbol(p.name)] = namedJsArgs[p.name];
         }
       }
-      return reflect(o).invoke(new Symbol(c.name), positionalArgs, namedArgs)
-          .reflectee;
     }
-    return reflect(o).invoke(new Symbol(c.name), args).reflectee;
+
+    var result = reflect(o)
+        .invoke(new Symbol(c.name), positionalArgs, namedArgs)
+        .reflectee;
+
+    if (c.jsifyReturn) {
+      return jsify(result);
+    }
+    return result;
   });
 }
 
 _exportField(ExportedProperty e, JsObject prototype) {
+  var accessors = {};
+  if (e.hasGetter) {
+    accessors['get'] = _convertCallback((self, args) {
+      var o = self[DART_OBJECT_PROPERTY];
+      var r = reflect(o).getField(new Symbol(e.name)).reflectee;
+      if (e.jsify) r = jsify(r);
+      return r;
+    });
+  }
+  if (e.hasSetter) {
+    accessors['set'] = _convertCallback((self, List args) {
+      var o = self[DART_OBJECT_PROPERTY];
+      var v = args.single;
+      reflect(o).setField(new Symbol(e.name), v);
+    });
+  }
   _obj.callMethod('defineProperty', [prototype, e.name,
-    new js.JsObject.jsify({
-      'get': _convertCallback((self, args) {
-        var o = self[DART_OBJECT_PROPERTY];
-        var r = reflect(o).getField(new Symbol(e.name)).reflectee;
-        return r;
-      }),
-      'set': _convertCallback((self, List args) {
-        var o = self[DART_OBJECT_PROPERTY];
-        var v = args.single;
-        reflect(o).setField(new Symbol(e.name), v);
-      })
-    })
-  ]);
+      new js.JsObject.jsify(accessors)]);
 }
 
 typedef JsCallback(receiver, List args);

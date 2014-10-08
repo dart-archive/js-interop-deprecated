@@ -8,6 +8,7 @@ import 'dart:html';
 import 'dart:js' as js;
 
 import 'package:js/js.dart';
+import 'package:js/src/js_list.dart';
 import 'package:unittest/unittest.dart';
 import 'package:unittest/html_enhanced_config.dart';
 
@@ -309,6 +310,30 @@ main() {
       expect(js.context['dart']['test']['library2']['DartOnly'], isNull);
       expect(js.context['dart']['test']['library2']['Library2'], isNull);
       expect(js.context['dart']['test']['library2']['Library2Impl'], isNull);
+    });
+
+    test('should return lists from methods to JavaScript', () {
+      var library2 = new l2.Library2();
+      var o = new l2.JsAndDart(0);
+      var l = library2.callCreateList(o);
+      expect(l, new isInstanceOf<JsList>());
+      expect(l, ['x', 'y', 'z']);
+    });
+
+    test('should return lists from getters to JavaScript', () {
+      var library2 = new l2.Library2();
+      var o = new l2.JsAndDart(0);
+      var l = library2.callListGetter(o);
+      expect(l, new isInstanceOf<JsList>());
+      expect(l, [1, 2, 3]);
+    });
+
+    test('should return lists from fields to JavaScript', () {
+      var library2 = new l2.Library2();
+      var o = new l2.JsAndDart(0);
+      var l = library2.callListField(o);
+      expect(l, new isInstanceOf<JsList>());
+      expect(l, [8, 3, 1]);
     });
 
   });

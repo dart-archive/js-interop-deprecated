@@ -125,7 +125,18 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
     var dartParameters = formatParameters(c.parameters, _dartCallFormatter);
     var jsParameters =
         formatParameters(c.parameters, _jsSignatureFormatter(withThis: true));
-    buffer.writeln(
+    if (c.jsifyReturn) {
+      buffer.writeln(
+'''
+  // method ${c.name}
+  prototype['${c.name}'] = new js.JsFunction.withThis(($jsParameters) {
+    return  $JS_PREFIX.jsify(
+        ($JS_PREFIX.toDart($JS_THIS_REF) as ${c.parent.name})
+            .${c.name}($dartParameters));
+  });
+''');
+    } else {
+      buffer.writeln(
 '''
   // method ${c.name}
   prototype['${c.name}'] = new js.JsFunction.withThis(($jsParameters) {
@@ -133,6 +144,7 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
         .${c.name}($dartParameters);
   });
 ''');
+    }
   }
 
   void _generateProperty(ExportedProperty f) {
@@ -142,8 +154,15 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
     buffer.writeln("  _obj.callMethod('defineProperty', [prototype, '$name', "
         "new js.JsObject.jsify({");
     if (f.hasGetter) {
-      buffer.writeln("    'get': new js.JsFunction.withThis("
-          "(o) => (o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name),");
+      if (f.jsify) {
+        buffer.writeln("    'get': new js.JsFunction.withThis("
+            "(o) => $JS_PREFIX.jsify("
+                "(o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name)),");
+      } else {
+        buffer.writeln("    'get': new js.JsFunction.withThis("
+            "(o) => "
+                "(o[$JS_PREFIX.DART_OBJECT_PROPERTY] as $className).$name),");
+      }
     }
     if (f.hasSetter) {
       buffer.writeln("    'set': new js.JsFunction.withThis("

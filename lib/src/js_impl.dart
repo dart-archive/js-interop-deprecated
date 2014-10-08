@@ -122,7 +122,7 @@ JsObject _obj = context['Object'];
 
 dynamic jsify(data) {
   if ((data is! Map) && (data is! Iterable)) {
-    throw new ArgumentError("object must be a Map or Iterable");
+    throw new ArgumentError("object must be a Map or Iterable, was $data");
   }
 
   if (data is JsObject || data is JsObjectMap || data is JsList) return data;

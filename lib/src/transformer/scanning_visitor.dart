@@ -33,6 +33,7 @@ class ScanningVisitor extends RecursiveElementVisitor {
   final ClassElement noExportClass;
   final ClassElement jsInterfaceClass;
   final ClassElement jsProxyClass;
+  final ClassElement jsifyClass;
 
   // This is neccessary for code-generating proxy implementations
   final Set<ClassElement> jsProxies = new Set<ClassElement>();
@@ -51,13 +52,15 @@ class ScanningVisitor extends RecursiveElementVisitor {
         jsInterfaceClass = getImplLib(jsLibrary).getType('JsInterface'),
         jsProxyClass = jsMetadataLibrary.getType('JsProxy'),
         exportClass = jsMetadataLibrary.getType('Export'),
-        noExportClass = jsMetadataLibrary.getType('NoExport') {
+        noExportClass = jsMetadataLibrary.getType('NoExport'),
+        jsifyClass = jsMetadataLibrary.getType('Jsify') {
     assert(jsLibrary != null);
     assert(entryLibrary != null);
     assert(jsInterfaceClass != null);
     assert(jsProxyClass != null);
     assert(exportClass != null);
     assert(noExportClass != null);
+    assert(jsifyClass != null);
   }
 
   @override
@@ -176,8 +179,9 @@ class ScanningVisitor extends RecursiveElementVisitor {
                   _getParameterKind(p.parameterKind),
                   new DartType(p.type.name)))
           .toList();
+      var jsifyReturn = hasAnnotation(element, jsifyClass);
       var c = new ExportedMethod(name, clazz, parameters,
-          isStatic: element.isStatic);
+          isStatic: element.isStatic, jsifyReturn: jsifyReturn);
       clazz.children[name] = c;
     }
     _restoreExportState(previousState);
@@ -190,10 +194,15 @@ class ScanningVisitor extends RecursiveElementVisitor {
       var clazz = library.declarations[element.enclosingElement.name];
       assert(clazz is ExportedClass);
       var name = element.name;
+      var jsify = hasAnnotation(element, jsifyClass);
+      if (element.getter != null && !element.getter.isSynthetic) {
+        jsify = hasAnnotation(element.getter, jsifyClass);
+      }
       var c = new ExportedProperty(name, clazz,
           hasGetter: element.getter != null,
           hasSetter: element.setter != null,
-          isStatic: element.isStatic);
+          isStatic: element.isStatic,
+          jsify: jsify);
       clazz.children[name] = c;
     }
     _restoreExportState(previousState);

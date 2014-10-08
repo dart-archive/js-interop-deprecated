@@ -48,3 +48,28 @@ function createMap(k1, v1, k2, v2) {
   m[k2] = v2;
   return m;
 }
+
+
+function callCreateList(o) {
+  var list = o.createList('x', 'y', 'z');
+  if (!Array.isArray(list)) {
+    throw "Not an Array";
+  }
+  return list;
+}
+
+function callListGetter(o) {
+  var list = o.listGetter;
+  if (!Array.isArray(list)) {
+    throw "Not an Array";
+  }
+  return list;
+}
+
+function callListField(o) {
+  var list = o.listField;
+  if (!Array.isArray(list)) {
+    throw "Not an Array";
+  }
+  return list;
+}
