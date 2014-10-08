@@ -379,7 +379,9 @@ class JsInterface extends jsi.JsInterface {
 
     if (decl != null) {
       mirrors.MethodMirror method = decl;
-      String name = mirrors.MirrorSystem.getName(invocation.memberName);
+      var nameAnnotation = _getJsNameAnnotation(method);
+      var name = nameAnnotation != null ? nameAnnotation.name :
+          mirrors.MirrorSystem.getName(invocation.memberName);
       if (invocation.isGetter) {
         var o = toDart(toJs(this)[name]);
         assert(o == null ||
@@ -430,6 +432,16 @@ metadata.JsProxy _getJsProxyAnnotation(ClassMirror c) {
   if (jsProxyAnnotationMirror == null) return null;
 
   return jsProxyAnnotationMirror.reflectee;
+}
+
+metadata.JsName _getJsNameAnnotation(MethodMirror m) {
+  var jsNameAnnotationMirror =
+      m.metadata
+      .firstWhere((i) => i.reflectee is metadata.JsName, orElse: () => null);
+
+  if (jsNameAnnotationMirror == null) return null;
+
+  return jsNameAnnotationMirror.reflectee;
 }
 
 
