@@ -16,7 +16,7 @@ import 'package:js/js.dart';
  * [toJs] function when added, and converted to Dart with the [toDart] funtion
  * when accessed.
  */
-class JsList<E> extends ListBase {
+class JsList<E> extends ListBase<E> {
   JsArray _o;
 
   JsList.fromJsObject(JsObject o) : _o = o;
@@ -68,7 +68,7 @@ class JsList<E> extends ListBase {
   E removeLast() => toDart(_o.removeLast()) as E;
 
   @override
-  void setRange(int start, int end, List<E> iterable, [int startFrom = 0]) {
+  void setRange(int start, int end, Iterable<E> iterable, [int startFrom = 0]) {
     _o.setRange(start, end, iterable.map(toJs), startFrom);
   }
 
