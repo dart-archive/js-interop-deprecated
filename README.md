@@ -23,32 +23,83 @@ API have stabilized.
 Usage
 -----
 
+**Warning: The API is still changing rapidly. Not for the faint of heart**
+
+
 ### Defining Typed JavaScript Proxies
 
-Typed JavaScript Proxies are classes that have represent a JavaScript object and have a well-defined API. They are defined in two parts:
+Typed JavaScript Proxies are classes that have represent a JavaScript object and have a well-defined Dart API, complete with type annotations, constructors, even optional and named parameters. They are defined in two parts:
 
   1. An abstract class that defines the interface
-  2. A concrete class that implements the interface (automaticlly via mirrors or the transformer)
+  2. A concrete class that implements the interface (automaticlly, either via mirrors or the `js` transformer)
 
-The abstract class must extend `JsInterface` and must have a constructor with the signature `created(JsObject o)`. Any abstract methods or accessors on the class are automatically implemented for you to call into JavaScript.
+The abstract class is defined as follows:
 
-The concrete implementation class must extend the interface class, and must also have a `created` constructor. It must also have a `@JsProxy` annotation which tells `package:js` that the class is a proxy, and which JavaScript prototype it should proxy. You also will want to add a `noSuchMethod` that forwards to the super class to suppress warnings.
+  1. It must extend `JsInterface`
+  2. It must have a constructor with the signature `C.created(JsObject o)`.
+  3. Any abstract methods or accessors on the class are automatically implemented for you to call into JavaScript. Becuase only abstract class members are proxied to JavaScript, fields must be represented as abstract getter/setter pairs.
+  4. Ideally, all parameters and returns should have type annotations. The generator adds casts based on the type annotations which help dart2js produce smaller, faster output.
+  5. Add a factory constructor if you want to create new instances from Dart. The constructor must redirect to a factory constructor on the implementation class.
+  6. Maps and Lists need to be copied to be usable in JavaScript. Add a `@jsify` annotation to any parameter that takes a Map or List. Note that modification from JS won't be visible in Dart, unless you send the copied collection back later.
 
-#### Example
+The concrete implementation class is defined as follows:
 
-    import 'package:js/js.dart';
+  1. It must extend the interface class.
+  2. It must have a `created` constructor.
+  3. It must have a `@JsProxy` annotation. This tells `package:js` that the class is a proxy, and which JavaScript prototype it should proxy.
+  4. It should have a `noSuchMethod` that forwards to the super class to suppress warnings.
 
-    abstract class Foo extends JsInterface {
-      Foo.created(JsObject o) : super.created(o);
+#### Example - Proxying JavaScript to Dart
 
-      String getName();
-    }
+##### JavaScript
 
-    @JsProxy(constructor: 'Foo')
-    class FooImpl extends Foo {
-      Foo.created(JsObject o) : super.created(o);
-      noSuchMethod(i) => super.noSuchMethod(i);
-    }
+```javascript
+function Foo(name) {
+  this.name = name;
+}
+
+Foo.prototype.sayHello = function() {
+  return "Hello " + name;
+}
+```
+
+##### Dart
+
+```dart
+import 'package:js/js.dart';
+
+abstract class Foo extends JsInterface {
+  Foo.created(JsObject o) : super.created(o);
+  
+  factory Foo(String name) => new FooImpl(name);
+  
+  String get name;
+  void set name(String n);
+  
+  String sayHello();
+}
+
+@JsProxy(constructor: 'Foo')
+class FooImpl extends Foo {
+  Foo.created(JsObject o) : super.created(o);
+  
+  factory FooImpl(String name) => new JsInterface(FooImpl, [name]);
+  
+  noSuchMethod(i) => super.noSuchMethod(i);
+}
+```
+
+This may seem a bit verbose, and it is, but it's because of a few constraints we have:
+
+  * The proxy methods should be abstract.
+  * Abstract members cause warnings on non-abstract classes, which can't be silenced by adding a `noSuchMethod()`, so the proxy class must be abstract.
+  * Abstract classes can't be instantiated, so we need a separate implementation class.
+  * The abstract methods are implemented via `noSuchMethod()` in `JsInterface`, which doesn't silence the warnings cause be "unimplemented" methods, so we must add a `noSuchMethod()` to the implementation class.
+  * The only way to express an "abstract field" is with a getter/setter pair.
+  * `JsInterface` needs a reference to the raw `JsObject`, so must have a generative constructor.
+  * We want to create new instances with expressions like `new Foo()`, not `new FooImpl()`, so we need a factory constructor on the interface class.
+
+We will try to see what changes we can make in the future to this package or the language to alleviate the boilerplate. The good news is that once the boilerplate for the class is set up, the interesting parts - the methods and fields - are quite simple to write and maintain. We will also look into generators for proxies from various sources like TypeScript, Closure, JSHint annotations, Polymer, etc.
 
 ### Exporting Dart APIs to JavaScript
 
@@ -58,38 +109,42 @@ You can export classes, functions, variables, and even whole libraries to JavaSc
 
 ##### a.dart:
 
-    library a;
+```dart
+library a;
 
-    import 'package:js/js.dart';
+import 'package:js/js.dart';
 
-    @Export()
-    class A {
-      String name;
+@Export()
+class A {
+  String name;
 
-      A();
+  A();
 
-      A.withName(this.name);
-    }
+  A.withName(this.name);
+}
+```
 
 ##### JavaScript
 
-    var a1 = new dart.a.A();
-    a1 instanceof dart.a.A; // true
-    a1.name; // null
-    a1.name = 'red'; // sets the value in Dart
+```javascript
+var a1 = new dart.a.A();
+a1 instanceof dart.a.A; // true
+a1.name; // null
+a1.name = 'red'; // sets the value in Dart
 
-    // Named constructors are supported
-    var a2 = new dart.a.A.withName('blue');
-    a2 instanceof dart.a.A;
-    a2.name; // 'blue'
+// Named constructors are supported
+var a2 = new dart.a.A.withName('blue');
+a2 instanceof dart.a.A;
+a2.name; // 'blue'
+```
 
 All of the types referenced by exported functions and methods must either be "primitives" as defined by dart:js
  (`bool`, `num`, `String`, `DateTime`), JsInterfaces, or other exported classes.
+ 
+As with parameters for JsInterfaces, the return values of exported methods are Dart objects being passed to JavaScript. If these are Maps or Lists, they too must be copied to work in JavaScript, so add `@jsify` to the method, field or getter.
 
-Installing
-----------
-
-**Warning: The API is still changing rapidly. Not for the faint of heart**
+Configuration and Initialization
+--------------------------------
 
 ### Adding the dependency
 
@@ -98,11 +153,13 @@ dependency to install it.
 
 Add the following to your `pubspec.yaml`:
 
-    dependencies:
-      js:
-        git:
-          url: git://github.com/dart-lang/js-interop.git
-          ref: 0.4.0
+```yaml
+dependencies:
+  js:
+    git:
+      url: git://github.com/dart-lang/js-interop.git
+      ref: 0.4.0
+```
 
 ### Configuring the transformers
 
@@ -126,10 +183,41 @@ If your package both defines proxies or exports, and has an HTML entry-point in 
 
 ### Loading the generated JavaScript
 
-The JavaScript prototypes for exported APIs must be loaded in a page for them to be available to other JavaScript code. This code is loaded by including `packages/js/interop.js` in your HTML. When your application is built that script is replaced by the generated JavaScript.
+The JavaScript prototypes for exported APIs must be loaded in a page for them to be available to other JavaScript code. This code is loaded by including `packages/js/interop.js` in your HTML. When your application is built that script is replaced by the generated JavaScript. The interop script must be loaded before your main Dart script.
 
-    <html>
-      <head>
-        <script src="packages/js/interop.js"></script>
-      </head>
-    </html>
+##### main.html
+
+```html
+<html>
+  <head>
+    <script src="packages/js/interop.js"></script>
+  </head>
+  <body>
+    <script type="application/dart" src="main.dart"></script>
+  </body>
+</html>
+```
+### Initializing Interop
+
+Your `main()` method must call `initializeJavaScript()` in order to export Dart classes and register proxies. This call should be made as early as possible, ideally first.
+
+##### main.dart
+
+```dart
+library main;
+
+import 'package:js/js.dart';
+
+main() {
+  initializeJavaScript();
+}
+```
+
+Contributing and Filing Bugs
+----------------------------
+
+Please file bugs and features requests on the Github issue tracker: https://github.com/dart-lang/js-interop/issues
+
+We also love and accept community contributions, from API suggestions to pull requests. Please file an issue before beginning work so we can discuss the design and implementation. We are trying to create issues for all current and future work, so if something there intrigues you (or you need it!) join in on the discussion.
+
+All we require is that you sign the Google Individual Contributor License Agreement https://developers.google.com/open-source/cla/individual?csw=1
