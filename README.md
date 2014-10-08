@@ -158,7 +158,6 @@ dependencies:
   js:
     git:
       url: git://github.com/dart-lang/js-interop.git
-      ref: 0.4.0
 ```
 
 ### Configuring the transformers
