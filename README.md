@@ -81,7 +81,7 @@ abstract class Foo extends JsInterface {
 
 @JsProxy(constructor: 'Foo')
 class FooImpl extends Foo {
-  Foo.created(JsObject o) : super.created(o);
+  FooImpl.created(JsObject o) : super.created(o);
   
   factory FooImpl(String name) => new JsInterface(FooImpl, [name]);
   
