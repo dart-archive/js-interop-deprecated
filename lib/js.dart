@@ -11,5 +11,6 @@ library js;
 // js.dart is just an alias for mirrors.dart at runtime. The transformer
 // replaces this import of js.dart with src/static.dart.
 export 'package:js/src/mirrors.dart';
-export 'package:js/src/js_map.dart' show JsMap;
+export 'package:js/src/js_expando.dart' show JsExpando;
 export 'package:js/src/js_list.dart' show JsList;
+export 'package:js/src/js_map.dart' show JsMap;
