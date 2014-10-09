@@ -28,7 +28,7 @@ Usage
 
 ### Defining Typed JavaScript Proxies
 
-Typed JavaScript Proxies are classes that have represent a JavaScript object and have a well-defined Dart API, complete with type annotations, constructors, even optional and named parameters. They are defined in two parts:
+Typed JavaScript Proxies are classes that represent a JavaScript object and have a well-defined Dart API, complete with type annotations, constructors, even optional and named parameters. They are defined in two parts:
 
   1. An abstract class that defines the interface
   2. A concrete class that implements the interface (automaticlly, either via mirrors or the `js` transformer)
