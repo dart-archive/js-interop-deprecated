@@ -378,14 +378,20 @@ class JsInterface extends jsi.JsInterface {
     var decl = getDeclaration(mirror.type, invocation.memberName);
 
     if (decl != null) {
-      mirrors.MethodMirror method = decl;
-      var nameAnnotation = _getJsNameAnnotation(method);
+      var nameAnnotation = _getJsNameAnnotation(decl);
       var name = nameAnnotation != null ? nameAnnotation.name :
           mirrors.MirrorSystem.getName(invocation.memberName);
       if (invocation.isGetter) {
+        // Usually a MethodMirror is retrieved. A VariableMirror may be
+        // retrieved when the JsInterface implements a class with fields
+        mirrors.TypeMirror returnType;
+        if (decl is mirrors.MethodMirror) returnType = decl.returnType;
+        else if (decl is mirrors.VariableMirror) returnType = decl.type;
+        else throw new StateError('The declaration grabbed should be '
+                                  'a MethodMirror or a VariableMirror');
+
         var o = toDart(toJs(this)[name]);
-        assert(o == null ||
-            mirrors.reflect(o).type.isSubtypeOf(method.returnType));
+        assert(o == null || mirrors.reflect(o).type.isSubtypeOf(returnType));
         return o;
       }
       if (invocation.isSetter) {
@@ -415,8 +421,7 @@ class JsInterface extends jsi.JsInterface {
             ? m.returnType.originalDeclaration.simpleName
             : null;
         var o = toDart(toJs(this).callMethod(name, jsArgs), returnType);
-        assert(o == null ||
-            mirrors.reflect(o).type.isSubtypeOf(method.returnType));
+        assert(o == null || mirrors.reflect(o).type.isSubtypeOf(m.returnType));
         return o;
       }
       assert(false);
@@ -434,7 +439,7 @@ metadata.JsProxy _getJsProxyAnnotation(ClassMirror c) {
   return jsProxyAnnotationMirror.reflectee;
 }
 
-metadata.JsName _getJsNameAnnotation(MethodMirror m) {
+metadata.JsName _getJsNameAnnotation(DeclarationMirror m) {
   var jsNameAnnotationMirror =
       m.metadata
       .firstWhere((i) => i.reflectee is metadata.JsName, orElse: () => null);
