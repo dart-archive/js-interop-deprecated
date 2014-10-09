@@ -19,6 +19,19 @@ import 'package:js/js.dart';
 class JsList<E> extends ListBase<E> {
   JsArray _o;
 
+  /**
+   * Creates an instance backed by a new JavaScript Array.
+   */
+  JsList() : _o = new JsArray();
+
+  /**
+   * Creates an instance by deep converting [list] to JavaScript with [jsify].
+   */
+  JsList.jsify(List<E> list) : _o = jsify(list);
+
+  /**
+   * Creates an instance backed by the JavaScript object [o].
+   */
   JsList.fromJsObject(JsObject o) : _o = o;
 
   @override

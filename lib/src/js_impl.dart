@@ -9,7 +9,7 @@
 library js.impl;
 
 import 'dart:js';
-import 'package:js/src/js_object_map.dart';
+import 'package:js/src/js_map.dart';
 import 'package:js/src/js_list.dart';
 import 'dart:collection';
 export 'dart:js' show context, JsObject;
@@ -113,7 +113,7 @@ dynamic toDart(dynamic o, [Symbol fallbackType]) {
 
     // no wrapper, handle fallback cases
     if (fallbackType == #Map) {
-      return new JsObjectMap.fromJsObject(o);
+      return new JsMap.fromJsObject(o);
     }
 
     return o;
@@ -128,7 +128,7 @@ dynamic jsify(data) {
     throw new ArgumentError("object must be a Map or Iterable, was $data");
   }
 
-  if (data is JsObject || data is JsObjectMap || data is JsList) return data;
+  if (data is JsObject || data is JsMap || data is JsList) return data;
 
   var _convertedObjects = new HashMap.identity();
 

@@ -12,27 +12,46 @@ import 'package:js/src/js_impl.dart';
 /**
  * A [Map] interface wrapper for [JsObject]s.
  *
- * Keys must be [String] because they are used as JavaScript properties names.
- *
  * Values returned from this map are automatically converted to JavaScript with
  * the [toJs] function when added, and to Dart with the [toDart] funtion when
  * accessed.
+ *
+ * Keys must be [String] because they are used as JavaScript property names. The
+ * key '__proto__' is disallowed.
  */
-class JsObjectMap<V> extends MapMixin<String, V> {
+class JsMap<V> extends MapMixin<String, V> {
   static final _obj = context['Object'];
 
   final JsObject _o;
 
-  JsObjectMap.fromJsObject(JsObject o) : _o = o;
+  /**
+   * Creates an instance backed by a new JavaScript object whose prototype is
+   * Object.
+   */
+  JsMap() : _o = new JsObject(_obj);
+
+  /**
+   * Creates an instance by deep converting [map] to JavaScript with [jsify].
+   */
+  JsMap.jsify(Map<String, dynamic> map) : _o = jsify(map);
+
+  /**
+   * Creates an instance backed by the JavaScript object [o].
+   */
+  JsMap.fromJsObject(JsObject o) : _o = o;
+
+  void _checkKey(String key) {
+    if (key == '__proto__') {
+      throw new ArgumentError("'__proto__' is disallowed as a key");
+    }
+  }
 
   @override
   V operator [](String key) => toDart(_o[key]) as V;
 
   @override
   void operator []=(String key, V value) {
-    if (key == '__proto__') {
-      throw new ArgumentError("'__proto__' is disallowed as a key");
-    }
+    _checkKey(key);
     _o[key] = toJs(value);
   }
 
@@ -51,9 +70,7 @@ class JsObjectMap<V> extends MapMixin<String, V> {
 
   @override
   V putIfAbsent(String key, V ifAbsent()) {
-    if (key == '__proto__') {
-      throw new ArgumentError("'__proto__' is disallowed as a key");
-    }
+    _checkKey(key);
     return Maps.putIfAbsent(this, key, ifAbsent) as V;
   }
 
