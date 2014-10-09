@@ -107,7 +107,7 @@ main() {
     });
 
     test('should use custom name provided by @JsName with method', () {
-      var e = context.createExportMe();
+      var e = context.x_createExportMe();
       expect(e, new isInstanceOf<t.ExportMe>());
     });
 
