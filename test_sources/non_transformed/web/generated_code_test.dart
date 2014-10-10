@@ -362,6 +362,12 @@ main() {
       expect(l, [8, 3, 1]);
     });
 
+    test('should be able to call a top-level function', () {
+      var lib2 = js.context['dart']['test']['library'];
+      var s = lib2.callMethod('topLevelFunction');
+      expect(s, 'buffalo');
+    });
+
   });
 
 }

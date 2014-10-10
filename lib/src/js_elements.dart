@@ -133,14 +133,26 @@ class ExportedConstructor extends ExportedElement<ExportedClass> {
       : super(name, parent);
 }
 
-class ExportedMethod extends ExportedElement<ExportedClass> {
-  final bool isStatic;
+class ExportedCallable<P extends ExportedElement> extends ExportedElement<P> {
   final bool jsifyReturn;
   final List<ExportedParameter> parameters;
 
-  ExportedMethod(String name, ExportedClass parent, this.parameters,
-      {this.isStatic : false, this.jsifyReturn: false})
+  ExportedCallable(String name, P parent, this.parameters,
+      {this.jsifyReturn: false})
       : super(name, parent);
+}
+
+
+class ExportedMethod extends ExportedCallable<ExportedClass> {
+  final bool isStatic;
+
+  ExportedMethod(
+      String name,
+      ExportedClass parent,
+      List<ExportedParameter> parameters,
+      {this.isStatic : false,
+      bool jsifyReturn: false})
+      : super(name, parent, parameters, jsifyReturn: jsifyReturn);
 
   String toString() => 'ExportedMethod($name $parameters)';
 }
@@ -169,7 +181,14 @@ class ExportedTopLevelVariable extends ExportedElement<ExportedLibrary> {
       : super(name, parent);
 }
 
-class ExportedFunction extends ExportedElement<ExportedLibrary> {
-  ExportedFunction(String name, ExportedLibrary parent) : super(name, parent);
-}
+class ExportedFunction extends ExportedCallable<ExportedLibrary> {
 
+  ExportedFunction(
+      String name,
+      ExportedLibrary parent,
+      List<ExportedParameter> parameters,
+      {bool jsifyReturn: false})
+      : super(name, parent, parameters, jsifyReturn: jsifyReturn);
+
+  String toString() => 'ExportedFunction($name $parameters)';
+}

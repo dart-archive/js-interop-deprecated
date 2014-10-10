@@ -184,6 +184,9 @@ class DoNotExport {
 String topLevelField = "aardvark";
 
 @Export()
+String topLevelFunction() => "buffalo";
+
+@Export()
 DoNotExport getDoNotExport() => new DoNotExport();
 
 @NoExport()

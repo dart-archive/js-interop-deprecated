@@ -123,7 +123,16 @@ class ScanningVisitor extends RecursiveElementVisitor {
     if (_exportState == ExportState.EXPORTED) {
       var library = jsElements.getLibrary(element.library.name);
       var name = element.name;
-      var v = new ExportedFunction(name, library);
+      var parameters = element.parameters
+          .map((p) =>
+              new ExportedParameter(
+                  p.name,
+                  _getParameterKind(p.parameterKind),
+                  new DartType(p.type.name)))
+          .toList();
+      var jsifyReturn = hasAnnotation(element, jsifyClass);
+      var v = new ExportedFunction(name, library, parameters,
+          jsifyReturn: jsifyReturn);
       library.declarations[name] = v;
     }
     _restoreExportState(previousState);

@@ -30,49 +30,18 @@ import 'package:quiver/mirrors.dart';
 final _dart = js.context['dart'];
 final _obj = js.context['Object'];
 
-// This is ugly. For each ExportedClass we need a reference to the class mirror
-// to implement constructors, but ExportedClass is used in code generation
-// as well.
-Expando<ClassMirror> _classMirrors = new Expando<ClassMirror>();
+// This is ugly. For each exported declaration we need a reference to the mirror
+// to use for invoke() and newInstance(), but ExportedClass is used in code
+// generation as well.
+Expando<DeclarationMirror> _declarationMirrors =
+    new Expando<DeclarationMirror>();
 
 initializeJavaScript() {
   var libraries = currentMirrorSystem().libraries;
-
   var jsElements = new JsElements();
-  var jsInterface = reflectType(JsInterface);
 
   for (var library in libraries.values) {
-    var exportedLibrary;
-    var libraryName = _getName(library);
-    var libraryExportAnnotation = _getExportAnnotation(library);
-    if (libraryExportAnnotation != null) {
-      exportedLibrary = jsElements.getLibrary(libraryName);
-    }
-
-    var classes = library.declarations.values.where((d) => d is ClassMirror);
-    for (ClassMirror clazz in classes) {
-      metadata.JsProxy jsProxyAnnotation = _getJsProxyAnnotation(clazz);
-      if (jsProxyAnnotation != null && jsProxyAnnotation.constructor != null) {
-        _registerProxy(clazz, jsProxyAnnotation);
-      }
-
-      var classExportAnnotation = _getExportAnnotation(clazz);
-      var classNoExportAnnotation = _getNoExportAnnotation(clazz);
-
-      if (classNoExportAnnotation == null
-          && !clazz.isAbstract
-          && !classImplements(clazz, jsInterface)
-          && (libraryExportAnnotation != null
-              || classExportAnnotation != null)) {
-        exportedLibrary = jsElements.getLibrary(libraryName);
-        var name = _getName(clazz);
-        var c = new ExportedClass(name, exportedLibrary);
-        _classMirrors[c] = clazz;
-        exportedLibrary.declarations[name] = c;
-        _addExportedConstructors(clazz, c);
-        _addExportedMembers(clazz, c);
-      }
-    }
+    _scanLibrary(library, jsElements);
   }
 
   for (ExportedLibrary library in jsElements.exportedLibraries.values) {
@@ -80,7 +49,78 @@ initializeJavaScript() {
   }
 }
 
-void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
+void _scanLibrary(LibraryMirror library, JsElements jsElements) {
+  if (library.uri.scheme == 'dart') return;
+
+  var export = _getExportAnnotation(library) != null;
+
+  if (export) {
+    jsElements.getLibrary(_getName(library));
+  }
+
+  for (DeclarationMirror declaration in library.declarations.values) {
+    if (declaration is ClassMirror) {
+      _scanClass(declaration, library, export, jsElements);
+    } else if (declaration is MethodMirror) {
+      _scanFunction(declaration, library, export, jsElements);
+    }
+  }
+}
+
+void _scanClass(ClassMirror clazz, LibraryMirror library, bool export,
+                JsElements jsElements) {
+
+  var jsProxyAnnotation = _getJsProxyAnnotation(clazz);
+  var isJsInterface = classImplements(clazz, reflectType(JsInterface));
+  var exportAnnotation = _getExportAnnotation(clazz) != null;
+  var noExportAnnotation = _getNoExportAnnotation(clazz) != null;
+
+  // TODO: much more check of invalid annotation / interface combinations
+  if (isJsInterface && jsProxyAnnotation != null
+      && jsProxyAnnotation.constructor != null) {
+    _registerProxy(clazz, jsProxyAnnotation);
+  }
+
+  export = (export || exportAnnotation) && !noExportAnnotation;
+
+  if (export && !clazz.isAbstract && !isJsInterface) {
+    var libraryName = _getName(library);
+    var exportedLibrary = jsElements.getLibrary(libraryName);
+    var name = _getName(clazz);
+    var exportedClass = new ExportedClass(name, exportedLibrary);
+    exportedLibrary.declarations[name] = exportedClass;
+    _declarationMirrors[exportedClass] = clazz;
+    _scanConstructors(clazz, exportedClass);
+    _scanClassMembers(clazz, exportedClass);
+  }
+}
+
+void _scanFunction(MethodMirror function, LibraryMirror library, bool export,
+                   JsElements jsElements) {
+
+  var exportAnnotation = _getExportAnnotation(function) != null;
+  var noExportAnnotation = _getNoExportAnnotation(function) != null;
+
+  export = (export || exportAnnotation) && !noExportAnnotation;
+
+  if (export) {
+    var libraryName = _getName(library);
+    var exportedLibrary = jsElements.getLibrary(libraryName);
+    var name = _getName(function);
+    var hasJsify = function.metadata
+        .any((m) => m.reflectee == metadata.jsify);
+    var parameters = function.parameters.map((p) =>
+        new ExportedParameter(_getName(p), _getKind(p), _getType(p)))
+        .toList();
+    var exportedFunction = new ExportedFunction(name, exportedLibrary,
+        parameters, jsifyReturn: hasJsify);
+    exportedLibrary.declarations[name] = exportedFunction;
+    _declarationMirrors[exportedFunction] = library;
+  }
+}
+
+
+void _scanClassMembers(ClassMirror clazz, ExportedClass c) {
   var declarations = getDeclarations(clazz);
 
   for (var declaration in declarations.values) {
@@ -91,6 +131,7 @@ void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
 
       if (declaration is MethodMirror && !declaration.isOperator
           && name != 'noSuchMethod' && !declaration.isStatic) {
+
         if (declaration.isRegularMethod) {
           var parameters = declaration.parameters.map((p) =>
               new ExportedParameter(_getName(p), _getKind(p), _getType(p)))
@@ -118,6 +159,7 @@ void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
             property.hasSetter = true;
           }
         }
+
       } else if (declaration is VariableMirror) {
         c.children[name] = new ExportedProperty(name, c,
             hasSetter: !declaration.isFinal,
@@ -129,7 +171,7 @@ void _addExportedMembers(ClassMirror clazz, ExportedClass c) {
   }
 }
 
-void _addExportedConstructors(ClassMirror clazz, ExportedClass c) {
+void _scanConstructors(ClassMirror clazz, ExportedClass c) {
   var constructors = clazz.declarations.values
       .where((d) => d is MethodMirror && d.isConstructor);
   for (MethodMirror ctor in constructors) {
@@ -168,6 +210,8 @@ _exportLibrary(ExportedLibrary library, JsObject parent) {
 _exportDeclaration(ExportedElement e, JsObject parent) {
   if (e is ExportedClass) {
     _exportClass(e, parent);
+  } else if (e is ExportedFunction) {
+    _exportFunction(e, parent);
   }
 }
 
@@ -188,7 +232,7 @@ _exportClass(ExportedClass c, JsObject parent) {
     return o;
   };
   parent[c.name] = constructor;
-  var classMirror = _classMirrors[c];
+  var classMirror = _declarationMirrors[c];
   var type = classMirror.reflectedType;
   registerJsConstructorForType(type, constructor['_wrapDartObject']);
 
@@ -206,7 +250,7 @@ _exportClassMember(ExportedElement e, JsObject prototype, JsObject ctor) {
 }
 
 _exportConstructor(ExportedConstructor c, JsObject ctor) {
-  var classMirror = _classMirrors[c.parent];
+  var classMirror = _declarationMirrors[c.parent];
   var jsName = c.name == '' ? '_new' : c.name;
   var namedParameters = c.parameters
       .where((p) => p.kind == ParameterKind.NAMED).toList();
@@ -230,13 +274,16 @@ _exportConstructor(ExportedConstructor c, JsObject ctor) {
   });
 }
 
-_exportMethod(ExportedMethod c, JsObject prototype) {
+typedef Mirror _GetMirror(self);
+
+_exportMethodOrFunction(ExportedCallable c, JsObject parent,
+    _GetMirror _getMirror) {
   var name = c.name;
   var namedParameters = c.parameters
       .where((p) => p.kind == ParameterKind.NAMED).toList();
   var positionalParameterCount = c.parameters.length - namedParameters.length;
-  prototype[name] = _convertCallback((self, args) {
-    var o = self[DART_OBJECT_PROPERTY];
+  parent[name] = _convertCallback((self, args) {
+    var mirror = _getMirror(self);
     var positionalArgs = args;
     var namedArgs = null;
 
@@ -252,7 +299,7 @@ _exportMethod(ExportedMethod c, JsObject prototype) {
       }
     }
 
-    var result = reflect(o)
+    var result = mirror
         .invoke(new Symbol(c.name), positionalArgs, namedArgs)
         .reflectee;
 
@@ -282,6 +329,15 @@ _exportField(ExportedProperty e, JsObject prototype) {
   }
   _obj.callMethod('defineProperty', [prototype, e.name,
       new js.JsObject.jsify(accessors)]);
+}
+
+_exportMethod(ExportedMethod m, JsObject prototype) {
+  return _exportMethodOrFunction(m, prototype,
+      (self) => reflect(self[DART_OBJECT_PROPERTY]));
+}
+
+_exportFunction(ExportedFunction f, JsObject parent) {
+  return _exportMethodOrFunction(f, parent, (_) => _declarationMirrors[f]);
 }
 
 typedef JsCallback(receiver, List args);

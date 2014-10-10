@@ -76,6 +76,8 @@ void _export_${library.getPath('_')}($JS_PREFIX.JsObject parent) {
   void _generateDeclarationExportCall(ExportedElement element) {
     if (element is ExportedClass) {
       buffer.writeln("  _export_${element.getPath('_')}(lib);");
+    } else if (element is ExportedFunction) {
+      _generateFunction(element);
     }
   }
 
@@ -172,6 +174,24 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
     buffer.writeln("  })]);");
   }
 
+  void _generateFunction(ExportedFunction c) {
+    var dartParameters = formatParameters(c.parameters, _dartCallFormatter);
+    var jsParameters =
+        formatParameters(c.parameters, _jsSignatureFormatter());
+    if (c.jsifyReturn) {
+      buffer.writeln(
+'''
+  // function ${c.name}
+  lib['${c.name}'] = $JS_PREFIX.jsify(($jsParameters) => ${c.name}($dartParameters));
+''');
+    } else {
+      buffer.writeln(
+'''
+  // function ${c.name}
+  lib['${c.name}'] = ($jsParameters) => ${c.name}($dartParameters);
+''');
+    }
+  }
 }
 
 /**
