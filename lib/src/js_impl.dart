@@ -99,7 +99,7 @@ dynamic toDart(dynamic o, [Symbol fallbackType]) {
         wrapper = new JsList.fromJsObject(o);
       } else {
         // look up JsInterface factory
-        var jsConstructor = o['constructor'] as JsObject;
+        var jsConstructor = o['constructor'] as JsFunction;
         var dartConstructor = _interfaceConstructors[jsConstructor];
         if (dartConstructor != null) {
           wrapper = dartConstructor(o);
@@ -157,9 +157,9 @@ dynamic jsify(data) {
 }
 
 // Dart Type -> JS constructorfor proxy
-final Map<Type, JsObject> _exportedConstructors = <Type, JsObject>{};
+final Map<Type, JsFunction> _exportedConstructors = <Type, JsFunction>{};
 
-registerJsConstructorForType(Type type, JsObject constructor) {
+registerJsConstructorForType(Type type, JsFunction constructor) {
   _exportedConstructors[type] = constructor;
 }
 
@@ -169,7 +169,7 @@ final Map<JsFunction, InterfaceFactory> _interfaceConstructors =
 
 typedef JsInterface InterfaceFactory(JsObject o);
 
-registerFactoryForJsConstructor(JsObject constructor,
+registerFactoryForJsConstructor(JsFunction constructor,
     InterfaceFactory factory) {
   _interfaceConstructors[constructor] = factory;
 }
