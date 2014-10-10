@@ -67,7 +67,7 @@ dynamic toJs(dynamic o) {
     }
     return proxy;
   }
-  // TODO: check that `o` is transferrable?
+
   return o;
 }
 
@@ -90,7 +90,6 @@ final Expando<JsObject> _exportedProxies = new Expando<JsObject>();
  */
 dynamic toDart(dynamic o, [Symbol fallbackType]) {
   if (o == null) return o;
-  if (o is num || o is String || o is bool || o is DateTime) return o;
 
   if (o is JsObject) {
     var wrapper = o[DART_OBJECT_PROPERTY];
@@ -115,10 +114,9 @@ dynamic toDart(dynamic o, [Symbol fallbackType]) {
     if (fallbackType == #Map) {
       return new JsMap.fromJsObject(o);
     }
-
-    return o;
   }
-  throw new ArgumentError("Could not convert ${o.runtimeType}($o) to Dart");
+
+  return o;
 }
 
 JsObject _obj = context['Object'];
