@@ -28,6 +28,7 @@ export 'package:js/src/metadata.dart';
 import 'package:quiver/mirrors.dart';
 
 final _dart = js.context['dart'];
+final _dartObj = _dart['Object'];
 final _obj = js.context['Object'];
 
 // This is ugly. For each exported declaration we need a reference to the mirror
@@ -63,6 +64,8 @@ void _scanLibrary(LibraryMirror library, JsElements jsElements) {
       _scanClass(declaration, library, export, jsElements);
     } else if (declaration is MethodMirror) {
       _scanFunction(declaration, library, export, jsElements);
+    } else if (declaration is VariableMirror) {
+      _scanVariable(declaration, library, export, jsElements);
     }
   }
 }
@@ -119,6 +122,29 @@ void _scanFunction(MethodMirror function, LibraryMirror library, bool export,
   }
 }
 
+void _scanVariable(VariableMirror variable, LibraryMirror library, bool export,
+                   JsElements jsElements) {
+  var exportAnnotation = _getExportAnnotation(variable) != null;
+  var noExportAnnotation = _getNoExportAnnotation(variable) != null;
+
+  export = (export || exportAnnotation) && !noExportAnnotation;
+
+  if (export) {
+    var libraryName = _getName(library);
+    var exportedLibrary = jsElements.getLibrary(libraryName);
+    var name = _getName(variable);
+    var hasJsify = variable.metadata
+        .any((m) => m.reflectee == metadata.jsify);
+
+    var exportedVariable = new ExportedTopLevelVariable(name, exportedLibrary,
+        hasSetter: !variable.isFinal,
+        hasGetter: true,
+        jsify: hasJsify);
+
+    exportedLibrary.declarations[name] = exportedVariable;
+    _declarationMirrors[exportedVariable] = library;
+  }
+}
 
 void _scanClassMembers(ClassMirror clazz, ExportedClass c) {
   var declarations = getDeclarations(clazz);
@@ -212,6 +238,8 @@ _exportDeclaration(ExportedElement e, JsObject parent) {
     _exportClass(e, parent);
   } else if (e is ExportedFunction) {
     _exportFunction(e, parent);
+  } else if (e is ExportedTopLevelVariable) {
+    _exportTopLevelVariable(e, parent);
   }
 }
 
@@ -223,11 +251,11 @@ _exportClass(ExportedClass c, JsObject parent) {
     // instance.
     constructor['_new'].apply(args, thisArg: self);
   });
-  var prototype = _obj.callMethod('create', [_dart['Object']['prototype']]);
+  var prototype = _obj.callMethod('create', [_dartObj['prototype']]);
   constructor['prototype'] = prototype;
-  constructor['prototype']['constructor'] = constructor;
+  prototype['constructor'] = constructor;
   constructor['_wrapDartObject'] = (dartObject) {
-    var o = _obj.callMethod('create', [constructor['prototype']]);
+    var o = _obj.callMethod('create', [prototype]);
     o[DART_OBJECT_PROPERTY] = dartObject;
     return o;
   };
@@ -338,6 +366,27 @@ _exportMethod(ExportedMethod m, JsObject prototype) {
 
 _exportFunction(ExportedFunction f, JsObject parent) {
   return _exportMethodOrFunction(f, parent, (_) => _declarationMirrors[f]);
+}
+
+_exportTopLevelVariable(ExportedTopLevelVariable v, JsObject parent) {
+  var accessors = {};
+  if (v.hasGetter) {
+    accessors['get'] = _convertCallback((_, args) {
+      LibraryMirror library = _declarationMirrors[v];
+      var r = library.getField(new Symbol(v.name)).reflectee;
+      if (v.jsify) r = jsify(r);
+      return r;
+    });
+  }
+  if (v.hasSetter) {
+    accessors['set'] = _convertCallback((_, List args) {
+      LibraryMirror library = _declarationMirrors[v];
+      var r = args.single;
+      library.setField(new Symbol(v.name), v);
+    });
+  }
+  _obj.callMethod('defineProperty', [parent, v.name,
+      new js.JsObject.jsify(accessors)]);
 }
 
 typedef JsCallback(receiver, List args);

@@ -363,9 +363,15 @@ main() {
     });
 
     test('should be able to call a top-level function', () {
-      var lib2 = js.context['dart']['test']['library'];
-      var s = lib2.callMethod('topLevelFunction');
+      var lib = js.context['dart']['test']['library'];
+      var s = lib.callMethod('topLevelFunction');
       expect(s, 'buffalo');
+    });
+
+    test('should be able to access a top-level variable', () {
+      var lib = js.context['dart']['test']['library'];
+      var s = lib['topLevelField'];
+      expect(s, 'aardvark');
     });
 
   });

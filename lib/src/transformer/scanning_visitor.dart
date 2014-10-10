@@ -111,7 +111,15 @@ class ScanningVisitor extends RecursiveElementVisitor {
     if (_exportState == ExportState.EXPORTED) {
       var library = jsElements.getLibrary(element.library.name);
       var name = element.name;
-      var v = new ExportedTopLevelVariable(name, library);
+
+      var jsify = hasAnnotation(element, jsifyClass);
+      if (element.getter != null && !element.getter.isSynthetic) {
+        jsify = hasAnnotation(element.getter, jsifyClass);
+      }
+      var v = new ExportedTopLevelVariable(name, library,
+          hasGetter: element.getter != null,
+          hasSetter: element.setter != null,
+          jsify: jsify);
       library.declarations[name] = v;
     }
     _restoreExportState(previousState);

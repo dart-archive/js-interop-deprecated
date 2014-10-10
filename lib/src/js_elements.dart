@@ -160,25 +160,44 @@ class ExportedMethod extends ExportedCallable<ExportedClass> {
 /**
  * Represents a field or getter/setter.
  */
-class ExportedProperty extends ExportedElement<ExportedClass> {
-  final bool isStatic;
+class ExportedVariable<P extends ExportedElement> extends ExportedElement<P> {
   bool jsify;
   bool hasGetter;
   bool hasSetter;
 
-  ExportedProperty(String name, ExportedClass parent, {
-      this.hasGetter : false,
-      this.hasSetter : false,
-      this.isStatic: false,
-      this.jsify: false})
+  ExportedVariable(
+      String name,
+      P parent,
+      this.hasGetter,
+      this.hasSetter,
+      this.jsify)
       : super(name, parent);
 
   String toString() => 'ExportedProperty($name)';
 }
 
-class ExportedTopLevelVariable extends ExportedElement<ExportedLibrary> {
-  ExportedTopLevelVariable(String name, ExportedLibrary parent)
-      : super(name, parent);
+class ExportedProperty extends ExportedVariable<ExportedClass> {
+  final bool isStatic;
+
+  ExportedProperty(String name, ExportedClass parent, {
+      bool hasGetter : false,
+      bool hasSetter : false,
+      this.isStatic: false,
+      bool jsify: false})
+      : super(name, parent, hasGetter, hasSetter, jsify);
+
+  String toString() => 'ExportedProperty($name)';
+}
+
+class ExportedTopLevelVariable extends ExportedVariable<ExportedLibrary> {
+
+  ExportedTopLevelVariable(String name, ExportedLibrary parent, {
+      bool hasGetter : false,
+      bool hasSetter : false,
+      bool jsify: false})
+      : super(name, parent, hasGetter, hasSetter, jsify);
+
+  String toString() => 'ExportedTopLevelVariable($name)';
 }
 
 class ExportedFunction extends ExportedCallable<ExportedLibrary> {

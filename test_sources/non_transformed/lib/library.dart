@@ -181,6 +181,7 @@ class DoNotExport {
   bool get getter => false;
 }
 
+@Export()
 String topLevelField = "aardvark";
 
 @Export()

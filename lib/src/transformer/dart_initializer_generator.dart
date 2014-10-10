@@ -78,6 +78,8 @@ void _export_${library.getPath('_')}($JS_PREFIX.JsObject parent) {
       buffer.writeln("  _export_${element.getPath('_')}(lib);");
     } else if (element is ExportedFunction) {
       _generateFunction(element);
+    } else if (element is ExportedTopLevelVariable) {
+      _generateTopLevelVariable(element);
     }
   }
 
@@ -192,8 +194,24 @@ void _export_${c.getPath('_')}($JS_PREFIX.JsObject parent) {
 ''');
     }
   }
-}
 
+  void _generateTopLevelVariable(ExportedTopLevelVariable v) {
+    var name = v.name;
+    buffer.writeln("  _obj.callMethod('defineProperty', [lib, '$name', "
+        "new js.JsObject.jsify({");
+    if (v.hasGetter) {
+      if (v.jsify) {
+        buffer.writeln("    'get': () => $JS_PREFIX.jsify($name),");
+      } else {
+        buffer.writeln("    'get': () => $name,");
+      }
+    }
+    if (v.hasSetter) {
+      buffer.writeln("    'set': (v) => $name = v,");
+    }
+    buffer.writeln("  })]);");
+  }
+}
 /**
  * Formats parameters for use as a Dart closure passed to JavaScript.
  *
