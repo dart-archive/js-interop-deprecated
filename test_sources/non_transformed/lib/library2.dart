@@ -5,7 +5,7 @@ import 'package:js/js.dart';
 
 
 abstract class Library2 extends JsInterface {
-  factory Library2() => new Library2Impl();
+  factory Library2() = Library2Impl;
   Library2.created(JsObject o) : super.created(o);
 
   DartOnly createDartOnly();
@@ -63,7 +63,7 @@ class JsAndDart {
 }
 
 abstract class Gizmo extends JsInterface {
-  factory Gizmo(String x) => new GizmoImpl(x);
+  factory Gizmo(String x) = GizmoImpl;
   Gizmo.created(JsObject o) : super.created(o);
 
   String get x;

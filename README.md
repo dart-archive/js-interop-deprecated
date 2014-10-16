@@ -71,7 +71,7 @@ import 'package:js/js.dart';
 abstract class Foo extends JsInterface {
   Foo.created(JsObject o) : super.created(o);
   
-  factory Foo(String name) => new FooImpl(name);
+  factory Foo(String name) = FooImpl;
   
   String get name;
   void set name(String n);

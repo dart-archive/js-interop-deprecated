@@ -8,7 +8,7 @@ import 'package:js/js.dart';
 
 abstract class Context extends JsInterface {
 
-  factory Context() => new ContextImpl();
+  factory Context() = ContextImpl;
 
   Context.created(JsObject o) : super.created(o);
 
@@ -66,7 +66,7 @@ abstract class JsFoo extends JsInterface {
 
   JsFoo.created(JsObject o) : super.created(o);
 
-  factory JsFoo(String name) => new JsInterface(JsFooImpl, [name]);
+  factory JsFoo(String name) = JsFooImpl;
 
   String get name;
 
@@ -80,6 +80,8 @@ abstract class JsFoo extends JsInterface {
 @JsProxy(constructor: 'JsThing')
 class JsFooImpl extends JsFoo {
 
+  factory JsFooImpl(String name) => new JsInterface(ContextImpl, [name]);
+
   JsFooImpl.created(JsObject o) : super.created(o);
 
   noSuchMethod(i) => super.noSuchMethod(i);
@@ -87,7 +89,7 @@ class JsFooImpl extends JsFoo {
 
 abstract class JsBar extends JsFoo {
 
-  factory JsBar(String name) => new JsInterface(JsBarImpl, [name]);
+  factory JsBar(String name) = JsBarImpl;
 
   JsBar.created(JsObject o) : super.created(o);
 
@@ -97,6 +99,8 @@ abstract class JsBar extends JsFoo {
 
 @JsProxy(constructor: 'JsThing2')
 class JsBarImpl extends JsBar {
+
+  factory JsBarImpl(String name) => new JsInterface(ContextImpl, [name]);
 
   JsBarImpl.created(JsObject o) : super.created(o);
 
