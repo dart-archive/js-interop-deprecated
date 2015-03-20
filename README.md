@@ -1,5 +1,10 @@
-Dart-JavaScript Interop
+Dart-JavaScript Interop (paused)
 =======================
+
+**Note:** Development on this package has paused. We encourage every developer
+to use `dart:js` for Dart-JavaScript interop. Further work on a
+higher-level interop with JavaScript will be explored along with
+new experimental approaches to compiling to JavaScript.
 
 package:js provides high-level, typed interopability between Dart and
 JavaScript. It allows developers to export Dart APIs to JavaScript and define
