@@ -12,31 +12,31 @@ main() {
 
     test('should accept simple name', () {
       expect(createProxySkeleton('MyClass'), '''
-abstract class MyClass extends JsInterface {
-  factory MyClass() => new MyClassImpl();
-  MyClass.created(JsObject o) : super.created(o);
-}
-
 @JsProxy(constructor: 'MyClass')
 class MyClassImpl extends MyClass {
   factory MyClassImpl() => new JsInterface(MyClassImpl, []);
   MyClassImpl.created(JsObject o) : super.created(o);
   noSuchMethod(i) => super.noSuchMethod(i);
+}
+
+abstract class MyClass extends JsInterface {
+  factory MyClass() = MyClassImpl;
+  MyClass.created(JsObject o) : super.created(o);
 }''');
     });
 
     test('should accept qualified name', () {
       expect(createProxySkeleton('a.b.MyClass'), '''
-abstract class MyClass extends JsInterface {
-  factory MyClass() => new MyClassImpl();
-  MyClass.created(JsObject o) : super.created(o);
-}
-
 @JsProxy(constructor: 'a.b.MyClass')
 class MyClassImpl extends MyClass {
   factory MyClassImpl() => new JsInterface(MyClassImpl, []);
   MyClassImpl.created(JsObject o) : super.created(o);
   noSuchMethod(i) => super.noSuchMethod(i);
+}
+
+abstract class MyClass extends JsInterface {
+  factory MyClass() = MyClassImpl;
+  MyClass.created(JsObject o) : super.created(o);
 }''');
     });
 

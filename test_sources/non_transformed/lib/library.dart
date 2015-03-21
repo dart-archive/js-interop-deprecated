@@ -8,7 +8,7 @@ import 'package:js/js.dart';
 
 abstract class Context extends JsInterface {
 
-  factory Context() => new ContextImpl();
+  factory Context() = ContextImpl;
 
   Context.created(JsObject o) : super.created(o);
 
@@ -89,7 +89,7 @@ abstract class JsFoo extends JsInterface implements HasName {
 
   JsFoo.created(JsObject o) : super.created(o);
 
-  factory JsFoo(String name) => new JsFooImpl(name);
+  factory JsFoo(String name) = JsFooImpl;
 
   String get name;
 
@@ -121,7 +121,7 @@ class JsFooImpl extends JsFoo {
 
 abstract class JsBar extends JsFoo {
 
-  factory JsBar(String name) => new JsBarImpl(name);
+  factory JsBar(String name) = JsBarImpl;
 
   JsBar.created(JsObject o) : super.created(o);
 
