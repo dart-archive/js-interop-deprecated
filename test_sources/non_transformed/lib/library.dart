@@ -85,17 +85,14 @@ abstract class HasName {
   String name;
 }
 
-abstract class JsFoo extends JsInterface implements HasName {
+abstract class JsFoo extends JsInterface with _JsFooMethod implements HasName,
+    _JsFooProperties {
 
   JsFoo.created(JsObject o) : super.created(o);
 
   factory JsFoo(String name) => new JsFooImpl(name);
 
-  String get name;
-
   int y() => 1;
-
-  num double(num x);
 
   String getName(HasName b);
 
@@ -104,9 +101,14 @@ abstract class JsFoo extends JsInterface implements HasName {
   void setAnonymous(JsObject o);
 
   void setBar(JsBar);
+}
 
-  JsBar get bar;
-  void set bar(JsBar bar);
+abstract class _JsFooProperties {
+  JsBar bar;
+}
+
+abstract class _JsFooMethod {
+  num double(num x);
 }
 
 @JsProxy(constructor: 'JsThing')
