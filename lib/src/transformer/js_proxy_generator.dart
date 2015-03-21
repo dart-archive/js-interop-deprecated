@@ -108,7 +108,7 @@ class JsProxyGenerator {
   bool _replaceFactoryConstructor(ClassElement proxy, JsProxy proxyAnnotation) {
     final name = proxy.name;
     final factoryConstructor = _getFactoryConstructor(proxy);
-    final bool isGlobal = proxyAnnotation.global;
+    final bool isGlobal = proxyAnnotation.global == true;
     final String jsConstructor = proxyAnnotation.constructor;
 
     if (factoryConstructor == null) return false;
