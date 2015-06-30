@@ -8,9 +8,24 @@
  */
 library js;
 
-// js.dart is just an alias for mirrors.dart at runtime. The transformer
-// replaces this import of js.dart with src/static.dart.
-export 'package:js/src/mirrors.dart';
-export 'package:js/src/js_expando.dart' show JsExpando;
-export 'package:js/src/js_list.dart' show JsList;
-export 'package:js/src/js_map.dart' show JsMap;
+/// A metadata annotation that marks an enum as a set of values.
+const jsEnum = const _JsEnum();
+class _JsEnum {
+  const _JsEnum();
+}
+
+/// A metadata annotation that allows to customize the name used for method call
+/// or attribute access on the javascript side.
+///
+/// You can use it on libraries, classes, members.
+class JsName {
+  final String name;
+  const JsName(this.name);
+}
+
+/// A metadata annotation used to indicate that the Js object is a anonymous js
+/// object. That is it is created with `new Object()`.
+const anonymous = const _Anonymous();
+class _Anonymous {
+  const _Anonymous();
+}
