@@ -20,7 +20,7 @@ class _JsEnum {
 /// You can use it on libraries, classes, members.
 class JsName {
   final String name;
-  const JsName(this.name);
+  const JsName([this.name]);
 }
 
 /// A metadata annotation used to indicate that the Js object is a anonymous js
